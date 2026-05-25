@@ -20,7 +20,7 @@ function FlipDigit({ value }: { value: string }) {
   }, [value, prevValue]);
 
   return (
-    <div className="relative w-32 h-48 sm:w-56 sm:h-80 lg:w-80 lg:h-96 font-mono font-bold text-white select-none [perspective:1000px]">
+    <div className="relative w-14 h-20 sm:w-20 sm:h-28 lg:w-24 lg:h-36 font-mono font-bold text-white select-none [perspective:1000px]">
       
       <style>{`
         .backface-hidden {
@@ -34,15 +34,15 @@ function FlipDigit({ value }: { value: string }) {
       `}</style>
 
       {/* 1. TOPO BASE */}
-      <div className="absolute top-0 left-0 w-full h-1/2 overflow-hidden rounded-t-2xl bg-gradient-to-b from-[#1a1a1c] to-[#111112] border-b border-black/50">
-        <div className="absolute top-0 left-0 w-full h-[200%] flex items-center justify-center text-8xl sm:text-9xl lg:text-[160px] leading-none">
+      <div className="absolute top-0 left-0 w-full h-1/2 overflow-hidden rounded-t-xl bg-gradient-to-b from-[#1a1a1c] to-[#111112] border-b border-black/50">
+        <div className="absolute top-0 left-0 w-full h-[200%] flex items-center justify-center text-4xl sm:text-6xl lg:text-8xl leading-none">
           {value}
         </div>
       </div>
 
       {/* 2. BASE DE BAIXO */}
-      <div className="absolute bottom-0 left-0 w-full h-1/2 overflow-hidden rounded-b-2xl bg-gradient-to-b from-[#111112] to-[#09090a]">
-        <div className="absolute bottom-0 left-0 w-full h-[200%] flex items-center justify-center text-8xl sm:text-9xl lg:text-[160px] leading-none">
+      <div className="absolute bottom-0 left-0 w-full h-1/2 overflow-hidden rounded-b-xl bg-gradient-to-b from-[#111112] to-[#09090a]">
+        <div className="absolute bottom-0 left-0 w-full h-[200%] flex items-center justify-center text-4xl sm:text-6xl lg:text-8xl leading-none">
           {prevValue}
         </div>
       </div>
@@ -196,64 +196,53 @@ export function TimerWidget({
   }
 
   return (
-    <div className="p-8 bg-gradient-to-br from-slate-900/80 via-slate-950 to-black text-white rounded-2xl shadow-2xl max-w-sm border border-slate-800/60 backdrop-blur-sm">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">Active Timer</p>
-          <h3 className="text-lg font-semibold tracking-tight text-white">{entityName}</h3>
-        </div>
-        {isRunning && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-full">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-            <span className="text-xs font-semibold text-emerald-300">Recording</span>
-          </div>
-        )}
-      </div>
+    <div className="p-6 bg-[#0d0d0e] text-white rounded-xl shadow-2xl max-w-sm border border-zinc-800/80">
+      <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500">
+        {entityName}
+      </span>
 
-      <div className="relative mb-8 py-6 px-4 bg-black/50 rounded-xl border border-slate-800/40 backdrop-blur">
-        <div className="text-5xl sm:text-6xl font-mono font-bold text-center tracking-tight text-transparent bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text">
-          {hrs}:{mins}:{secs}
-        </div>
-        <p className="text-center text-xs text-slate-500 mt-3 font-mono">Hours • Minutes • Seconds</p>
+      <div className="text-4xl font-mono font-bold text-center my-6 tracking-widest text-zinc-100">
+        {hrs}:{mins}:{secs}
       </div>
 
       {timerLoading && (
-        <p className="text-xs text-slate-500 text-center mb-4 animate-pulse">Loading timer…</p>
+        <p className="text-xs text-zinc-600 text-center mb-2">Carregando timer...</p>
       )}
 
-      {/* BOTÕES PRINCIPAIS */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      {/* BOTÕES — MONOCROMÁTICOS */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
         {!isRunning ? (
           <button
             onClick={handleStart}
             disabled={isStarting || timerLoading}
-            className="py-3 px-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-lg transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-emerald-500/50 hover:shadow-xl active:scale-95"
+            className="py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-semibold rounded-lg transition text-sm disabled:opacity-50"
           >
-            {isStarting ? '…' : '▶ Start'}
+            {isStarting ? 'Iniciando...' : 'Start Timer'}
           </button>
         ) : (
           <button
             onClick={handleStop}
             disabled={isStopping || timerLoading}
-            className="py-3 px-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold rounded-lg transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-red-500/50 hover:shadow-xl active:scale-95"
+            className="py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-100 font-semibold rounded-lg transition text-sm border border-zinc-800 disabled:opacity-50"
           >
-            {isStopping ? '…' : '⏹ Stop'}
+            {isStopping ? 'Salvando...' : 'Stop Timer'}
           </button>
         )}
+        {/* Reset só disponível quando parado — limpa visualmente mas não apaga o histórico */}
         <button
           onClick={() => {/* reset visual não é necessário: o tempo vem do hook */}}
           disabled={isRunning || timerLoading}
-          className="py-3 px-4 bg-slate-800/60 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold rounded-lg transition-all duration-200 text-sm border border-slate-700/40 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+          className="py-2.5 bg-zinc-900/40 hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 font-semibold rounded-lg transition text-sm border border-zinc-800/50 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          ⟲ Reset
+          Reset
         </button>
       </div>
 
       <button
         onClick={() => setIsFullscreen(true)}
-        className="w-full py-3 px-4 bg-slate-800/80 hover:bg-slate-700 text-slate-100 font-semibold rounded-lg text-xs tracking-widest uppercase transition-all duration-200 border border-slate-700/40 hover:border-slate-600/60 active:scale-95"
+        className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-semibold rounded-lg text-xs tracking-wider uppercase transition text-center border border-zinc-800"
       >
-        ⛶ Fullscreen Mode
+        Go to Flip Clock
       </button>
 
       {/* FULLSCREEN COM FLIPDIGIT ANIMADO */}
@@ -269,21 +258,21 @@ export function TimerWidget({
             ✕
           </button>
 
-          <div className="flex items-center gap-6 sm:gap-8 lg:gap-12">
+          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4">
             <FlipDigit value={hrs[0]} />
             <FlipDigit value={hrs[1]} />
 
-            <div className="flex flex-col gap-4 sm:gap-8 lg:gap-12 px-2 opacity-40 animate-pulse">
-              <span className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-white rounded-full"></span>
-              <span className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-white rounded-full"></span>
+            <div className="flex flex-col gap-2 sm:gap-4 px-1 opacity-40 animate-pulse">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
             </div>
 
             <FlipDigit value={mins[0]} />
             <FlipDigit value={mins[1]} />
 
-            <div className="flex flex-col gap-4 sm:gap-8 lg:gap-12 px-2 opacity-40 animate-pulse">
-              <span className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-white rounded-full"></span>
-              <span className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-white rounded-full"></span>
+            <div className="flex flex-col gap-2 sm:gap-4 px-1 opacity-40 animate-pulse">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
             </div>
 
             <FlipDigit value={secs[0]} />

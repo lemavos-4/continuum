@@ -89,11 +89,9 @@ const formatDays = (d: number) => {
 
 const badgeStyle = (badge: string) => {
   const b = badge?.toLowerCase() || "";
-  if (b.includes("hot")) return "bg-orange-500/10 text-orange-400 border-orange-500/20";
-  if (b.includes("forgotten") || b.includes("gem")) return "bg-violet-500/10 text-violet-400 border-violet-500/20";
-  if (b.includes("key")) return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-  if (b.includes("high")) return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-  return "bg-white/5 text-neutral-300 border-white/10";
+  if (b.includes("hot")) return "bg-white/[0.06] text-white/90 border-white/20";
+  if (b.includes("forgotten") || b.includes("gem")) return "bg-white/[0.04] text-white/70 border-white/10";
+  return "bg-transparent text-white/50 border-white/10";
 };
 
 const formatNoteDate = (timestamp?: number) => {
@@ -122,19 +120,19 @@ const DashboardSkeleton = () => (
 function StatCard({ icon: Icon, label, value, hint }: { icon: ComponentType<{ className?: string }>; label: string; value: string | number; hint?: string; }) {
   return (
     <div className="border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-5 flex flex-col gap-1 min-w-0 shadow-inner transition-all duration-300 hover:border-white/10 hover:bg-neutral-900/30">
-      <div className="flex items-center gap-1.5 text-neutral-500">
+      <div className="flex items-center gap-1.5 text-white/50">
         <Icon className="h-3.5 w-3.5 shrink-0" />
         <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold truncate">{label}</span>
       </div>
-      <p className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-neutral-100 tabular-nums leading-none mt-1 truncate">{value}</p>
-      {hint && <p className="text-[10px] sm:text-[11px] text-neutral-500 truncate mt-0.5">{hint}</p>}
+      <p className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-white/95 tabular-nums leading-none mt-1 truncate">{value}</p>
+      {hint && <p className="text-[10px] sm:text-[11px] text-white/40 truncate mt-0.5">{hint}</p>}
     </div>
   );
 }
 
 function StatChip({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-white/5 border border-white/5 px-1.5 py-0.5 text-[9px] sm:text-[10px] text-neutral-400 font-medium">
+    <span className="inline-flex items-center gap-1 rounded-sm border border-white/5 bg-white/[0.02] px-1.5 py-0.5 font-mono text-[10px] text-white/40">
       {children}
     </span>
   );
@@ -155,10 +153,10 @@ function NoteCard({ item, onOpen }: { item: NoteInsight; onOpen: () => void }) {
         <Badge variant="outline" className={cn("border text-[9px] font-medium px-1.5 py-0 shadow-sm", badgeStyle(item.badge))}>
           {item.badge}
         </Badge>
-        <span className="font-mono text-[9px] text-neutral-500">{item.score.toFixed(1)}</span>
+        <span className="font-mono text-[9px] text-white/50">{item.score.toFixed(1)}</span>
       </div>
       <div className="flex items-start gap-2 flex-1 min-w-0">
-        <div className="mt-0.5 rounded-lg bg-white/5 p-1 border border-white/5 shrink-0">
+        <div className="mt-0.5 rounded-lg bg-white/[0.06] p-1 border border-white/5 shrink-0">
           <StickyNote className="h-3.5 w-3.5 text-neutral-400" />
         </div>
         <h3 className="line-clamp-2 text-xs sm:text-sm font-medium text-neutral-200 group-hover:text-white transition-colors">{item.note.title || "Untitled"}</h3>
@@ -187,16 +185,16 @@ function EntityCard({ item, onOpen }: { item: EntityInsight; onOpen: () => void 
         <Badge variant="outline" className={cn("border text-[9px] font-medium px-1.5 py-0 shadow-sm", badgeStyle(item.badge))}>
           {item.badge}
         </Badge>
-        <span className="font-mono text-[9px] text-neutral-500">{item.score.toFixed(1)}</span>
+        <span className="font-mono text-[9px] text-white/50">{item.score.toFixed(1)}</span>
       </div>
       <div className="flex items-start gap-2 flex-1 min-w-0">
-        <div className="mt-0.5 rounded-lg bg-white/5 p-1 border border-white/5 shrink-0">
+        <div className="mt-0.5 rounded-lg bg-white/[0.06] p-1 border border-white/5 shrink-0">
           <Network className="h-3.5 w-3.5 text-neutral-400" />
         </div>
         <div className="min-w-0">
           <h3 className="line-clamp-2 text-xs sm:text-sm font-medium text-neutral-200 group-hover:text-white transition-colors">{item.entity.title}</h3>
           {item.entity.type && (
-            <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-neutral-500 truncate">{item.entity.type}</p>
+            <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/50 truncate">{item.entity.type}</p>
           )}
         </div>
       </div>
@@ -226,12 +224,12 @@ function DashboardInsightSection({
     <div className={cn("border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 flex flex-col shadow-inner", className)}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-400" />
           </div>
           <div>
             <h2 className="text-xs sm:text-sm font-semibold text-neutral-200">{title}</h2>
-            {subtitle && <p className="text-[11px] text-neutral-500">{subtitle}</p>}
+            {subtitle && <p className="text-[11px] text-white/50">{subtitle}</p>}
           </div>
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-4 mt-1 sm:mt-0 border-t border-white/5 sm:border-none pt-2 sm:pt-0">
@@ -240,7 +238,7 @@ function DashboardInsightSection({
               type="button"
               onClick={onRefresh}
               disabled={refreshing}
-              className="text-[11px] sm:text-xs text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5"
+              className="text-[11px] sm:text-xs text-white/50 hover:text-white transition-colors flex items-center gap-1.5"
             >
               <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
               <span>Refresh</span>
@@ -250,7 +248,7 @@ function DashboardInsightSection({
             <button
               type="button"
               onClick={() => navigate(viewMoreHref)}
-              className="text-[11px] sm:text-xs text-neutral-400 hover:text-white transition-colors"
+              className="text-[11px] sm:text-xs text-white/50 hover:text-white transition-colors"
             >
               {viewMoreLabel || "View all"}
             </button>
@@ -265,7 +263,7 @@ function DashboardInsightSection({
             ))}
           </div>
         ) : empty ? (
-          <div className="rounded-xl border border-dashed border-white/5 bg-neutral-900/5 p-6 text-center text-xs text-neutral-500 h-full flex flex-col items-center justify-center min-h-[120px]">
+          <div className="rounded-xl border border-dashed border-white/5 bg-white/[0.01] p-6 text-center text-xs text-white/30 h-full flex flex-col items-center justify-center min-h-[120px]">
             Nothing to show yet.
           </div>
         ) : (
@@ -275,7 +273,7 @@ function DashboardInsightSection({
               <Accordion type="single" collapsible className="mt-3">
                 <AccordionItem value={title} className="border-none">
                   <AccordionTrigger className="px-0 py-0 hover:no-underline">
-                    <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.01] px-3 py-2 text-xs font-medium text-neutral-400 hover:bg-white/5 transition-colors">
+                    <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.01] px-3 py-2 text-xs font-medium text-white/50 hover:bg-white/[0.02] transition-colors">
                       <span>Show {visibleCount - previewItems.length} more</span>
                       <span>{visibleCount} of {totalCount}</span>
                     </div>
@@ -284,13 +282,13 @@ function DashboardInsightSection({
                     <div className={cn("grid gap-3 mb-3", gridColsClass)}>
                       {expandedItems}
                     </div>
-                    <div className="flex items-center justify-between gap-3 text-[10px] text-neutral-500 pt-2 border-t border-white/5">
+                    <div className="flex items-center justify-between gap-3 text-[10px] text-white/40 pt-2 border-t border-white/5">
                       <span>{totalCount > visibleCount ? `Showing ${visibleCount} of ${totalCount}` : `Showing all ${visibleCount}`}</span>
                       {viewMoreHref && (
                         <button
                           type="button"
                           onClick={() => navigate(viewMoreHref)}
-                          className="text-neutral-400 hover:text-white transition-colors"
+                          className="text-white/50 hover:text-white transition-colors"
                         >
                           {viewMoreLabel || "View all"}
                         </button>
@@ -560,11 +558,11 @@ export default function Dashboard() {
         {/* HEADER */}
         <header className="border-b border-white/5 pb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[10px] tracking-wider uppercase text-neutral-500 font-semibold mb-0.5">Overview</p>
-            <h1 className="font-serif text-3xl sm:text-4xl tracking-tight text-neutral-100">
+            <p className="text-[10px] tracking-wider uppercase text-white/40 font-semibold mb-0.5">Overview</p>
+            <h1 className="font-serif text-3xl sm:text-4xl tracking-tight text-white/95">
               {greeting}, {displayName}
             </h1>
-            <p className="mt-0.5 text-xs text-neutral-500">
+            <p className="mt-0.5 text-xs text-white/50">
               Here's what's happening across your knowledge graph.
             </p>
           </div>
@@ -586,18 +584,18 @@ export default function Dashboard() {
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                  <div className="h-9 w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
                     <Share2 className="h-4 w-4 text-neutral-400" />
                   </div>
                   <div>
                     <h2 className="text-sm font-semibold text-neutral-200">Score evolution</h2>
-                    <p className="text-xs text-neutral-500">Knowledge graph gravity index</p>
+                    <p className="text-xs text-white/50\">Knowledge graph gravity index</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <p className="text-[9px] uppercase tracking-wider text-neutral-500 font-semibold">Current</p>
-                    <p className="font-mono text-lg sm:text-xl text-neutral-100 tabular-nums leading-none mt-0.5">
+                    <p className="text-[9px] uppercase tracking-wider text-white/50 font-semibold">Current</p>
+                    <p className="font-mono text-lg sm:text-xl text-white/95 tabular-nums leading-none mt-0.5">
                       {scoreStats.current.toFixed(2)}
                     </p>
                   </div>
@@ -605,7 +603,7 @@ export default function Dashboard() {
                     type="button"
                     onClick={() => refetchScoreTimeline()}
                     disabled={scoreTimelineFetching}
-                    className="text-xs text-neutral-500 hover:text-white hidden sm:flex items-center gap-1 transition-colors disabled:opacity-50"
+                    className="text-xs text-white/50 hover:text-white hidden sm:flex items-center gap-1 transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className={cn("h-3 w-3", scoreTimelineFetching && "animate-spin")} />
                     Score
@@ -613,7 +611,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => navigate("/insights")}
-                    className="text-xs text-neutral-500 hover:text-white hidden sm:block transition-colors"
+                    className="text-xs text-white/50 hover:text-white hidden sm:block transition-colors"
                   >
                     Insights →
                   </button>
@@ -640,7 +638,7 @@ export default function Dashboard() {
                         "text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all shrink-0",
                         timeRange === range 
                           ? "bg-white/10 text-white border border-white/10 shadow-sm" 
-                          : "text-neutral-500 hover:text-neutral-300 border border-transparent"
+                          : "text-white/40 hover:text-white/70 border border-transparent"
                       )}
                     >
                       {labels[range]}
@@ -652,13 +650,13 @@ export default function Dashboard() {
 
             <div className="h-[200px] sm:h-[250px] w-full -mx-2 relative">
               {scoreTimelineLoading && scoreTimelineData.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center text-xs text-neutral-500">
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-white/40">
                   Loading score history…
                 </div>
               ) : !scoreStats.hasData ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-center px-4">
-                  <p className="text-xs text-neutral-400">No score history yet</p>
-                  <p className="text-[11px] text-neutral-600">Create notes and entities to build your knowledge gravity.</p>
+                  <p className="text-xs text-white/40">No score history yet</p>
+                  <p className="text-[11px] text-white/30">Create notes and entities to build your knowledge gravity.</p>
                 </div>
               ) : (
                 <>
@@ -733,12 +731,12 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center justify-between gap-3 mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                  <div className="h-9 w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
                     <Activity className="h-4 w-4 text-neutral-400" />
                   </div>
                   <h2 className="text-sm font-semibold text-neutral-200">Plan usage</h2>
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/60 bg-white/[0.05] border border-white/10 px-2 py-0.5 rounded-md">
                   {user?.plan || "FREE"}
                 </span>
               </div>
@@ -747,8 +745,8 @@ export default function Dashboard() {
                 <div className="space-y-3.5">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-neutral-400">Notes</span>
-                      <span className="text-neutral-200 font-mono text-[11px] tabular-nums">
+                      <span className="text-white/60">Notes</span>
+                      <span className="text-white/80 font-mono text-[11px] tabular-nums">
                         {usage.notesCount} / {limits.maxNotes === -1 ? "∞" : limits.maxNotes}
                       </span>
                     </div>
@@ -756,8 +754,8 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-neutral-400">Entities</span>
-                      <span className="text-neutral-200 font-mono text-[11px] tabular-nums">
+                      <span className="text-white/60">Entities</span>
+                      <span className="text-white/80 font-mono text-[11px] tabular-nums">
                         {usage.entitiesCount} / {limits.maxEntities === -1 ? "∞" : limits.maxEntities}
                       </span>
                     </div>
@@ -765,14 +763,14 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-neutral-400">Vault storage</span>
-                      <span className="text-neutral-200 font-mono text-[11px] tabular-nums">{storageUsed} / {storageLimit}</span>
+                      <span className="text-white/60">Vault storage</span>
+                      <span className="text-white/80 font-mono text-[11px] tabular-nums">{storageUsed} / {storageLimit}</span>
                     </div>
                     <Progress value={limits.maxVaultSizeMB === -1 ? 0 : Math.min((usage.vaultSizeMB / limits.maxVaultSizeMB) * 100, 100)} className="h-1 bg-white/5" />
                   </div>
                 </div>
               ) : (
-                <div className="text-xs text-neutral-500">Loading usage…</div>
+                <div className="text-xs text-white/40">Loading usage…</div>
               )}
 
               <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.01] p-3.5 text-[11px]">
@@ -817,12 +815,12 @@ export default function Dashboard() {
           <div className="border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 lg:col-span-4 flex flex-col shadow-inner">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
                   <FolderOpen className="h-3.5 w-3.5 text-neutral-400" />
                 </div>
                 <h2 className="text-xs sm:text-sm font-semibold text-neutral-200">Recent notes</h2>
               </div>
-              <button type="button" onClick={() => navigate("/notes")} className="text-xs text-neutral-400 hover:text-white transition-colors">
+              <button type="button" onClick={() => navigate("/notes")} className="text-xs text-white/50 hover:text-white transition-colors\">
                 View all
               </button>
             </div>
@@ -836,14 +834,14 @@ export default function Dashboard() {
                     className="group w-full rounded-xl border border-transparent px-2.5 py-2 text-left transition-all hover:bg-neutral-900/50 hover:border-white/5"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs sm:text-sm font-medium text-neutral-300 group-hover:text-white truncate">{note.title || "Untitled"}</p>
-                      <ArrowRight className="h-3.5 w-3.5 text-neutral-600 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-neutral-400" />
+                      <p className="text-xs sm:text-sm font-medium text-white/80 group-hover:text-white truncate">{note.title || "Untitled"}</p>
+                      <ArrowRight className="h-3.5 w-3.5 text-white/30 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-white/50" />
                     </div>
-                    <p className="mt-0.5 text-[9px] font-mono text-neutral-500">{formatNoteDate(note.createdAtTimestamp)}</p>
+                    <p className="mt-0.5 text-[9px] font-mono text-white/40">{formatNoteDate(note.createdAtTimestamp)}</p>
                   </button>
                 ))
               ) : (
-                <div className="rounded-xl border border-dashed border-white/5 bg-neutral-900/5 p-6 text-center text-xs text-neutral-500 h-full flex items-center justify-center">
+                <div className="rounded-xl border border-dashed border-white/5 bg-white/[0.01] p-6 text-center text-xs text-white/30 h-full flex items-center justify-center">
                   No recent notes yet.
                 </div>
               )}
