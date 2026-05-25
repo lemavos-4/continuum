@@ -296,6 +296,10 @@ public class MetricsService {
                 .collect(Collectors.toList());
     }
 
+    private static double round(double v) {
+        return Math.round(v * 100.0) / 100.0;
+    }
+
     private User getUser(String userId) {
         return userRepo.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
     }
