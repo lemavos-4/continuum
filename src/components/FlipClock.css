@@ -1,116 +1,98 @@
 /* ============================================================
-   FLIP CLOCK — Premium Split-Flap Aesthetic
+   FLIP CLOCK — Anti-Artifact Clip-Path Edition
    ============================================================ */
 
 .flip-clock-fullscreen {
   background: #000;
-  display: flex;
-  gap: 10px; /* Espaço entre os dígitos */
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
 }
 
 .flip-digit {
   position: relative;
   width: 5rem;
-  height: 7rem;
-  perspective: 1000px; /* Aumentado para um 3D mais suave */
+  height: 7.5rem;
+  font-size: 5.5rem;
+  perspective: 1000px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-weight: 700;
-  font-size: 5rem;
-  line-height: 7rem; /* Importante para alinhar o texto verticalmente */
-  color: #f0f0f0;
+  color: #fff;
   border-radius: 0.5rem;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); /* Sombra externa para dar profundidade */
 }
 
-/* Tamanhos responsivos */
+/* Responsividade Premium */
 @media (min-width: 640px) {
-  .flip-digit { width: 7rem; height: 10rem; font-size: 7rem; line-height: 10rem; }
+  .flip-digit { width: 7.5rem; height: 11rem; font-size: 8rem; }
 }
 @media (min-width: 1024px) {
-  .flip-digit { width: 8.5rem; height: 12rem; font-size: 8.5rem; line-height: 12rem; }
+  .flip-digit { width: 9.5rem; height: 14rem; font-size: 10.5rem; }
 }
 
-/* Estilo comum para todas as metades */
-.base-top, .base-bottom, .flip-top, .flip-bottom {
+/* Estilo Base para todas as faces (Sempre em tamanho total) */
+.digit-face {
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 50%;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  background: linear-gradient(to bottom, #1a1a1a, #111); /* Fundo com leve gradiente */
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
-}
-
-/* Metades Superiores */
-.base-top, .flip-top {
-  top: 0;
-  align-items: flex-start;
-  border-radius: 0.5rem 0.5rem 0 0;
-  transform-origin: bottom;
-}
-
-/* Metades Inferiores */
-.base-bottom, .flip-bottom {
-  bottom: 0;
-  align-items: flex-end;
-  border-radius: 0 0 0.5rem 0.5rem;
-  transform-origin: top;
-}
-
-/* A linha do meio (Hinge / Dobradiça) */
-.base-top::after, .flip-top::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
-  height: 1px;
-  background: rgba(0, 0, 0, 0.8);
-  box-shadow: 0 1px 1px rgba(255, 255, 255, 0.1);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85);
+}
+
+/* METADES SUPERIORES (Exibe apenas os 50% de cima) */
+.face-top-base,
+.face-top-flip {
+  clip-path: inset(0 0 50% 0);
+  transform-origin: 50% 50%; /* Gira exatamente na linha central */
+  background: linear-gradient(to bottom, #181818 0%, #111111 100%);
+}
+
+/* METADES INFERIORES (Exibe apenas os 50% de baixo) */
+.face-bottom-base,
+.face-bottom-flip {
+  clip-path: inset(50% 0 0 0);
+  transform-origin: 50% 50%; /* Gira exatamente na linha central */
+  background: linear-gradient(to bottom, #111111 0%, #0a0a0a 100%);
+}
+
+/* Estado inicial da aba inferior que vai subir */
+.face-bottom-flip {
+  transform: rotateX(90deg);
 }
 
 /* ============================================================
-   A LÓGICA DO FLIP (ANIMAÇÃO)
+   ANIMAÇÃO DE FLIP SINCRONIZADA (0.3s + 0.3s)
    ============================================================ */
 
-/* A carta que gira contém o flip-top e o flip-bottom */
-.flip-card {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  transform-style: preserve-3d;
+.flip-digit.flipping .face-top-flip {
+  animation: flip-top-fall 0.3s ease-in forwards;
 }
 
-/* O flip-bottom começa escondido de cabeça para baixo */
-.flip-bottom {
-  transform: rotateX(90deg);
-  background: linear-gradient(to bottom, #222, #111); /* Fica levemente mais claro ao virar */
+.flip-digit.flipping .face-bottom-flip {
+  animation: flip-bottom-reveal 0.3s ease-out 0.3s forwards;
 }
 
-/* Quando a classe 'flipping' é adicionada ao .flip-digit */
-.flip-digit.flipping .flip-top {
-  animation: flip-top-anim 0.5s cubic-bezier(0.37, 0.01, 0.94, 0.34) forwards;
-}
-
-.flip-digit.flipping .flip-bottom {
-  animation: flip-bottom-anim 0.5s cubic-bezier(0.15, 0.45, 0.28, 1) 0.5s forwards;
-}
-
-/* Animações refinadas com curva de aceleração (cubic-bezier) */
-@keyframes flip-top-anim {
+@keyframes flip-top-fall {
   0%   { transform: rotateX(0deg); }
   100% { transform: rotateX(-90deg); }
 }
 
-@keyframes flip-bottom-anim {
+@keyframes flip-bottom-reveal {
   0%   { transform: rotateX(90deg); }
   100% { transform: rotateX(0deg); }
+}
+
+/* Sombra/Linha física realista divisória do meio */
+.flip-digit::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 1px);
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 1px 1px rgba(255, 255, 255, 0.08);
+  z-index: 20;
 }
