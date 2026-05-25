@@ -239,7 +239,7 @@ public class MetricsService {
         Map<LocalDate, Integer> notesCreatedByDate = new HashMap<>();
         Map<LocalDate, Integer> linkedNotesCreatedByDate = new HashMap<>();
         Map<LocalDate, Integer> entitiesCreatedByDate = new HashMap<>();
-        Map<LocalDate, Set<LocalDate>> activeTrackingDaysByDate = new HashMap<>();
+        Set<LocalDate> activeTrackingDates = new HashSet<>();
 
         for (Note note : notes) {
             Instant createdAt = note.getCreatedAt() != null ? note.getCreatedAt() : note.getUpdatedAt();
@@ -259,7 +259,7 @@ public class MetricsService {
             if (entity.getTrackingDates() != null) {
                 for (LocalDate trackingDate : entity.getTrackingDates()) {
                     if (trackingDate != null) {
-                        activeTrackingDaysByDate.computeIfAbsent(trackingDate, ignored -> new HashSet<>()).add(trackingDate);
+                        activeTrackingDates.add(trackingDate);
                     }
                 }
             }
@@ -267,21 +267,32 @@ public class MetricsService {
 
         for (TrackingEvent event : trackingEvents) {
             if (event.getDate() == null) continue;
-            activeTrackingDaysByDate.computeIfAbsent(event.getDate(), ignored -> new HashSet<>()).add(event.getDate());
+            activeTrackingDates.add(event.getDate());
         }
 
         int notesSoFar = 0;
         int linkedNotesSoFar = 0;
         int entitiesSoFar = 0;
         Deque<LocalDate> recentActiveDays = new ArrayDeque<>();
+        Deque<Map.Entry<LocalDate, Integer>> recentNotesWindow = new ArrayDeque<>();
+        int recentNotesCount = 0;
         List<ScoreTimelineResponse.ScorePoint> history = new ArrayList<>();
 
         for (LocalDate cursor = startDate; !cursor.isAfter(today); cursor = cursor.plusDays(1)) {
-            notesSoFar += notesCreatedByDate.getOrDefault(cursor, 0);
+            int notesCreatedToday = notesCreatedByDate.getOrDefault(cursor, 0);
+            notesSoFar += notesCreatedToday;
             linkedNotesSoFar += linkedNotesCreatedByDate.getOrDefault(cursor, 0);
             entitiesSoFar += entitiesCreatedByDate.getOrDefault(cursor, 0);
 
-            if (activeTrackingDaysByDate.containsKey(cursor)) {
+            if (notesCreatedToday > 0) {
+                recentNotesWindow.addLast(Map.entry(cursor, notesCreatedToday));
+                recentNotesCount += notesCreatedToday;
+            }
+            while (!recentNotesWindow.isEmpty() && recentNotesWindow.peekFirst().getKey().isBefore(cursor.minusDays(29))) {
+                recentNotesCount -= recentNotesWindow.removeFirst().getValue();
+            }
+
+            if (activeTrackingDates.contains(cursor)) {
                 recentActiveDays.addLast(cursor);
             }
             while (!recentActiveDays.isEmpty() && recentActiveDays.peekFirst().isBefore(cursor.minusDays(29))) {
@@ -291,25 +302,13 @@ public class MetricsService {
             double noteDensity = notesSoFar == 0 ? 0.0 : Math.min(35.0, notesSoFar * 1.4);
             double entityDensity = entitiesSoFar == 0 ? 0.0 : Math.min(25.0, entitiesSoFar * 1.8);
             double connectionDensity = notesSoFar == 0 ? 0.0 : Math.min(25.0, ((double) linkedNotesSoFar / notesSoFar) * 25.0);
-            double freshness = notesSoFar == 0 ? 0.0 : Math.min(10.0, ((double) notesCreatedByDateWindow(notesCreatedByDate, cursor) / notesSoFar) * 10.0);
+            double freshness = notesSoFar == 0 ? 0.0 : Math.min(10.0, ((double) recentNotesCount / notesSoFar) * 10.0);
             double continuity = Math.min(5.0, recentActiveDays.size() / 6.0);
 
             history.add(new ScoreTimelineResponse.ScorePoint(cursor, round(noteDensity + entityDensity + connectionDensity + freshness + continuity)));
         }
 
         return history;
-    }
-
-    private long notesCreatedByDateWindow(Map<LocalDate, Integer> notesCreatedByDate, LocalDate currentDate) {
-        LocalDate start = currentDate.minusDays(29);
-        long total = 0;
-        for (Map.Entry<LocalDate, Integer> entry : notesCreatedByDate.entrySet()) {
-            LocalDate date = entry.getKey();
-            if (!date.isBefore(start) && !date.isAfter(currentDate)) {
-                total += entry.getValue();
-            }
-        }
-        return total;
     }
 
     // ── private ───────────────────────────────────────────────────────────────
