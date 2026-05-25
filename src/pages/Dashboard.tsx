@@ -677,37 +677,57 @@ export default function Dashboard() {
                     </div>
                   )}
                   <ChartContainer config={{}} className="h-full w-full">
-                    <AreaChart data={scoreTimelineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={scoreTimelineData} margin={{ top: 12, right: 12, left: -16, bottom: 0 }}>
                       <defs>
                         <linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.35} />
+                          <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.22} />
+                          <stop offset="60%" stopColor="hsl(var(--foreground))" stopOpacity={0.06} />
                           <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid stroke="hsl(var(--foreground) / 0.06)" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval="preserveStartEnd" />
+                      <CartesianGrid stroke="hsl(var(--foreground) / 0.04)" strokeDasharray="2 6" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                        tickMargin={8}
+                        minTickGap={32}
+                        interval="preserveStartEnd"
+                      />
                       <YAxis
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                         domain={[0, (dataMax: number) => Math.max(dataMax * 1.2, 1)]}
-                        tickFormatter={(value) => Number(value).toFixed(1)}
+                        tickFormatter={(value) => Number(value).toFixed(0)}
                         width={32}
+                        tickCount={4}
                       />
                       <Tooltip
-                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 11, color: "hsl(var(--foreground))" }}
-                        labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                        cursor={{ stroke: "hsl(var(--foreground) / 0.2)", strokeWidth: 1, strokeDasharray: "3 3" }}
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 10,
+                          fontSize: 11,
+                          color: "hsl(var(--foreground))",
+                          boxShadow: "0 8px 24px -8px rgba(0,0,0,0.6)",
+                          padding: "8px 10px",
+                        }}
+                        labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 10, marginBottom: 4 }}
                         formatter={(value) => [Number(value as number).toFixed(2), "Score"]}
                       />
                       <Area
                         type="monotone"
                         dataKey="score"
                         stroke="hsl(var(--foreground))"
-                        strokeWidth={2}
+                        strokeWidth={1.75}
                         fill="url(#scoreFill)"
                         dot={false}
                         activeDot={{ r: 4, fill: "hsl(var(--foreground))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
                         isAnimationActive
+                        animationDuration={500}
                       />
                     </AreaChart>
                   </ChartContainer>
