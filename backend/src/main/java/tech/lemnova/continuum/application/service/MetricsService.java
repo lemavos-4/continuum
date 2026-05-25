@@ -27,6 +27,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class MetricsService {
@@ -37,7 +38,6 @@ public class MetricsService {
     private final VaultDataService vaultData;
     private final PlanConfiguration planConfig;
     private final EntityService entityService;
-    private final TrackingService trackingService;
 
     public MetricsService(UserRepository userRepo,
                           NoteRepository noteRepo,
@@ -52,7 +52,6 @@ public class MetricsService {
         this.vaultData  = vaultData;
         this.planConfig = planConfig;
         this.entityService = entityService;
-        this.trackingService = trackingService;
     }
 
     public EntityTimeline getEntityTimeline(String userId, String entityId) {
@@ -222,13 +221,18 @@ public class MetricsService {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
+        LocalDate firstEntityTrackingDate = entities.stream()
+                .flatMap(entity -> entity.getTrackingDates() != null ? entity.getTrackingDates().stream() : Stream.<LocalDate>empty())
+                .filter(Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
         LocalDate firstTrackingDate = trackingEvents.stream()
                 .map(TrackingEvent::getDate)
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
 
-        LocalDate startDate = Stream.of(firstNoteDate, firstEntityDate, firstTrackingDate)
+        LocalDate startDate = Stream.of(firstNoteDate, firstEntityDate, firstEntityTrackingDate, firstTrackingDate)
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(today);
@@ -252,6 +256,14 @@ public class MetricsService {
             if (entity.getCreatedAt() == null) continue;
             LocalDate date = entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate();
             entitiesCreatedByDate.merge(date, 1, Integer::sum);
+
+            if (entity.getTrackingDates() != null) {
+                for (LocalDate trackingDate : entity.getTrackingDates()) {
+                    if (trackingDate != null) {
+                        activeTrackingDaysByDate.computeIfAbsent(trackingDate, ignored -> new HashSet<>()).add(trackingDate);
+                    }
+                }
+            }
         }
 
         for (TrackingEvent event : trackingEvents) {
