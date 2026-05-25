@@ -7,6 +7,7 @@ import tech.lemnova.continuum.application.service.MetricsService;
 import tech.lemnova.continuum.controller.dto.metrics.DashboardMetrics;
 import tech.lemnova.continuum.controller.dto.metrics.EntityTimeline;
 import tech.lemnova.continuum.controller.dto.metrics.ScoreTimelineResponse;
+import tech.lemnova.continuum.controller.dto.metrics.ScoreTimelineResponse.ScorePoint;
 import tech.lemnova.continuum.infra.security.CustomUserDetails;
 
 import java.util.List;
@@ -32,9 +33,9 @@ public class MetricsController {
     }
 
     @GetMapping("/score/timeline")
-    public ResponseEntity<ScoreTimelineResponse> scoreTimeline(
+    public ResponseEntity<List<ScorePoint>> scoreTimeline(
             @AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.ok(metricsService.getUserScoreTimeline(user.getUserId()));
+        return ResponseEntity.ok(metricsService.getUserScoreTimeline(user.getUserId()).history());
     }
 }
 
