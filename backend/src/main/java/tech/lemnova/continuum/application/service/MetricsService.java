@@ -9,6 +9,7 @@ import tech.lemnova.continuum.controller.dto.metrics.MentionEntry;
 import tech.lemnova.continuum.controller.dto.metrics.TopEntity;
 import tech.lemnova.continuum.controller.dto.metrics.ScoreTimelineResponse;
 import tech.lemnova.continuum.domain.connection.NoteReference;
+import tech.lemnova.continuum.domain.metrics.UserScoreSnapshot;
 import tech.lemnova.continuum.domain.note.Note;
 import tech.lemnova.continuum.domain.note.NoteIndex;
 import tech.lemnova.continuum.domain.plan.PlanConfiguration;
@@ -19,6 +20,7 @@ import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
 import tech.lemnova.continuum.infra.persistence.EntityRepository;
 import tech.lemnova.continuum.infra.persistence.NoteRepository;
+import tech.lemnova.continuum.infra.persistence.UserScoreSnapshotRepository;
 import tech.lemnova.continuum.infra.vault.VaultDataService;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -38,19 +40,22 @@ public class MetricsService {
     private final VaultDataService vaultData;
     private final PlanConfiguration planConfig;
     private final EntityService entityService;
+    private final UserScoreSnapshotRepository scoreSnapshotRepo;
 
     public MetricsService(UserRepository userRepo,
                           NoteRepository noteRepo,
                           EntityRepository entityRepo,
                           VaultDataService vaultData,
                           PlanConfiguration planConfig,
-                          EntityService entityService) {
+                          EntityService entityService,
+                          UserScoreSnapshotRepository scoreSnapshotRepo) {
         this.userRepo   = userRepo;
         this.noteRepo   = noteRepo;
         this.entityRepo = entityRepo;
         this.vaultData  = vaultData;
         this.planConfig = planConfig;
         this.entityService = entityService;
+        this.scoreSnapshotRepo = scoreSnapshotRepo;
     }
 
     public EntityTimeline getEntityTimeline(String userId, String entityId) {
@@ -194,6 +199,13 @@ public class MetricsService {
 
     public List<ScoreTimelineResponse.ScorePoint> getUserScoreTimeline(String userId) {
         User user = getUser(userId);
+        List<ScoreTimelineResponse.ScorePoint> history = buildScoreHistory(user);
+        persistScoreHistory(userId, history);
+        return history;
+    }
+
+    private List<ScoreTimelineResponse.ScorePoint> buildScoreHistory(User user) {
+        String userId = user.getId();
         String vaultId = user.getVaultId();
 
         List<Note> notes = noteRepo.findByUserId(userId).stream()
@@ -309,6 +321,26 @@ public class MetricsService {
         }
 
         return history;
+    }
+
+    private void persistScoreHistory(String userId, List<ScoreTimelineResponse.ScorePoint> history) {
+        scoreSnapshotRepo.deleteByUserId(userId);
+        if (history.isEmpty()) {
+            return;
+        }
+
+        List<UserScoreSnapshot> snapshots = history.stream()
+                .map(point -> {
+                    UserScoreSnapshot snapshot = new UserScoreSnapshot();
+                    snapshot.setUserId(userId);
+                    snapshot.setDate(point.date());
+                    snapshot.setScore(point.score());
+                    snapshot.setCreatedAt(Instant.now());
+                    return snapshot;
+                })
+                .toList();
+
+        scoreSnapshotRepo.saveAll(snapshots);
     }
 
     // ── private ───────────────────────────────────────────────────────────────

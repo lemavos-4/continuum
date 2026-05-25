@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface UserScoreSnapshotRepository extends MongoRepository<UserScoreSnapshot, String> {
     Optional<UserScoreSnapshot> findByUserIdAndDate(String userId, LocalDate date);
     List<UserScoreSnapshot> findByUserIdAndDateBetweenOrderByDateAsc(String userId, LocalDate from, LocalDate to);
+    void deleteByUserId(String userId);
 }
