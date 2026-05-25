@@ -9,7 +9,6 @@ import tech.lemnova.continuum.controller.dto.metrics.MentionEntry;
 import tech.lemnova.continuum.controller.dto.metrics.TopEntity;
 import tech.lemnova.continuum.controller.dto.metrics.ScoreTimelineResponse;
 import tech.lemnova.continuum.domain.connection.NoteReference;
-import tech.lemnova.continuum.domain.metrics.UserScoreSnapshot;
 import tech.lemnova.continuum.domain.note.Note;
 import tech.lemnova.continuum.domain.note.NoteIndex;
 import tech.lemnova.continuum.domain.plan.PlanConfiguration;
@@ -20,7 +19,6 @@ import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
 import tech.lemnova.continuum.infra.persistence.EntityRepository;
 import tech.lemnova.continuum.infra.persistence.NoteRepository;
-import tech.lemnova.continuum.infra.persistence.UserScoreSnapshotRepository;
 import tech.lemnova.continuum.infra.vault.VaultDataService;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -40,7 +38,6 @@ public class MetricsService {
     private final PlanConfiguration planConfig;
     private final EntityService entityService;
     private final TrackingService trackingService;
-    private final UserScoreSnapshotRepository scoreSnapshotRepo;
 
     public MetricsService(UserRepository userRepo,
                           NoteRepository noteRepo,
@@ -48,8 +45,7 @@ public class MetricsService {
                           VaultDataService vaultData,
                           PlanConfiguration planConfig,
                           EntityService entityService,
-                          TrackingService trackingService,
-                          UserScoreSnapshotRepository scoreSnapshotRepo) {
+                          TrackingService trackingService) {
         this.userRepo   = userRepo;
         this.noteRepo   = noteRepo;
         this.entityRepo = entityRepo;
@@ -57,7 +53,6 @@ public class MetricsService {
         this.planConfig = planConfig;
         this.entityService = entityService;
         this.trackingService = trackingService;
-        this.scoreSnapshotRepo = scoreSnapshotRepo;
     }
 
     public EntityTimeline getEntityTimeline(String userId, String entityId) {
@@ -199,36 +194,7 @@ public class MetricsService {
                 activitiesCompletedToday, weeklyAverage, globalHeatmap);
     }
 
-    public ScoreTimelineResponse getUserScoreTimeline(String userId) {
-        getUser(userId);
-
-        LocalDate today = LocalDate.now();
-        // Pull up to ~10 years of history; cheap because snapshots are 1/day.
-        LocalDate from = today.minusDays(3650);
-
-        List<UserScoreSnapshot> snapshots = scoreSnapshotRepo
-                .findByUserIdAndDateBetweenOrderByDateAsc(userId, from, today);
-        Map<LocalDate, Double> scoreByDate = new java.util.TreeMap<>();
-        for (UserScoreSnapshot s : snapshots) {
-            scoreByDate.put(s.getDate(), s.getScore());
-        }
-
-        // Always recompute and persist today's snapshot so currentScore is fresh.
-        double currentScore = computeCurrentScore(userId);
-        UserScoreSnapshot todaySnapshot = scoreSnapshotRepo.findByUserIdAndDate(userId, today)
-                .orElseGet(() -> UserScoreSnapshot.builder().userId(userId).date(today).build());
-        todaySnapshot.setScore(currentScore);
-        scoreSnapshotRepo.save(todaySnapshot);
-        scoreByDate.put(today, currentScore);
-
-        List<ScoreTimelineResponse.ScorePoint> history = new ArrayList<>();
-        for (Map.Entry<LocalDate, Double> entry : scoreByDate.entrySet()) {
-            history.add(new ScoreTimelineResponse.ScorePoint(entry.getKey(), entry.getValue()));
-        }
-        return new ScoreTimelineResponse(currentScore, history);
-    }
-
-    private double computeCurrentScore(String userId) {
+    public List<ScoreTimelineResponse.ScorePoint> getUserScoreTimeline(String userId) {
         User user = getUser(userId);
         String vaultId = user.getVaultId();
 
@@ -243,31 +209,96 @@ public class MetricsService {
                 .toList();
 
         LocalDate today = LocalDate.now();
-        Instant thirtyDaysAgo = today.minusDays(30).atStartOfDay().toInstant(ZoneOffset.UTC);
-
-        long linkedNotes = notes.stream()
-                .filter(n -> n.getEntityIds() != null && !n.getEntityIds().isEmpty())
-                .count();
-        long recentNotes = notes.stream()
-                .filter(n -> {
-                    Instant updatedAt = n.getUpdatedAt() != null ? n.getUpdatedAt() : n.getCreatedAt();
-                    return updatedAt != null && !updatedAt.isBefore(thirtyDaysAgo);
+        LocalDate firstNoteDate = notes.stream()
+                .map(note -> {
+                    Instant at = note.getCreatedAt() != null ? note.getCreatedAt() : note.getUpdatedAt();
+                    return at != null ? at.atZone(ZoneOffset.UTC).toLocalDate() : null;
                 })
-                .count();
-        long activeTrackingDays = trackingEvents.stream()
+                .filter(Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        LocalDate firstEntityDate = entities.stream()
+                .map(entity -> entity.getCreatedAt() != null ? entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate() : null)
+                .filter(Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        LocalDate firstTrackingDate = trackingEvents.stream()
                 .map(TrackingEvent::getDate)
                 .filter(Objects::nonNull)
-                .filter(d -> !d.isBefore(today.minusDays(29)) && !d.isAfter(today))
-                .distinct()
-                .count();
+                .min(LocalDate::compareTo)
+                .orElse(null);
 
-        double noteDensity = notes.isEmpty() ? 0.0 : Math.min(35.0, notes.size() * 1.4);
-        double entityDensity = entities.isEmpty() ? 0.0 : Math.min(25.0, entities.size() * 1.8);
-        double connectionDensity = notes.isEmpty() ? 0.0 : Math.min(25.0, ((double) linkedNotes / notes.size()) * 25.0);
-        double freshness = notes.isEmpty() ? 0.0 : Math.min(10.0, ((double) recentNotes / notes.size()) * 10.0);
-        double continuity = Math.min(5.0, activeTrackingDays / 6.0);
+        LocalDate startDate = Stream.of(firstNoteDate, firstEntityDate, firstTrackingDate)
+                .filter(Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(today);
 
-        return round(noteDensity + entityDensity + connectionDensity + freshness + continuity);
+        Map<LocalDate, Integer> notesCreatedByDate = new HashMap<>();
+        Map<LocalDate, Integer> linkedNotesCreatedByDate = new HashMap<>();
+        Map<LocalDate, Integer> entitiesCreatedByDate = new HashMap<>();
+        Map<LocalDate, Set<LocalDate>> activeTrackingDaysByDate = new HashMap<>();
+
+        for (Note note : notes) {
+            Instant createdAt = note.getCreatedAt() != null ? note.getCreatedAt() : note.getUpdatedAt();
+            if (createdAt == null) continue;
+            LocalDate date = createdAt.atZone(ZoneOffset.UTC).toLocalDate();
+            notesCreatedByDate.merge(date, 1, Integer::sum);
+            if (note.getEntityIds() != null && !note.getEntityIds().isEmpty()) {
+                linkedNotesCreatedByDate.merge(date, 1, Integer::sum);
+            }
+        }
+
+        for (Entity entity : entities) {
+            if (entity.getCreatedAt() == null) continue;
+            LocalDate date = entity.getCreatedAt().atZone(ZoneOffset.UTC).toLocalDate();
+            entitiesCreatedByDate.merge(date, 1, Integer::sum);
+        }
+
+        for (TrackingEvent event : trackingEvents) {
+            if (event.getDate() == null) continue;
+            activeTrackingDaysByDate.computeIfAbsent(event.getDate(), ignored -> new HashSet<>()).add(event.getDate());
+        }
+
+        int notesSoFar = 0;
+        int linkedNotesSoFar = 0;
+        int entitiesSoFar = 0;
+        Deque<LocalDate> recentActiveDays = new ArrayDeque<>();
+        List<ScoreTimelineResponse.ScorePoint> history = new ArrayList<>();
+
+        for (LocalDate cursor = startDate; !cursor.isAfter(today); cursor = cursor.plusDays(1)) {
+            notesSoFar += notesCreatedByDate.getOrDefault(cursor, 0);
+            linkedNotesSoFar += linkedNotesCreatedByDate.getOrDefault(cursor, 0);
+            entitiesSoFar += entitiesCreatedByDate.getOrDefault(cursor, 0);
+
+            if (activeTrackingDaysByDate.containsKey(cursor)) {
+                recentActiveDays.addLast(cursor);
+            }
+            while (!recentActiveDays.isEmpty() && recentActiveDays.peekFirst().isBefore(cursor.minusDays(29))) {
+                recentActiveDays.removeFirst();
+            }
+
+            double noteDensity = notesSoFar == 0 ? 0.0 : Math.min(35.0, notesSoFar * 1.4);
+            double entityDensity = entitiesSoFar == 0 ? 0.0 : Math.min(25.0, entitiesSoFar * 1.8);
+            double connectionDensity = notesSoFar == 0 ? 0.0 : Math.min(25.0, ((double) linkedNotesSoFar / notesSoFar) * 25.0);
+            double freshness = notesSoFar == 0 ? 0.0 : Math.min(10.0, ((double) notesCreatedByDateWindow(notesCreatedByDate, cursor) / notesSoFar) * 10.0);
+            double continuity = Math.min(5.0, recentActiveDays.size() / 6.0);
+
+            history.add(new ScoreTimelineResponse.ScorePoint(cursor, round(noteDensity + entityDensity + connectionDensity + freshness + continuity)));
+        }
+
+        return history;
+    }
+
+    private long notesCreatedByDateWindow(Map<LocalDate, Integer> notesCreatedByDate, LocalDate currentDate) {
+        LocalDate start = currentDate.minusDays(29);
+        long total = 0;
+        for (Map.Entry<LocalDate, Integer> entry : notesCreatedByDate.entrySet()) {
+            LocalDate date = entry.getKey();
+            if (!date.isBefore(start) && !date.isAfter(currentDate)) {
+                total += entry.getValue();
+            }
+        }
+        return total;
     }
 
     // ── private ───────────────────────────────────────────────────────────────
