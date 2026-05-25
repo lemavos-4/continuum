@@ -478,19 +478,12 @@ export default function Dashboard() {
     return 0;
   }, [summary]);
 
-  // Extract { currentScore, history } from API. Tolerates legacy array shape.
   const { currentScore, fullHistory } = useMemo(() => {
-    let rawHistory: any[] = [];
-    let current = 0;
-
-    if (Array.isArray(scoreTimeline)) {
-      rawHistory = scoreTimeline;
-    } else if (scoreTimeline && typeof scoreTimeline === "object") {
-      const obj = scoreTimeline as any;
-      current = Number(obj.currentScore ?? 0);
-      const list = obj.history ?? obj.timeline ?? obj.points ?? obj.data ?? [];
-      if (Array.isArray(list)) rawHistory = list;
-    }
+    const rawHistory = Array.isArray(scoreTimeline)
+      ? scoreTimeline
+      : scoreTimeline && typeof scoreTimeline === "object"
+        ? ((scoreTimeline as any).history ?? (scoreTimeline as any).timeline ?? (scoreTimeline as any).points ?? (scoreTimeline as any).data ?? [])
+        : [];
 
     const normalized = rawHistory.reduce((acc: any[], point: any) => {
       if (!point?.date) return acc;
@@ -509,11 +502,10 @@ export default function Dashboard() {
 
     normalized.sort((a, b) => a.ts - b.ts);
 
-    if (!current && normalized.length > 0) {
-      current = normalized[normalized.length - 1].score;
-    }
-
-    return { currentScore: current, fullHistory: normalized };
+    return {
+      currentScore: normalized.length > 0 ? normalized[normalized.length - 1].score : 0,
+      fullHistory: normalized,
+    };
   }, [scoreTimeline]);
 
   // Local filtering by selected time range.
