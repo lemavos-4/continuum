@@ -1,277 +1,161 @@
-import { Play, Pause, Trash2, X } from "@/lib/heroicons";
-import { useEffect, useRef, useState } from 'react';
-import { useTimeTracking } from '@/hooks/useTimeTracking';
-import { Button } from '@/components/ui/button';
-import './FlipClock.css';
+import { useState, useEffect } from 'react';
 
-interface TimerWidgetProps {
-  entityId: string;
-  entityName: string;
-  onTimerStart?: (sessionId: string) => void;
-  onTimerStop?: (duration: number) => void;
-  compact?: boolean;
-}
-
-interface FlipDigitProps {
-  value: string;
-  isColon?: boolean;
-}
-
-function FlipDigit({ value, isColon = false }: FlipDigitProps) {
-  const [previous, setPrevious] = useState(value);
-  const [flipping, setFlipping] = useState(false);
+// ============================================================
+// SUBCOMPONENTE: FlipDigit (O segredo do efeito mecânico 3D)
+// ============================================================
+function FlipDigit({ value }) {
+  const [prevValue, setPrevValue] = useState(value);
+  const [isFlipping, setIsFlipping] = useState(false);
 
   useEffect(() => {
-    if (value !== previous) {
-      setFlipping(true);
-      const timeout = window.setTimeout(() => {
-        setFlipping(false);
-        setPrevious(value);
+    if (value !== prevValue) {
+      setIsFlipping(true);
+      
+      // Sincronizado com os 0.6s da animação do CSS
+      const timeout = setTimeout(() => {
+        setPrevValue(value);
+        setIsFlipping(false);
       }, 600);
-      return () => window.clearTimeout(timeout);
+
+      return () => clearTimeout(timeout);
     }
-  }, [value, previous]);
-
-  if (isColon) {
-    return (
-      <div className="flex items-center justify-center w-6 sm:w-10 h-[7rem] sm:h-[10rem] lg:h-[12rem] text-5xl sm:text-7xl lg:text-8xl font-mono font-bold text-white/60">
-        :
-      </div>
-    );
-  }
+  }, [value, prevValue]);
 
   return (
-    <div className={`flip-digit ${flipping ? 'flipping' : ''}`}>
-      <div className="flip-top">{flipping ? previous : value}</div>
-      <div className="flip-bottom">{value}</div>
+    <div className={`flip-digit ${isFlipping ? 'flipping' : ''}`}>
+      {/* BACKGROUNDS FIXOS */}
+      <div className="base-top"><span>{value}</span></div>
+      <div className="base-bottom"><span>{prevValue}</span></div>
+      
+      {/* CARTAS QUE SE MOVIMENTAM */}
+      <div className="flip-top"><span>{prevValue}</span></div>
+      <div className="flip-bottom"><span>{value}</span></div>
     </div>
   );
 }
 
-function FlipClockOverlay({ timeString, onClose }: { timeString: string; onClose: () => void }) {
-  // Parse time string "HH:MM:SS" into individual digits
-  const timeParts = timeString.split(':');
-  const hours = timeParts[0].padStart(2, '0').split('');
-  const minutes = timeParts[1].padStart(2, '0').split('');
-  const seconds = timeParts[2].padStart(2, '0').split('');
+// ============================================================
+// COMPONENTE PRINCIPAL: TimerWidget
+// ============================================================
+export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop }) {
+  const [seconds, setSeconds] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  return (
-    <div className="flip-clock-fullscreen fixed inset-0 z-50 flex items-center justify-center bg-black text-white">
-      <div className="relative w-full max-w-7xl px-4">
-        <button
-          onClick={onClose}
-          className="absolute right-6 top-6 z-50 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/60 text-white backdrop-blur-md transition-colors hover:bg-white/10"
-          aria-label="Close flip clock"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        <div className="flex flex-col items-center gap-10">
-          <div className="flex items-center justify-center gap-1 sm:gap-2">
-            <FlipDigit value={hours[0]} />
-            <FlipDigit value={hours[1]} />
-            <FlipDigit value=":" isColon />
-            <FlipDigit value={minutes[0]} />
-            <FlipDigit value={minutes[1]} />
-            <FlipDigit value=":" isColon />
-            <FlipDigit value={seconds[0]} />
-            <FlipDigit value={seconds[1]} />
-          </div>
-
-          <div className="text-center text-xs uppercase tracking-[0.3em] text-zinc-500">
-            Press <span className="text-white">Esc</span> to exit
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Reusable timer widget component - uses shared timer state
- */
-export function TimerWidget({
-  entityId,
-  entityName,
-  onTimerStart,
-  onTimerStop,
-  compact = false,
-}: TimerWidgetProps) {
-  const { activeTimers, isTimerActive, getElapsedSeconds, startTimer, stopTimer, isStarting, isStopping, getActiveTimer, formatSeconds } = useTimeTracking();
-  const [isFlipOpen, setIsFlipOpen] = useState(false);
-  const [flipTime, setFlipTime] = useState(0);
-  const fullscreenRef = useRef<HTMLDivElement | null>(null);
-
-  const { data: activeTimer, isLoading: timerLoading } = getActiveTimer(entityId);
-  const isRunning = isTimerActive(entityId);
-
-  // Get the current timer value from the hook's shared state
-  const currentElapsed = isRunning ? getElapsedSeconds(entityId) : (activeTimer?.elapsedSeconds || 0);
-  const timeString = formatSeconds(currentElapsed);
-
-  // Update flip time when Flip Clock is open
+  // Lógica do contador do Cronômetro
   useEffect(() => {
-    if (!isFlipOpen) return;
-
-    const updateFlipTime = () => {
-      const elapsed = isRunning ? getElapsedSeconds(entityId) : (activeTimer?.elapsedSeconds || 0);
-      setFlipTime(elapsed);
-    };
-
-    updateFlipTime(); // Initial update
-    const interval = setInterval(updateFlipTime, 100); // Update every 100ms for smooth animation
-
+    let interval = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
     return () => clearInterval(interval);
-  }, [isFlipOpen, isRunning, getElapsedSeconds, entityId, activeTimer?.elapsedSeconds]);
+  }, [isActive]);
 
-  const handleStart = async () => {
-    try {
-      await startTimer(entityId);
-      onTimerStart?.(entityId);
-    } catch (error) {
-      console.error('Failed to start timer:', error);
-    }
-  };
-
-  const handleStop = async () => {
-    try {
-      const activeTimerData = activeTimers.get(entityId);
-      if (activeTimerData) {
-        await stopTimer({ sessionId: activeTimerData.timerId });
-        onTimerStop?.(currentElapsed);
-      }
-    } catch (error) {
-      console.error('Failed to stop timer:', error);
-    }
-  };
-
-  const openFlipClock = async () => {
-    setIsFlipOpen(true);
-    setFlipTime(currentElapsed);
-
-    // Request fullscreen after a small delay to ensure the element is rendered
-    setTimeout(() => {
-      if (fullscreenRef.current?.requestFullscreen) {
-        fullscreenRef.current.requestFullscreen().catch((error) => {
-          console.warn('Fullscreen request failed:', error);
-        });
-      }
-    }, 100);
-  };
-
-  const closeFlipClock = async () => {
-    setIsFlipOpen(false);
-    if (document.fullscreenElement) {
-      try {
-        await document.exitFullscreen();
-      } catch (error) {
-        console.warn('Exit fullscreen failed:', error);
-      }
-    }
-  };
-
+  // Captura a tecla ESC para fechar a tela cheia
   useEffect(() => {
-    const onFullScreenChange = () => {
-      if (!document.fullscreenElement) {
-        setIsFlipOpen(false);
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsFullscreen(false);
       }
     };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isFlipOpen) {
-        closeFlipClock();
-      }
-    };
+  const handleStart = () => {
+    setIsActive(true);
+    if (onTimerStart) onTimerStart(`session-${entityId}-${Date.now()}`);
+  };
 
-    document.addEventListener('fullscreenchange', onFullScreenChange);
-    document.addEventListener('keydown', onEscape);
+  const handleStop = () => {
+    setIsActive(false);
+    if (onTimerStop) onTimerStop(seconds);
+  };
 
-    return () => {
-      document.removeEventListener('fullscreenchange', onFullScreenChange);
-      document.removeEventListener('keydown', onEscape);
-    };
-  }, [isFlipOpen]);
+  const handleReset = () => {
+    setIsActive(false);
+    setSeconds(0);
+  };
 
-  if (compact) {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-sm text-zinc-400">
-          {timeString}
-        </span>
-        {isRunning ? (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={handleStop}
-            disabled={isStopping}
-            className="h-6 w-6 p-0"
-            title="Stop timer"
-          >
-            <Pause className="w-3 h-3" />
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleStart}
-            disabled={isStarting}
-            className="h-6 w-6 p-0"
-            title="Start timer"
-          >
-            <Play className="w-3 h-3" />
-          </Button>
-        )}
-      </div>
-    );
-  }
+  // Formata os segundos em strings de dois dígitos [HH, MM, SS]
+  const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const secs = String(seconds % 60).padStart(2, '0');
 
   return (
-    <div className="relative flex flex-col items-center gap-4 p-4 bg-zinc-900/50 rounded-lg border border-white/5">
-      <h3 className="text-lg font-medium text-white">{entityName}</h3>
-
-      <div className="text-4xl font-mono font-bold text-zinc-400">
-        {timeString}
+    <div className="p-6 bg-gray-900 text-white rounded-xl shadow-xl max-w-sm border border-gray-800">
+      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">{entityName}</span>
+      
+      {/* Display simples do painel do Widget */}
+      <div className="text-4xl font-mono font-bold text-center my-6 tracking-widest text-gray-100">
+        {hrs}:{mins}:{secs}
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        {isRunning ? (
-          <Button
-            onClick={handleStop}
-            disabled={isStopping || timerLoading}
-            variant="destructive"
-            className="gap-2"
-          >
-            <Pause className="w-4 h-4" />
-            Stop & Save
-          </Button>
-        ) : (
-          <Button
-            onClick={handleStart}
-            disabled={isStarting || timerLoading}
-            variant="default"
-            className="gap-2"
-          >
-            <Play className="w-4 h-4" />
+      {/* Controles simples */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        {!isActive ? (
+          <button onClick={handleStart} className="py-2 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-lg transition">
             Start Timer
-          </Button>
+          </button>
+        ) : (
+          <button onClick={handleStop} className="py-2 bg-rose-600 hover:bg-rose-500 font-semibold rounded-lg transition">
+            Stop Timer
+          </button>
         )}
-
-        <Button
-          onClick={openFlipClock}
-          variant="secondary"
-          className="gap-2"
-        >
-          Go to Flip Clock
-        </Button>
+        <button onClick={handleReset} className="py-2 bg-gray-800 hover:bg-gray-700 font-semibold rounded-lg transition">
+          Reset
+        </button>
       </div>
 
-      {timerLoading && (
-        <p className="text-xs text-zinc-500">Loading timer status...</p>
-      )}
+      <button
+        onClick={() => setIsFullscreen(true)}
+        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-lg text-sm transition text-center"
+      >
+        Go to Flip Clock
+      </button>
 
-      {isFlipOpen && (
-        <div ref={fullscreenRef} className="fixed inset-0 z-50 bg-black">
-          <FlipClockOverlay timeString={formatSeconds(flipTime)} onClose={closeFlipClock} />
+      {/* TELA CHEIA DO RELÓGIO (FLIP CLOCK) */}
+      {isFullscreen && (
+        <div className="flip-clock-fullscreen fixed inset-0 z-50 flex flex-col justify-center items-center bg-black select-none">
+          
+          {/* Botão Fechar (X) */}
+          <button 
+            onClick={() => setIsFullscreen(false)}
+            className="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl font-light w-12 h-12 flex items-center justify-center rounded-full border border-gray-800 hover:border-gray-600 transition"
+          >
+            ✕
+          </button>
+
+          {/* Container dos Dígitos */}
+          <div className="flex items-center gap-2 md:gap-4">
+            <FlipDigit value={hrs[0]} />
+            <FlipDigit value={hrs[1]} />
+            
+            {/* Dois pontos piscantes/estáticos */}
+            <div className="flex flex-col gap-3 px-2">
+              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
+              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
+            </div>
+
+            <FlipDigit value={mins[0]} />
+            <FlipDigit value={mins[1]} />
+
+            <div className="flex flex-col gap-3 px-2">
+              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
+              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
+            </div>
+
+            <FlipDigit value={secs[0]} />
+            <FlipDigit value={secs[1]} />
+          </div>
+
+          <div className="absolute bottom-10 text-xs font-medium tracking-widest text-gray-600 uppercase">
+            Press <span className="text-gray-400 bg-gray-900 px-2 py-1 rounded border border-gray-800 font-mono">ESC</span> to exit
+          </div>
         </div>
       )}
     </div>
