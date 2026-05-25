@@ -8,7 +8,8 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
-import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,15 +20,14 @@ public class UserScoreSnapshot {
     @Id
     private String id;
 
-    @Indexed
+    @Indexed(unique = true)
     private String userId;
 
-    private LocalDate date;
-
-    private double score;
+    @Builder.Default
+    private Map<String, Double> scoresByDate = new HashMap<>();
 
     @Builder.Default
-    private Instant createdAt = Instant.now();
+    private Instant updatedAt = Instant.now();
 
     public String getId() {
         return id;
@@ -45,27 +45,19 @@ public class UserScoreSnapshot {
         this.userId = userId;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public Map<String, Double> getScoresByDate() {
+        return scoresByDate;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setScoresByDate(Map<String, Double> scoresByDate) {
+        this.scoresByDate = scoresByDate;
     }
 
-    public double getScore() {
-        return score;
+    public Instant getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setScore(double score) {
-        this.score = score;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

@@ -199,9 +199,36 @@ public class MetricsService {
 
     public List<ScoreTimelineResponse.ScorePoint> getUserScoreTimeline(String userId) {
         User user = getUser(userId);
-        List<ScoreTimelineResponse.ScorePoint> history = buildScoreHistory(user);
-        persistScoreHistory(userId, history);
-        return history;
+
+        List<ScoreTimelineResponse.ScorePoint> computedHistory = buildScoreHistory(user);
+        if (computedHistory.isEmpty()) {
+            return List.of();
+        }
+
+        UserScoreSnapshot snapshot = scoreSnapshotRepo.findByUserId(userId)
+                .orElseGet(UserScoreSnapshot::new);
+
+        Map<String, Double> scoresByDate = snapshot.getScoresByDate() == null
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(snapshot.getScoresByDate());
+
+        if (scoresByDate.isEmpty()) {
+            for (ScoreTimelineResponse.ScorePoint point : computedHistory) {
+                scoresByDate.put(point.date().toString(), point.score());
+            }
+        }
+
+        scoresByDate.put(LocalDate.now().toString(), computedHistory.getLast().score());
+
+        snapshot.setUserId(userId);
+        snapshot.setScoresByDate(scoresByDate);
+        snapshot.setUpdatedAt(Instant.now());
+        scoreSnapshotRepo.save(snapshot);
+
+        return scoresByDate.entrySet().stream()
+                .map(entry -> new ScoreTimelineResponse.ScorePoint(LocalDate.parse(entry.getKey()), entry.getValue()))
+                .sorted(Comparator.comparing(ScoreTimelineResponse.ScorePoint::date))
+                .toList();
     }
 
     private List<ScoreTimelineResponse.ScorePoint> buildScoreHistory(User user) {
@@ -321,26 +348,6 @@ public class MetricsService {
         }
 
         return history;
-    }
-
-    private void persistScoreHistory(String userId, List<ScoreTimelineResponse.ScorePoint> history) {
-        scoreSnapshotRepo.deleteByUserId(userId);
-        if (history.isEmpty()) {
-            return;
-        }
-
-        List<UserScoreSnapshot> snapshots = history.stream()
-                .map(point -> {
-                    UserScoreSnapshot snapshot = new UserScoreSnapshot();
-                    snapshot.setUserId(userId);
-                    snapshot.setDate(point.date());
-                    snapshot.setScore(point.score());
-                    snapshot.setCreatedAt(Instant.now());
-                    return snapshot;
-                })
-                .toList();
-
-        scoreSnapshotRepo.saveAll(snapshots);
     }
 
     // ── private ───────────────────────────────────────────────────────────────

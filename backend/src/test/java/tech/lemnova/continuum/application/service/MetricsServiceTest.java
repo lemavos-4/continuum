@@ -12,7 +12,6 @@ import tech.lemnova.continuum.domain.entity.EntityType;
 import tech.lemnova.continuum.domain.metrics.UserScoreSnapshot;
 import tech.lemnova.continuum.domain.note.Note;
 import tech.lemnova.continuum.domain.plan.PlanConfiguration;
-import tech.lemnova.continuum.domain.tracking.TrackingEvent;
 import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
 import tech.lemnova.continuum.infra.persistence.EntityRepository;
@@ -23,11 +22,13 @@ import tech.lemnova.continuum.infra.vault.VaultDataService;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,7 +60,7 @@ class MetricsServiceTest {
     private MetricsService metricsService;
 
     @Test
-    void getUserScoreTimeline_persistsGeneratedHistory() {
+    void getUserScoreTimeline_persistsScoreDictionaryByDate() {
         User user = new User();
         user.setId("user-1");
         user.setVaultId("vault-1");
@@ -89,25 +90,55 @@ class MetricsServiceTest {
         when(noteRepo.findByUserId("user-1")).thenReturn(List.of(note));
         when(entityRepo.findByUserIdAndArchivedAtIsNull("user-1")).thenReturn(List.of(entity));
         when(vaultData.readTrackingEvents("vault-1")).thenReturn(List.of());
-        when(scoreSnapshotRepo.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(scoreSnapshotRepo.findByUserId("user-1")).thenReturn(Optional.empty());
+        when(scoreSnapshotRepo.save(any(UserScoreSnapshot.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<ScorePoint> history = metricsService.getUserScoreTimeline("user-1");
 
         assertThat(history).hasSize(3);
         assertThat(history.get(0).date()).isEqual(twoDaysAgo);
         assertThat(history.get(2).date()).isEqual(LocalDate.now());
-        assertThat(history).allMatch(point -> point.score() == 11.4);
 
-        verify(scoreSnapshotRepo).deleteByUserId("user-1");
+        ArgumentCaptor<UserScoreSnapshot> snapshotCaptor = ArgumentCaptor.forClass(UserScoreSnapshot.class);
+        verify(scoreSnapshotRepo).save(snapshotCaptor.capture());
 
-        ArgumentCaptor<List<UserScoreSnapshot>> snapshotsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(scoreSnapshotRepo).saveAll(snapshotsCaptor.capture());
-        assertThat(snapshotsCaptor.getValue()).hasSize(3);
-        assertThat(snapshotsCaptor.getValue())
-                .extracting(UserScoreSnapshot::getUserId)
-                .containsOnly("user-1");
-        assertThat(snapshotsCaptor.getValue())
-                .extracting(UserScoreSnapshot::getDate)
-                .containsExactly(twoDaysAgo, twoDaysAgo.plusDays(1), LocalDate.now());
+        UserScoreSnapshot savedSnapshot = snapshotCaptor.getValue();
+        Map<String, Double> scoresByDate = savedSnapshot.getScoresByDate();
+
+        assertThat(savedSnapshot.getUserId()).isEqualTo("user-1");
+        assertThat(scoresByDate).hasSize(3);
+        assertThat(scoresByDate.keySet()).containsExactlyInAnyOrder(
+                twoDaysAgo.toString(),
+                twoDaysAgo.plusDays(1).toString(),
+                LocalDate.now().toString()
+        );
+        assertThat(scoresByDate.get(LocalDate.now().toString())).isNotNull();
+    }
+
+    @Test
+    void getUserScoreTimeline_preservesExistingDictionaryAndUpdatesCurrentDay() {
+        User user = new User();
+        user.setId("user-1");
+        user.setVaultId("vault-1");
+
+        UserScoreSnapshot existing = new UserScoreSnapshot();
+        existing.setUserId("user-1");
+        existing.setScoresByDate(new HashMap<>(Map.of(
+                LocalDate.now().minusDays(1).toString(), 9.0,
+                LocalDate.now().minusDays(2).toString(), 8.0
+        )));
+
+        when(userRepo.findById("user-1")).thenReturn(Optional.of(user));
+        when(noteRepo.findByUserId("user-1")).thenReturn(List.of());
+        when(entityRepo.findByUserIdAndArchivedAtIsNull("user-1")).thenReturn(List.of());
+        when(vaultData.readTrackingEvents("vault-1")).thenReturn(List.of());
+        when(scoreSnapshotRepo.findByUserId("user-1")).thenReturn(Optional.of(existing));
+        when(scoreSnapshotRepo.save(any(UserScoreSnapshot.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<ScorePoint> history = metricsService.getUserScoreTimeline("user-1");
+
+        assertThat(history).isNotEmpty();
+        assertThat(history.stream().map(ScorePoint::date).toList()).contains(LocalDate.now());
+        verify(scoreSnapshotRepo).save(any(UserScoreSnapshot.class));
     }
 }
