@@ -44,8 +44,7 @@ public class MetricsService {
                           EntityRepository entityRepo,
                           VaultDataService vaultData,
                           PlanConfiguration planConfig,
-                          EntityService entityService,
-                          TrackingService trackingService) {
+                          EntityService entityService) {
         this.userRepo   = userRepo;
         this.noteRepo   = noteRepo;
         this.entityRepo = entityRepo;
