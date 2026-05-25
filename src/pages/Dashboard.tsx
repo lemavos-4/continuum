@@ -406,8 +406,8 @@ export default function Dashboard() {
     isError: scoreTimelineError,
     refetch: refetchScoreTimeline,
   } = useQuery({
-    queryKey: ["metrics", "scoreTimeline", timeRange],
-    queryFn: () => metricsApi.scoreTimeline(rangeDaysMap[timeRange]).then((r) => r.data),
+    queryKey: ["metrics", "scoreTimeline"],
+    queryFn: () => metricsApi.scoreTimeline().then((r) => r.data),
     retry: 1,
     staleTime: 60_000,
   });
@@ -478,72 +478,78 @@ export default function Dashboard() {
     return 0;
   }, [summary]);
 
-  // CORREÇÃO 1: Fallback realista (Gráfico zerado de forma autêntica se não houver dados históricos)
-  const fallbackScoreTimelineData = useMemo(() => {
-    const days = rangeDaysMap[timeRange];
-    const cappedDays = Math.min(days, 365);
-    const today = new Date();
+  // Extract { currentScore, history } from API. Tolerates legacy array shape.
+  const { currentScore, fullHistory } = useMemo(() => {
+    let rawHistory: any[] = [];
+    let current = 0;
 
-    return Array.from({ length: cappedDays }, (_, index) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() - (cappedDays - 1 - index));
-      const key = date.toISOString().slice(0, 10);
-
-      return {
-        date: key,
-        label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        score: 0,
-      };
-    });
-  }, [timeRange]);
-
-  // CORREÇÃO 2: Normalização segura contra fuso horário e extração inteligente de objetos (DashboardMetrics)
-  const scoreTimelineData = useMemo(() => {
-    let list: any[] = [];
     if (Array.isArray(scoreTimeline)) {
-      list = scoreTimeline;
-    } else if (scoreTimeline && typeof scoreTimeline === 'object') {
-      const potentialList = (scoreTimeline as any).timeline || 
-                            (scoreTimeline as any).points || 
-                            (scoreTimeline as any).history || 
-                            (scoreTimeline as any).data ||
-                            (scoreTimeline as any).scoreTimeline ||
-                            (scoreTimeline as any).metrics;
-      if (Array.isArray(potentialList)) {
-        list = potentialList;
-      }
+      rawHistory = scoreTimeline;
+    } else if (scoreTimeline && typeof scoreTimeline === "object") {
+      const obj = scoreTimeline as any;
+      current = Number(obj.currentScore ?? 0);
+      const list = obj.history ?? obj.timeline ?? obj.points ?? obj.data ?? [];
+      if (Array.isArray(list)) rawHistory = list;
     }
 
-    if (list.length === 0) return fallbackScoreTimelineData;
-    
-    const normalized = list.reduce((acc: any[], point: any) => {
+    const normalized = rawHistory.reduce((acc: any[], point: any) => {
       if (!point?.date) return acc;
-      
       const scoreValue = point.score !== undefined ? Number(point.score) : Number(point.value ?? 0);
-      const dateStr = point.date.includes("T") ? point.date : `${point.date}T00:00:00`;
+      const dateStr = String(point.date).includes("T") ? point.date : `${point.date}T00:00:00`;
       const date = new Date(dateStr);
-
       if (!Number.isNaN(date.getTime()) && !Number.isNaN(scoreValue)) {
         acc.push({
-          ...point,
-          label: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          date: String(point.date).slice(0, 10),
+          ts: date.getTime(),
           score: Number(scoreValue.toFixed(2)),
         });
       }
       return acc;
-    }, []);
+    }, [] as Array<{ date: string; ts: number; score: number }>);
 
-    return normalized.length > 0 ? normalized : fallbackScoreTimelineData;
-  }, [fallbackScoreTimelineData, scoreTimeline]);
+    normalized.sort((a, b) => a.ts - b.ts);
+
+    if (!current && normalized.length > 0) {
+      current = normalized[normalized.length - 1].score;
+    }
+
+    return { currentScore: current, fullHistory: normalized };
+  }, [scoreTimeline]);
+
+  // Local filtering by selected time range.
+  const scoreTimelineData = useMemo(() => {
+    const days = rangeDaysMap[timeRange];
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    const filtered = (timeRange === "total" ? fullHistory : fullHistory.filter((p) => p.ts >= cutoff));
+
+    if (filtered.length === 0) {
+      // Render a flat zero baseline so the chart doesn't look broken.
+      const today = new Date();
+      const cappedDays = Math.min(days, 90);
+      return Array.from({ length: cappedDays }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - (cappedDays - 1 - i));
+        return {
+          date: d.toISOString().slice(0, 10),
+          ts: d.getTime(),
+          score: 0,
+          label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        };
+      });
+    }
+
+    return filtered.map((p) => ({
+      ...p,
+      label: new Date(p.ts).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    }));
+  }, [fullHistory, timeRange]);
 
   const scoreStats = useMemo(() => {
-    if (scoreTimelineData.length === 0) return { current: 0, max: 1, hasData: false };
     const values = scoreTimelineData.map((p: any) => p.score);
-    const current = values[values.length - 1] ?? 0;
     const max = Math.max(...values, 0.1);
-    const hasData = values.some((v: number) => v > 0);
-    return { current, max, hasData };
-  }, [scoreTimelineData]);
+    const hasData = fullHistory.some((p) => p.score > 0);
+    return { current: currentScore, max, hasData };
+  }, [scoreTimelineData, currentScore, fullHistory]);
 
   if (summaryLoading) return <DashboardSkeleton />;
 
@@ -671,37 +677,57 @@ export default function Dashboard() {
                     </div>
                   )}
                   <ChartContainer config={{}} className="h-full w-full">
-                    <AreaChart data={scoreTimelineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={scoreTimelineData} margin={{ top: 12, right: 12, left: -16, bottom: 0 }}>
                       <defs>
                         <linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.35} />
+                          <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.22} />
+                          <stop offset="60%" stopColor="hsl(var(--foreground))" stopOpacity={0.06} />
                           <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid stroke="hsl(var(--foreground) / 0.06)" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} interval="preserveStartEnd" />
+                      <CartesianGrid stroke="hsl(var(--foreground) / 0.04)" strokeDasharray="2 6" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                        tickMargin={8}
+                        minTickGap={32}
+                        interval="preserveStartEnd"
+                      />
                       <YAxis
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                         domain={[0, (dataMax: number) => Math.max(dataMax * 1.2, 1)]}
-                        tickFormatter={(value) => Number(value).toFixed(1)}
+                        tickFormatter={(value) => Number(value).toFixed(0)}
                         width={32}
+                        tickCount={4}
                       />
                       <Tooltip
-                        contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 11, color: "hsl(var(--foreground))" }}
-                        labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                        cursor={{ stroke: "hsl(var(--foreground) / 0.2)", strokeWidth: 1, strokeDasharray: "3 3" }}
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 10,
+                          fontSize: 11,
+                          color: "hsl(var(--foreground))",
+                          boxShadow: "0 8px 24px -8px rgba(0,0,0,0.6)",
+                          padding: "8px 10px",
+                        }}
+                        labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 10, marginBottom: 4 }}
                         formatter={(value) => [Number(value as number).toFixed(2), "Score"]}
                       />
                       <Area
                         type="monotone"
                         dataKey="score"
                         stroke="hsl(var(--foreground))"
-                        strokeWidth={2}
+                        strokeWidth={1.75}
                         fill="url(#scoreFill)"
                         dot={false}
                         activeDot={{ r: 4, fill: "hsl(var(--foreground))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
                         isAnimationActive
+                        animationDuration={500}
                       />
                     </AreaChart>
                   </ChartContainer>

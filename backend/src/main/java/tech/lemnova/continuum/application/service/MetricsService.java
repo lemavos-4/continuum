@@ -7,7 +7,7 @@ import tech.lemnova.continuum.controller.dto.metrics.DashboardMetrics;
 import tech.lemnova.continuum.controller.dto.metrics.EntityTimeline;
 import tech.lemnova.continuum.controller.dto.metrics.MentionEntry;
 import tech.lemnova.continuum.controller.dto.metrics.TopEntity;
-import tech.lemnova.continuum.controller.dto.metrics.UserScoreSnapshotResponse;
+import tech.lemnova.continuum.controller.dto.metrics.ScoreTimelineResponse;
 import tech.lemnova.continuum.domain.connection.NoteReference;
 import tech.lemnova.continuum.domain.metrics.UserScoreSnapshot;
 import tech.lemnova.continuum.domain.note.Note;
@@ -199,37 +199,33 @@ public class MetricsService {
                 activitiesCompletedToday, weeklyAverage, globalHeatmap);
     }
 
-    public List<UserScoreSnapshotResponse> getUserScoreTimeline(String userId, int days) {
+    public ScoreTimelineResponse getUserScoreTimeline(String userId) {
         getUser(userId);
-        if (days <= 0) {
-            days = 14;
-        }
 
         LocalDate today = LocalDate.now();
-        LocalDate from = today.minusDays(days - 1);
+        // Pull up to ~10 years of history; cheap because snapshots are 1/day.
+        LocalDate from = today.minusDays(3650);
 
         List<UserScoreSnapshot> snapshots = scoreSnapshotRepo
                 .findByUserIdAndDateBetweenOrderByDateAsc(userId, from, today);
-        Map<LocalDate, Double> scoreByDate = snapshots.stream()
-                .collect(Collectors.toMap(UserScoreSnapshot::getDate, UserScoreSnapshot::getScore));
-
-        if (!scoreByDate.containsKey(today)) {
-            double currentScore = computeCurrentScore(userId);
-            UserScoreSnapshot todaySnapshot = UserScoreSnapshot.builder()
-                    .userId(userId)
-                    .date(today)
-                    .score(currentScore)
-                    .build();
-            scoreSnapshotRepo.save(todaySnapshot);
-            scoreByDate.put(today, currentScore);
+        Map<LocalDate, Double> scoreByDate = new java.util.TreeMap<>();
+        for (UserScoreSnapshot s : snapshots) {
+            scoreByDate.put(s.getDate(), s.getScore());
         }
 
-        List<UserScoreSnapshotResponse> timeline = new ArrayList<>();
-        for (int i = 0; i < days; i++) {
-            LocalDate date = from.plusDays(i);
-            timeline.add(new UserScoreSnapshotResponse(date, scoreByDate.getOrDefault(date, 0.0)));
+        // Always recompute and persist today's snapshot so currentScore is fresh.
+        double currentScore = computeCurrentScore(userId);
+        UserScoreSnapshot todaySnapshot = scoreSnapshotRepo.findByUserIdAndDate(userId, today)
+                .orElseGet(() -> UserScoreSnapshot.builder().userId(userId).date(today).build());
+        todaySnapshot.setScore(currentScore);
+        scoreSnapshotRepo.save(todaySnapshot);
+        scoreByDate.put(today, currentScore);
+
+        List<ScoreTimelineResponse.ScorePoint> history = new ArrayList<>();
+        for (Map.Entry<LocalDate, Double> entry : scoreByDate.entrySet()) {
+            history.add(new ScoreTimelineResponse.ScorePoint(entry.getKey(), entry.getValue()));
         }
-        return timeline;
+        return new ScoreTimelineResponse(currentScore, history);
     }
 
     private double computeCurrentScore(String userId) {
