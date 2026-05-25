@@ -539,9 +539,9 @@ export default function Dashboard() {
   const scoreStats = useMemo(() => {
     const values = scoreTimelineData.map((p: any) => p.score);
     const max = Math.max(...values, 0.1);
-    const hasData = fullHistory.some((p) => p.score > 0);
+    const hasData = scoreTimelineData.some((p: any) => p.score > 0);
     return { current: currentScore, max, hasData };
-  }, [scoreTimelineData, currentScore, fullHistory]);
+  }, [scoreTimelineData, currentScore]);
 
   if (summaryLoading) return <DashboardSkeleton />;
 
