@@ -1,0 +1,85 @@
+/* ============================================================
+   FLIP CLOCK — true split-flap aesthetic, monochrome.
+   ============================================================ */
+
+.flip-clock-fullscreen {
+  background: #000;
+}
+
+.flip-digit {
+  position: relative;
+  width: 5rem;
+  height: 7rem;
+  perspective: 600px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 5rem;
+  line-height: 1;
+  color: #fff;
+}
+
+@media (min-width: 640px) {
+  .flip-digit {
+    width: 7rem;
+    height: 10rem;
+    font-size: 7rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .flip-digit {
+    width: 8.5rem;
+    height: 12rem;
+    font-size: 8.5rem;
+  }
+}
+
+.flip-digit .flip-top,
+.flip-digit .flip-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: center;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  line-height: 1;
+}
+
+.flip-digit .flip-top {
+  top: 0;
+  align-items: flex-start;
+  border-radius: 0.5rem 0.5rem 0 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+  transform-origin: bottom;
+}
+
+.flip-digit .flip-bottom {
+  bottom: 0;
+  align-items: flex-end;
+  border-radius: 0 0 0.5rem 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  transform-origin: top;
+}
+
+.flip-digit.flipping .flip-top {
+  animation: flip-top 0.6s ease-in-out forwards;
+}
+
+.flip-digit.flipping .flip-bottom {
+  animation: flip-bottom 0.6s ease-in-out 0.3s forwards;
+}
+
+@keyframes flip-top {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+
+@keyframes flip-bottom {
+  0%   { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}

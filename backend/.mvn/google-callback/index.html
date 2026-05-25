@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script>
+        // Captura todos os parâmetros que o Google enviou (state, code, etc)
+        const queryParams = window.location.search;
+        // Redireciona o usuário para a rota com HASH que o seu React Router entende perfeitamente
+        window.location.href = "/#/google-callback" + queryParams;
+    </script>
+</head>
+<body>
+    <p>Carregando sua sessão, por favor aguarde...</p>
+</body>
+</html>

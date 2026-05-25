@@ -1,0 +1,21 @@
+# --- Maven ---
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# --- Secrets & Config (CRITICAL) ---
+.env
+.env.local
+!src/main/resources/application.properties.example
+
+# --- IDEs ---
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+bin/
+
+# --- OS ---
+.DS_Store
+Thumbs.db

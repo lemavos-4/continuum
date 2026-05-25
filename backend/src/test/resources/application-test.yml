@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/continuum-test
+
+frontend:
+  url: http://localhost:5173
+app:
+  url: http://localhost:5173
+
+logging:
+  level:
+    sql: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+security:
+  oauth2:
+    client:
+      registration:
+        google:
+          client-id: fake-client-id
+          client-secret: fake-client-secret
+          scope: openid,email,profile
+      provider:
+        google:
+          authorization-uri: https://accounts.google.com/o/oauth2/auth
+          token-uri: https://oauth2.googleapis.com/token
+          user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
