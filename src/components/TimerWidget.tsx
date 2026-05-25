@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // ============================================================
-// SUBCOMPONENTE: FlipDigit (Alinhamento Perfeito via Clip-Path)
+// SUBCOMPONENTE: FlipDigit (À prova de falhas e sem CSS externo)
 // ============================================================
 function FlipDigit({ value }) {
   const [prevValue, setPrevValue] = useState(value);
@@ -10,26 +10,59 @@ function FlipDigit({ value }) {
   useEffect(() => {
     if (value !== prevValue) {
       setIsFlipping(true);
-      
-      // Sincronizado com os 0.6s totais da animação (0.3s cada metade)
       const timeout = setTimeout(() => {
         setPrevValue(value);
         setIsFlipping(false);
-      }, 600);
-
+      }, 500); // 0.5s de animação total
       return () => clearTimeout(timeout);
     }
   }, [value, prevValue]);
 
   return (
-    <div className={`flip-digit ${isFlipping ? 'flipping' : ''}`}>
-      {/* BASES ESTÁTICAS (FUNDO) */}
-      <div className="digit-face face-top-base">{value}</div>
-      <div className="digit-face face-bottom-base">{prevValue}</div>
+    <div className="relative w-14 h-20 sm:w-20 sm:h-28 lg:w-24 lg:h-36 font-mono font-bold text-white select-none [perspective:1000px]">
       
-      {/* CARTAS QUE DOBLAM (FRENTE) */}
-      <div className="digit-face face-top-flip">{prevValue}</div>
-      <div className="digit-face face-bottom-flip">{value}</div>
+      {/* Injeção de estilo local para garantir que o Lovable nunca perca as animações */}
+      <style>{`
+        .backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+        .anim-top { animation: flip-top-fall 0.25s ease-in forwards; }
+        .anim-bottom { animation: flip-bottom-reveal 0.25s ease-out 0.25s forwards; }
+        @keyframes flip-top-fall { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(-90deg); } }
+        @keyframes flip-bottom-reveal { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
+      `}</style>
+
+      {/* 1. TOPO BASE (Mostra o novo número atrás) */}
+      <div className="absolute top-0 left-0 w-full h-1/2 overflow-hidden rounded-t-xl bg-gradient-to-b from-[#1c1c1e] to-[#111111] border-b border-black/40">
+        <div className="absolute top-0 left-0 w-full h-[200%] flex items-center justify-center text-4xl sm:text-6xl lg:text-8xl">
+          {value}
+        </div>
+      </div>
+
+      {/* 2. BASE DE BAIXO (Mostra o número antigo enquanto a carta não cai) */}
+      <div className="absolute bottom-0 left-0 w-full h-1/2 overflow-hidden rounded-b-xl bg-gradient-to-b from-[#111111] to-[#0a0a0a]">
+        <div className="absolute bottom-0 left-0 w-full h-[200%] flex items-center justify-center text-4xl sm:text-6xl lg:text-8xl bottom-0">
+          {prevValue}
+        </div>
+      </div>
+
+      {/* 3. CARTA QUE CAI DE CIMA (Número antigo virando para baixo) */}
+      <div className={`absolute top-0 left-0 w-full h-1/2 overflow-hidden rounded-t-xl bg-gradient-to-b from-[#1c1c1e] to-[#111111] border-b border-black/40 [transform-origin:bottom] backface-hidden ${isFlipping ? 'anim-top' : ''}`}>
+        <div className="absolute top-0 left-0 w-full h-[200%] flex items-center justify-center text-4xl sm:text-6xl lg:text-8xl">
+          {prevValue}
+        </div>
+      </div>
+
+      {/* 4. CARTA QUE APARECE EM BAIXO (Novo número se revelando) */}
+      <div className={`absolute bottom-0 left-0 w-full h-1/2 overflow-hidden rounded-b-xl bg-gradient-to-b from-[#111111] to-[#0a0a0a] [transform-origin:top] backface-hidden [transform:rotateX(90deg)] ${isFlipping ? 'anim-bottom' : ''}`}>
+        <div className="absolute bottom-0 left-0 w-full h-[200%] flex items-center justify-center text-4xl sm:text-6xl lg:text-8xl bottom-0">
+          {value}
+        </div>
+      </div>
+
+      {/* FRISO CENTRAL (A linha física do meio do relógio) */}
+      <div className="absolute top-[calc(50%-1px)] left-0 w-full h-[2px] bg-black/70 z-10 shadow-[0_1px_0px_rgba(255,255,255,0.15)]"></div>
     </div>
   );
 }
@@ -111,9 +144,9 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
         Go to Flip Clock
       </button>
 
-      {/* MODAL FULLSCREEN */}
+      {/* TELA CHEIA */}
       {isFullscreen && (
-        <div className="flip-clock-fullscreen fixed inset-0 z-50 flex flex-col justify-center items-center bg-black select-none">
+        <div className="fixed inset-0 z-50 flex flex-col justify-center items-center bg-black select-none">
           <button 
             onClick={() => setIsFullscreen(false)}
             className="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl font-light w-12 h-12 flex items-center justify-center rounded-full border border-gray-800 hover:border-gray-600 transition"
@@ -121,28 +154,28 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
             ✕
           </button>
 
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4">
             <FlipDigit value={hrs[0]} />
             <FlipDigit value={hrs[1]} />
             
-            <div className="flex flex-col gap-3 px-2 animate-pulse">
-              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
-              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
+            <div className="flex flex-col gap-2 sm:gap-4 px-1 opacity-60 animate-pulse">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
             </div>
 
             <FlipDigit value={mins[0]} />
             <FlipDigit value={mins[1]} />
 
-            <div className="flex flex-col gap-3 px-2 animate-pulse">
-              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
-              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
+            <div className="flex flex-col gap-2 sm:gap-4 px-1 opacity-60 animate-pulse">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
             </div>
 
             <FlipDigit value={secs[0]} />
             <FlipDigit value={secs[1]} />
           </div>
 
-          <div className="absolute bottom-10 text-xs font-medium tracking-widest text-gray-600 uppercase">
+          <div className="absolute bottom-10 text-xs font-medium tracking-widest text-gray-600 uppercase hidden sm:block">
             Press <span className="text-gray-400 bg-gray-900 px-2 py-1 rounded border border-gray-800 font-mono">ESC</span> to exit
           </div>
         </div>
