@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // ============================================================
-// SUBCOMPONENTE: FlipDigit (O segredo do efeito mecânico 3D)
+// SUBCOMPONENTE: FlipDigit (Alinhamento Perfeito via Clip-Path)
 // ============================================================
 function FlipDigit({ value }) {
   const [prevValue, setPrevValue] = useState(value);
@@ -11,7 +11,7 @@ function FlipDigit({ value }) {
     if (value !== prevValue) {
       setIsFlipping(true);
       
-      // Sincronizado com os 0.6s da animação do CSS
+      // Sincronizado com os 0.6s totais da animação (0.3s cada metade)
       const timeout = setTimeout(() => {
         setPrevValue(value);
         setIsFlipping(false);
@@ -23,13 +23,13 @@ function FlipDigit({ value }) {
 
   return (
     <div className={`flip-digit ${isFlipping ? 'flipping' : ''}`}>
-      {/* BACKGROUNDS FIXOS */}
-      <div className="base-top"><span>{value}</span></div>
-      <div className="base-bottom"><span>{prevValue}</span></div>
+      {/* BASES ESTÁTICAS (FUNDO) */}
+      <div className="digit-face face-top-base">{value}</div>
+      <div className="digit-face face-bottom-base">{prevValue}</div>
       
-      {/* CARTAS QUE SE MOVIMENTAM */}
-      <div className="flip-top"><span>{prevValue}</span></div>
-      <div className="flip-bottom"><span>{value}</span></div>
+      {/* CARTAS QUE DOBLAM (FRENTE) */}
+      <div className="digit-face face-top-flip">{prevValue}</div>
+      <div className="digit-face face-bottom-flip">{value}</div>
     </div>
   );
 }
@@ -42,7 +42,6 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
   const [isActive, setIsActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Lógica do contador do Cronômetro
   useEffect(() => {
     let interval = null;
     if (isActive) {
@@ -55,12 +54,9 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
     return () => clearInterval(interval);
   }, [isActive]);
 
-  // Captura a tecla ESC para fechar a tela cheia
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setIsFullscreen(false);
-      }
+      if (e.key === 'Escape') setIsFullscreen(false);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -81,7 +77,6 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
     setSeconds(0);
   };
 
-  // Formata os segundos em strings de dois dígitos [HH, MM, SS]
   const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
   const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
   const secs = String(seconds % 60).padStart(2, '0');
@@ -90,12 +85,10 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
     <div className="p-6 bg-gray-900 text-white rounded-xl shadow-xl max-w-sm border border-gray-800">
       <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">{entityName}</span>
       
-      {/* Display simples do painel do Widget */}
       <div className="text-4xl font-mono font-bold text-center my-6 tracking-widest text-gray-100">
         {hrs}:{mins}:{secs}
       </div>
 
-      {/* Controles simples */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         {!isActive ? (
           <button onClick={handleStart} className="py-2 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-lg transition">
@@ -118,11 +111,9 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
         Go to Flip Clock
       </button>
 
-      {/* TELA CHEIA DO RELÓGIO (FLIP CLOCK) */}
+      {/* MODAL FULLSCREEN */}
       {isFullscreen && (
         <div className="flip-clock-fullscreen fixed inset-0 z-50 flex flex-col justify-center items-center bg-black select-none">
-          
-          {/* Botão Fechar (X) */}
           <button 
             onClick={() => setIsFullscreen(false)}
             className="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl font-light w-12 h-12 flex items-center justify-center rounded-full border border-gray-800 hover:border-gray-600 transition"
@@ -130,23 +121,21 @@ export function TimerWidget({ entityId, entityName, onTimerStart, onTimerStop })
             ✕
           </button>
 
-          {/* Container dos Dígitos */}
           <div className="flex items-center gap-2 md:gap-4">
             <FlipDigit value={hrs[0]} />
             <FlipDigit value={hrs[1]} />
             
-            {/* Dois pontos piscantes/estáticos */}
-            <div className="flex flex-col gap-3 px-2">
-              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
-              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
+            <div className="flex flex-col gap-3 px-2 animate-pulse">
+              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
+              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
             </div>
 
             <FlipDigit value={mins[0]} />
             <FlipDigit value={mins[1]} />
 
-            <div className="flex flex-col gap-3 px-2">
-              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
-              <span className="w-2 h-2 bg-white rounded-full opacity-50"></span>
+            <div className="flex flex-col gap-3 px-2 animate-pulse">
+              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
+              <span className="w-2 h-2 bg-white rounded-full opacity-60"></span>
             </div>
 
             <FlipDigit value={secs[0]} />
