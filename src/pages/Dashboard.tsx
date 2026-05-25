@@ -658,7 +658,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="h-[240px] sm:h-[300px] w-full relative">
+            <div className="h-[200px] sm:h-[250px] w-full -mx-2 relative">
               {scoreTimelineLoading && scoreTimelineData.length === 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center text-xs text-neutral-500">
                   Loading score history…
@@ -677,68 +677,57 @@ export default function Dashboard() {
                     </div>
                   )}
                   <ChartContainer config={{}} className="h-full w-full">
-                    <AreaChart data={scoreTimelineData} margin={{ top: 16, right: 16, left: 4, bottom: 4 }}>
+                    <AreaChart data={scoreTimelineData} margin={{ top: 12, right: 12, left: -16, bottom: 0 }}>
                       <defs>
                         <linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.35} />
-                          <stop offset="50%" stopColor="hsl(var(--foreground))" stopOpacity={0.10} />
+                          <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.22} />
+                          <stop offset="60%" stopColor="hsl(var(--foreground))" stopOpacity={0.06} />
                           <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity={0} />
                         </linearGradient>
-                        <linearGradient id="scoreStroke" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.55} />
-                          <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity={1} />
-                        </linearGradient>
                       </defs>
-                      <CartesianGrid stroke="hsl(var(--foreground) / 0.05)" strokeDasharray="3 6" vertical={false} />
+                      <CartesianGrid stroke="hsl(var(--foreground) / 0.04)" strokeDasharray="2 6" vertical={false} />
                       <XAxis
                         dataKey="label"
                         tickLine={false}
                         axisLine={false}
                         tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                        tickMargin={10}
-                        minTickGap={40}
+                        tickMargin={8}
+                        minTickGap={32}
                         interval="preserveStartEnd"
-                        padding={{ left: 8, right: 8 }}
                       />
                       <YAxis
                         tickLine={false}
                         axisLine={false}
                         tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                        domain={[
-                          (dataMin: number) => Math.max(0, Math.floor(dataMin * 0.85)),
-                          (dataMax: number) => Math.ceil(Math.max(dataMax * 1.15, 1)),
-                        ]}
+                        domain={[0, (dataMax: number) => Math.max(dataMax * 1.2, 1)]}
                         tickFormatter={(value) => Number(value).toFixed(0)}
-                        width={36}
+                        width={32}
                         tickCount={4}
                       />
                       <Tooltip
-                        cursor={{ stroke: "hsl(var(--foreground) / 0.25)", strokeWidth: 1, strokeDasharray: "4 4" }}
+                        cursor={{ stroke: "hsl(var(--foreground) / 0.2)", strokeWidth: 1, strokeDasharray: "3 3" }}
                         contentStyle={{
-                          background: "hsl(var(--popover) / 0.95)",
-                          backdropFilter: "blur(8px)",
+                          background: "hsl(var(--popover))",
                           border: "1px solid hsl(var(--border))",
                           borderRadius: 10,
                           fontSize: 11,
                           color: "hsl(var(--foreground))",
-                          boxShadow: "0 12px 32px -12px rgba(0,0,0,0.7)",
-                          padding: "8px 12px",
+                          boxShadow: "0 8px 24px -8px rgba(0,0,0,0.6)",
+                          padding: "8px 10px",
                         }}
-                        labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 10, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}
+                        labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 10, marginBottom: 4 }}
                         formatter={(value) => [Number(value as number).toFixed(2), "Score"]}
                       />
                       <Area
-                        type="monotoneX"
+                        type="monotone"
                         dataKey="score"
-                        stroke="url(#scoreStroke)"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                        stroke="hsl(var(--foreground))"
+                        strokeWidth={1.75}
                         fill="url(#scoreFill)"
                         dot={false}
-                        activeDot={{ r: 5, fill: "hsl(var(--foreground))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                        activeDot={{ r: 4, fill: "hsl(var(--foreground))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
                         isAnimationActive
-                        animationDuration={650}
+                        animationDuration={500}
                       />
                     </AreaChart>
                   </ChartContainer>
