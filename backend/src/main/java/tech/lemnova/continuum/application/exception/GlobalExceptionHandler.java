@@ -41,6 +41,21 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(e.getMessage(), "PLAN_LIMIT_EXCEEDED"));
     }
 
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<ErrorResponse> handleTokenRefresh(TokenRefreshException e) {
+        log.warn("Token refresh error: {} [{}]", e.getMessage(), e.getErrorCode());
+        
+        // Determina status HTTP baseado no tipo de erro
+        HttpStatus status = switch (e.getErrorCode()) {
+            case "TOKEN_EXPIRED", "TOKEN_NOT_FOUND", "TOKEN_REVOKED" -> HttpStatus.UNAUTHORIZED;
+            case "INVALID_SIGNATURE", "INVALID_TOKEN_TYPE", "TOKEN_USER_MISMATCH" -> HttpStatus.UNAUTHORIZED;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        
+        return ResponseEntity.status(status)
+                .body(new ErrorResponse(e.getMessage(), e.getErrorCode()));
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e) {
         log.warn("Access denied: {}", e.getMessage());

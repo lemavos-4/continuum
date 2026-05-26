@@ -108,6 +108,141 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Gerenciador de Refresh Token com fila de requisições
+ * 
+ * Problema: Se múltiplas requisições falham com 401 simultaneamente,
+ * todas tentariam fazer refresh ao mesmo tempo.
+ * 
+ * Solução: Apenas a primeira faz refresh, as outras aguardam na fila.
+ */
+class RefreshTokenManager {
+  private isRefreshing = false;
+  private refreshPromise: Promise<string | null> | null = null;
+  private failedQueue: Array<{
+    resolve: (token: string) => void;
+    reject: (error: unknown) => void;
+  }> = [];
+
+  /**
+   * Processa a fila de requisições com o novo token
+   */
+  private processQueue(newAccessToken: string) {
+    this.failedQueue.forEach((prom) => {
+      prom.resolve(newAccessToken);
+    });
+    this.failedQueue = [];
+  }
+
+  /**
+   * Rejeita todas as requisições na fila
+   */
+  private rejectQueue(error: unknown) {
+    this.failedQueue.forEach((prom) => {
+      prom.reject(error);
+    });
+    this.failedQueue = [];
+  }
+
+  /**
+   * Tenta renovar o access token
+   * Usa Promise caching para evitar múltiplas requisições simultâneas
+   */
+  async refresh(): Promise<string | null> {
+    // Se já está fazendo refresh, retorna a promise existente
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.isRefreshing = true;
+
+    try {
+      this.refreshPromise = this.doRefresh();
+      return await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
+      this.isRefreshing = false;
+    }
+  }
+
+  /**
+   * Executa a requisição de refresh propriamente dita
+   */
+  private async doRefresh(): Promise<string | null> {
+    const refreshToken = getRefreshToken();
+
+    if (!refreshToken) {
+      console.warn("[RefreshTokenManager] Refresh token não encontrado");
+      return null;
+    }
+
+    try {
+      console.log("[RefreshTokenManager] Iniciando refresh de token");
+
+      // Usa axios diretamente para evitar interceptadores (senão cria loop)
+      const { data } = await axios.post<{
+        accessToken: string;
+        refreshToken?: string;
+        expiresIn?: number;
+      }>(
+        `${API_BASE_URL}/api/auth/refresh`,
+        { refreshToken },
+        {
+          timeout: 5000,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (data.accessToken) {
+        console.log("[RefreshTokenManager] Token renovado com sucesso");
+        
+        // Atualiza tokens (pode vir novo refresh token por rotation)
+        setAuthTokens(data.accessToken, data.refreshToken);
+
+        // Processa fila de requisições
+        this.processQueue(data.accessToken);
+
+        return data.accessToken;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("[RefreshTokenManager] Erro ao fazer refresh:", error);
+
+      // Rejeita todas as requisições na fila
+      this.rejectQueue(error);
+
+      // Limpa tokens e dispara logout
+      clearAuthTokens();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth:logout"));
+      }
+
+      return null;
+    }
+  }
+
+  /**
+   * Adiciona requisição à fila enquanto token está sendo renovado
+   */
+  waitForToken(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.failedQueue.push({ resolve, reject });
+    });
+  }
+
+  /**
+   * Reseta estado (útil para logout manual)
+   */
+  reset() {
+    this.isRefreshing = false;
+    this.refreshPromise = null;
+    this.failedQueue = [];
+  }
+}
+
+const refreshTokenManager = new RefreshTokenManager();
+
 // Interceptor: refresh token on 401 only.
 // 403 is treated as authorization/business error (e.g., PlanLimitException) and MUST NOT log the user out.
 // On refresh failure we just clear tokens and emit an event — the AuthContext reacts without a hard reload.
@@ -125,27 +260,52 @@ api.interceptors.response.use(
 
     if (status === 401 && !original?._retry && !isAuthEndpoint) {
       original._retry = true;
-      const refreshToken = getRefreshToken();
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
-            refreshToken,
-          });
-          setAuthTokens(data.accessToken, data.refreshToken);
-          original.headers.Authorization = `Bearer ${data.accessToken}`;
-          return api(original);
-        } catch {
-          // fall-through to soft logout
+
+      try {
+        // Inicia refresh (múltiplas requisições compartilham a mesma promise)
+        const newAccessToken = await refreshTokenManager.refresh();
+
+        if (!newAccessToken) {
+          console.error("[API] Refresh falhou, rejeitando requisição");
+          return Promise.reject(error);
         }
-      }
-      clearAuthTokens();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("auth:logout"));
+
+        // Se estava na fila, aguarda seu turno
+        if (refreshTokenManager["failedQueue"].length > 0) {
+          console.log("[API] Requisição aguardando na fila de refresh");
+          await refreshTokenManager.waitForToken();
+        }
+
+        // Atualiza header com novo token
+        original.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        // Retenta requisição original com novo token
+        console.log("[API] Retentando requisição original com novo token");
+        return api(original);
+      } catch (refreshError) {
+        console.error("[API] Erro durante refresh e retry:", refreshError);
+        return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );
+
+// Event listener para sincronizar logout entre abas/janelas
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === ACCESS_TOKEN_KEY && !event.newValue) {
+      console.log("[API] Logout detectado em outra aba, limpando estado local");
+      refreshTokenManager.reset();
+    }
+  });
+
+  // Listener para logout manual
+  window.addEventListener("auth:logout", () => {
+    refreshTokenManager.reset();
+  });
+}
 
 // --- AUTH API CORRIGIDA ---
 export const authApi = {
