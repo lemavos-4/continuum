@@ -613,20 +613,41 @@ export default function KnowledgeGraph() {
   const focusNode = useCallback((node: GraphNode) => {
     setSelectedNode(node);
     const entity = allEntities.find(e => e.id === node.id);
+    
+    // Calcular score baseado em degree e recência
+    const baseScore = Math.min(100, node.degree * 5 + 20);
+    const recencyBonus = node.recent ? 15 : 0;
+    const score = Math.round(baseScore + recencyBonus);
+    
+    // Se encontrar a entidade, abre o inspector com os dados completos + score
     if (entity) {
-      openInspector(entity);
+      openInspector({
+        ...entity,
+        graphScore: score,
+        graphDegree: node.degree,
+      } as any);
     } else {
+      // Criar uma entidade com informações adicionais do grafo
       openInspector({
         id: node.id,
         title: node.label,
         type: (node.type as EntityType) || "TOPIC",
         createdAt: node.createdAt || new Date().toISOString(),
         ownerId: "",
-      });
+        description: `Graph node • ${node.degree} connection${node.degree === 1 ? '' : 's'} • Type: ${TYPE_LABELS[node.type] || node.type}`,
+        graphScore: score,
+        graphDegree: node.degree,
+      } as any);
     }
-    const { w, h } = sizeRef.current;
-    const z = zoomRef.current;
-    panRef.current = { x: w / 2 - node.x * z, y: h / 2 - node.y * z };
+    
+    // Aguarda o render do DOM e depois centraliza o node
+    requestAnimationFrame(() => {
+      const { w, h } = sizeRef.current;
+      if (w > 0 && h > 0) {
+        const z = zoomRef.current;
+        panRef.current = { x: w / 2 - node.x * z, y: h / 2 - node.y * z };
+      }
+    });
   }, [allEntities, openInspector]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
