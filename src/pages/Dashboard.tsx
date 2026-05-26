@@ -22,9 +22,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  Share2,
-  Activity,
-  FolderOpen,
   ArrowRight,
   HardDrive,
   Network,
