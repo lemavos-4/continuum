@@ -13,6 +13,7 @@ interface SidebarItemProps {
 }
 
 export function SidebarItem({ icon: Icon, label, to, badge, collapsed = false, onClick }: SidebarItemProps) {
+  // Item renderizado quando NÃO possui um link (apenas clique/botão)
   const item = (
     <div
       className={cn(
@@ -35,14 +36,17 @@ export function SidebarItem({ icon: Icon, label, to, badge, collapsed = false, o
     </div>
   );
 
+  // Item renderizado quando POSSUI um link de navegação
   const link = (
     <NavLink
       to={to!}
       className={({ isActive }) =>
         cn(
-          "group relative flex items-center gap-3 rounded-2xl px-3 py-3 transition-all duration-250 ease-out overflow-hidden",
+          // REMOVIDO: overflow-hidden para permitir que a sombra (glow) apareça para fora do container
+          "group relative flex items-center gap-3 rounded-2xl px-3 py-3 transition-all duration-250 ease-out",
           "text-slate-200 hover:text-white hover:bg-white/5",
-          isActive && "bg-white/7 text-white shadow-[0_12px_40px_rgba(255,255,255,0.08)] before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-r before:from-transparent before:via-white/5 before:to-white/15 before:pointer-events-none",
+          // CORRIGIDO: bg-white/[0.07] com colchetes e um shadow com raio centralizado e maior opacidade para o glow
+          isActive && "bg-white/[0.07] text-white shadow-[0_0_20px_rgba(255,255,255,0.18)] before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-r before:from-transparent before:via-white/5 before:to-white/15 before:pointer-events-none",
         )
       }
       onClick={onClick}
@@ -57,6 +61,7 @@ export function SidebarItem({ icon: Icon, label, to, badge, collapsed = false, o
     </NavLink>
   );
 
+  // Retorno condicional baseado no estado (com link, colapsado ou botão puro)
   if (to) {
     return collapsed ? (
       <SidebarTooltip content={label}>{link}</SidebarTooltip>
