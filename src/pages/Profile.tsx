@@ -157,7 +157,7 @@ export default function Profile() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/[0.04]">
-                <div>
+                <div className="hidden">
                   <p className="text-xs text-white/30">Current Plan</p>
                   <p className="mt-1 text-sm font-medium text-white/70">{currentPlan}</p>
                 </div>
@@ -226,7 +226,7 @@ export default function Profile() {
           </div>
 
           {/* LIMITS SECTION */}
-          <section className="space-y-6 pt-4 border-t border-white/5 lg:col-span-2">
+          <section className="hidden space-y-6 pt-4 border-t border-white/5 lg:col-span-2">
             <div>
               <h2 className="text-sm font-semibold text-white/80">Plan Usage & Limits</h2>
             </div>

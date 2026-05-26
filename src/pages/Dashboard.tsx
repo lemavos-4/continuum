@@ -736,7 +736,7 @@ export default function Dashboard() {
           </div>
 
           {/* PLAN USAGE CARD */}
-          <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-4 flex flex-col justify-between">
+          <div className="hidden border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-4 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between gap-3 mb-5">
                 <div>

@@ -107,7 +107,7 @@ export default function Subscription() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-5xl px-6 py-10 lg:px-12 lg:py-16 space-y-12">
+      <div className="hidden mx-auto max-w-5xl px-6 py-10 lg:px-12 lg:py-16 space-y-12">
         
         {/* HEADER */}
         <header>

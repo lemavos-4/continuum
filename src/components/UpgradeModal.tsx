@@ -29,7 +29,7 @@ export default function UpgradeModal({ open, onOpenChange, reason }: UpgradeModa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md border-white/10 bg-black/95 backdrop-blur-xl">
+      <DialogContent className="hidden max-w-md border-white/10 bg-black/95 backdrop-blur-xl">
         <DialogHeader>
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">Upgrade</p>
           <DialogTitle className="font-serif text-3xl tracking-tight text-white">

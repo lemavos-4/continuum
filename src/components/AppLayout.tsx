@@ -127,7 +127,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-sidebar-accent-foreground">{display}</p>
-                    <p className="truncate text-[11px] text-sidebar-foreground/70">{user?.plan || "FREE"}</p>
+                    <p className="hidden truncate text-[11px] text-sidebar-foreground/70">{user?.plan || "FREE"}</p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
@@ -137,10 +137,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuItem onClick={() => { navigate("/profile"); setSidebarOpen(false); }}>
                   <UserIcon className="mr-2 h-4 w-4" /> Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { navigate("/subscription"); setSidebarOpen(false); }}>
+                <DropdownMenuItem className="hidden" onClick={() => { navigate("/subscription"); setSidebarOpen(false); }}>
                   <Settings className="mr-2 h-4 w-4" /> Subscription
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="hidden" />
                 <DropdownMenuItem onClick={handleLogoutRequest}>
                   <LogOut className="mr-2 h-4 w-4" /> Logout
                 </DropdownMenuItem>

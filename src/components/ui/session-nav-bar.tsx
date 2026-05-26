@@ -241,7 +241,7 @@ export function SessionNavBar() {
                 <div className="flex flex-col gap-0.5 px-2 py-1.5">
                   <span className="truncate text-sm font-medium text-[hsl(var(--popup-foreground))]">{display}</span>
                   <span className="truncate text-xs text-[hsl(var(--popup-muted))]">{user?.email}</span>
-                  <span className="mt-1 inline-flex w-fit items-center rounded border border-[hsl(var(--popup-border))] px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(var(--popup-muted))]">
+                  <span className="hidden mt-1 inline-flex w-fit items-center rounded border border-[hsl(var(--popup-border))] px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(var(--popup-muted))]">
                     {user?.plan || "FREE"}
                   </span>
                 </div>
@@ -249,10 +249,10 @@ export function SessionNavBar() {
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
                   <UserCircle className="mr-2 h-4 w-4" /> Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/subscription")}>
+                <DropdownMenuItem className="hidden" onClick={() => navigate("/subscription")}>
                   <Settings className="mr-2 h-4 w-4" /> Subscription
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="hidden" />
                 <DropdownMenuItem onClick={handleLogoutRequest}>
                   <LogOut className="mr-2 h-4 w-4" /> Sign out
                 </DropdownMenuItem>
