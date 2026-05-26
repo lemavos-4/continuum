@@ -509,29 +509,38 @@ export default function Dashboard() {
   // Local filtering by selected time range.
   const scoreTimelineData = useMemo(() => {
     const days = rangeDaysMap[timeRange];
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-    const filtered = (timeRange === "total" ? fullHistory : fullHistory.filter((p) => p.ts >= cutoff));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (filtered.length === 0) {
-      // Render a flat zero baseline so the chart doesn't look broken.
-      const today = new Date();
-      const cappedDays = Math.min(days, 90);
-      return Array.from({ length: cappedDays }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() - (cappedDays - 1 - i));
-        return {
-          date: d.toISOString().slice(0, 10),
-          ts: d.getTime(),
-          score: 0,
-          label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        };
-      });
+    // Build a lookup of existing scores keyed by YYYY-MM-DD.
+    const byDate = new Map<string, number>();
+    fullHistory.forEach((p) => byDate.set(p.date, p.score));
+
+    // "total" → span from earliest known date (or today) up to today.
+    let spanDays = days;
+    if (timeRange === "total") {
+      const earliest = fullHistory[0]?.ts ?? today.getTime();
+      const diff = Math.ceil((today.getTime() - earliest) / (24 * 60 * 60 * 1000)) + 1;
+      spanDays = Math.max(diff, 14);
     }
 
-    return filtered.map((p) => ({
-      ...p,
-      label: new Date(p.ts).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    }));
+    // Hard cap on point count to keep the chart readable.
+    const MAX_POINTS = 365;
+    const step = Math.max(1, Math.ceil(spanDays / MAX_POINTS));
+
+    const points: Array<{ date: string; ts: number; score: number; label: string }> = [];
+    for (let i = spanDays - 1; i >= 0; i -= step) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      points.push({
+        date: key,
+        ts: d.getTime(),
+        score: byDate.get(key) ?? 0,
+        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      });
+    }
+    return points;
   }, [fullHistory, timeRange]);
 
   const scoreStats = useMemo(() => {
@@ -706,6 +715,15 @@ export default function Dashboard() {
                           padding: "8px 10px",
                         }}
                         labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 10, marginBottom: 4 }}
+                        labelFormatter={(_label, payload) => {
+                          const ts = (payload?.[0]?.payload as any)?.ts;
+                          if (!ts) return _label as string;
+                          return new Date(ts).toLocaleDateString("en-US", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          });
+                        }}
                         formatter={(value) => [Number(value as number).toFixed(2), "Score"]}
                       />
                       <Area
