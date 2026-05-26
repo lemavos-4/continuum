@@ -9,6 +9,10 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import AuthDialog from "@/components/auth/AuthDialog";
 import { ScrollGlobe } from "@/components/ui/landing-page";
+import landingNotes from "@/assets/landing-notes.jpg";
+import landingEditor from "@/assets/landing-editor.jpg";
+import landingGraph from "@/assets/landing-graph.jpg";
+import landingInsights from "@/assets/landing-insights.jpg";
 
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -42,8 +46,8 @@ export default function LandingPage() {
         "Mention people, projects, or topics with @ and # — Continuum stitches everything into your personal knowledge graph automatically.",
       align: "center" as const,
       screenshots: [
-        { alt: "Notes list", caption: "Notes — every thought, one tap away." },
-        { alt: "Editor with mentions", caption: "Mentions become living links." },
+        { src: landingNotes, alt: "Notes list", caption: "Notes — every thought, one tap away." },
+        { src: landingEditor, alt: "Editor with mentions", caption: "Mentions become living links." },
       ],
     },
     {
@@ -72,8 +76,8 @@ export default function LandingPage() {
         },
       ],
       screenshots: [
-        { alt: "Knowledge graph view", caption: "Graph view — your second brain, visualized." },
-        { alt: "Insights dashboard", caption: "Insights — what's hot, what's forgotten." },
+        { src: landingGraph, alt: "Knowledge graph view", caption: "Graph view — your second brain, visualized." },
+        { src: landingInsights, alt: "Insights dashboard", caption: "Insights — what's hot, what's forgotten." },
       ],
     },
     {

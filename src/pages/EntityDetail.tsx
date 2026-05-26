@@ -227,10 +227,10 @@ export default function EntityDetail() {
     <AppLayout>
       <div className="px-6 lg:px-12 py-10 max-w-4xl mx-auto">
         <button
-          onClick={() => navigate("/entities")}
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/entities"))}
           className="mb-6 inline-flex items-center gap-1 text-xs uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to entities
+          <ArrowLeft className="w-3.5 h-3.5" /> Back
         </button>
 
         {/* Premium serif header — matches /entities */}

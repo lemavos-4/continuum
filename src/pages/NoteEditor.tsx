@@ -361,7 +361,7 @@ export default function NoteEditor() {
           {/* Top Toolbar */}
           <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/95 backdrop-blur z-10 shrink-0">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/notes")} className="text-muted-foreground hover:text-foreground w-8 h-8">
+              <Button variant="ghost" size="icon" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/notes"))} className="text-muted-foreground hover:text-foreground w-8 h-8">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               
