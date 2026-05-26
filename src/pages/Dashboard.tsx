@@ -626,7 +626,7 @@ export default function Dashboard() {
               </div>
 
               {/* BARRA SELETORA DE PERÍODO */}
-              <div className="flex items-center -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto scrollbar-none gap-1 border-y sm:border border-white/5 sm:rounded-xl bg-white/[0.01] p-1.5">
+              <div className="flex items-center -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto scrollbar-none gap-1 border-y sm:border border-white/5 sm:rounded-sm bg-white/[0.01] p-1">
                 {(Object.keys(rangeDaysMap) as TimeRange[]).map((range) => {
                   const labels: Record<TimeRange, string> = {
                     "14d": "14 Days",
@@ -642,10 +642,10 @@ export default function Dashboard() {
                       type="button"
                       onClick={() => setTimeRange(range)}
                       className={cn(
-                        "text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all shrink-0",
-                        timeRange === range 
-                          ? "bg-white/10 text-white border border-white/10 shadow-sm" 
-                          : "text-white/40 hover:text-white/70 border border-transparent"
+                        "text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-sm transition-colors shrink-0",
+                        timeRange === range
+                          ? "bg-white/[0.06] text-white"
+                          : "text-white/40 hover:text-white/70"
                       )}
                     >
                       {labels[range]}
