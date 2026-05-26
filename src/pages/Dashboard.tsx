@@ -221,16 +221,12 @@ function DashboardInsightSection({
   const showAccordion = !loading && !empty && items.length > 4;
 
   return (
-    <div className={cn("border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 flex flex-col shadow-inner", className)}>
+    <div className={cn("border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 flex flex-col", className)}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
-        <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
-            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-400" />
-          </div>
-          <div>
-            <h2 className="text-xs sm:text-sm font-semibold text-neutral-200">{title}</h2>
-            {subtitle && <p className="text-[11px] text-white/50">{subtitle}</p>}
-          </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Signal</p>
+          <h2 className="mt-1 font-serif text-xl text-white">{title}</h2>
+          {subtitle && <p className="mt-1 text-xs text-white/50">{subtitle}</p>}
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-4 mt-1 sm:mt-0 border-t border-white/5 sm:border-none pt-2 sm:pt-0">
           {onRefresh && (
@@ -238,7 +234,7 @@ function DashboardInsightSection({
               type="button"
               onClick={onRefresh}
               disabled={refreshing}
-              className="text-[11px] sm:text-xs text-white/50 hover:text-white transition-colors flex items-center gap-1.5"
+              className="text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors flex items-center gap-1.5"
             >
               <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
               <span>Refresh</span>
@@ -248,7 +244,7 @@ function DashboardInsightSection({
             <button
               type="button"
               onClick={() => navigate(viewMoreHref)}
-              className="text-[11px] sm:text-xs text-white/50 hover:text-white transition-colors"
+              className="text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors"
             >
               {viewMoreLabel || "View all"}
             </button>
