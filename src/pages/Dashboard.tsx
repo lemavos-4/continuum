@@ -743,16 +743,14 @@ export default function Dashboard() {
           </div>
 
           {/* PLAN USAGE CARD */}
-          <div className="border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 lg:col-span-4 flex flex-col justify-between shadow-inner">
+          <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-4 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between gap-3 mb-5">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
-                    <Activity className="h-4 w-4 text-neutral-400" />
-                  </div>
-                  <h2 className="text-sm font-semibold text-neutral-200">Plan usage</h2>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Account</p>
+                  <h2 className="mt-1 font-serif text-2xl text-white">Plan usage</h2>
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/60 bg-white/[0.05] border border-white/10 px-2 py-0.5 rounded-md">
+                <span className="text-[9px] font-mono uppercase tracking-widest text-white/70 border border-white/10 px-2 py-1 rounded-sm">
                   {user?.plan || "FREE"}
                 </span>
               </div>
@@ -828,15 +826,13 @@ export default function Dashboard() {
 
           {/* BLOCO 2: WORKSPACE ACTIVITY */}
           {/* RECENT NOTES CARD */}
-          <div className="border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 lg:col-span-4 flex flex-col shadow-inner">
+          <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-4 flex flex-col">
             <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
-                  <FolderOpen className="h-3.5 w-3.5 text-neutral-400" />
-                </div>
-                <h2 className="text-xs sm:text-sm font-semibold text-neutral-200">Recent notes</h2>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Stream</p>
+                <h2 className="mt-1 font-serif text-xl text-white">Recent notes</h2>
               </div>
-              <button type="button" onClick={() => navigate("/notes")} className="text-xs text-white/50 hover:text-white transition-colors\">
+              <button type="button" onClick={() => navigate("/notes")} className="text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors">
                 View all
               </button>
             </div>
