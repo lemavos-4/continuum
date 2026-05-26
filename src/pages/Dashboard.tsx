@@ -119,13 +119,13 @@ const DashboardSkeleton = () => (
 
 function StatCard({ icon: Icon, label, value, hint }: { icon: ComponentType<{ className?: string }>; label: string; value: string | number; hint?: string; }) {
   return (
-    <div className="border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-5 flex flex-col gap-1 min-w-0 shadow-inner transition-all duration-300 hover:border-white/10 hover:bg-neutral-900/30">
-      <div className="flex items-center gap-1.5 text-white/50">
-        <Icon className="h-3.5 w-3.5 shrink-0" />
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold truncate">{label}</span>
+    <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4 flex flex-col gap-1 min-w-0 transition-colors hover:border-white/10">
+      <div className="flex items-center gap-1.5 text-white/30">
+        <Icon className="h-3 w-3 shrink-0" />
+        <span className="text-[9px] uppercase tracking-widest font-mono truncate">{label}</span>
       </div>
-      <p className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight text-white/95 tabular-nums leading-none mt-1 truncate">{value}</p>
-      {hint && <p className="text-[10px] sm:text-[11px] text-white/40 truncate mt-0.5">{hint}</p>}
+      <p className="text-2xl font-mono tracking-tight text-white tabular-nums leading-none mt-2 truncate">{value}</p>
+      {hint && <p className="text-[10px] font-mono uppercase tracking-wider text-white/30 truncate mt-1">{hint}</p>}
     </div>
   );
 }
