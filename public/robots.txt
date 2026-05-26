@@ -12,3 +12,4 @@ Allow: /
 
 User-agent: *
 Allow: /
+Sitemap: https://continuumnodes.lovable.app/sitemap.xml
