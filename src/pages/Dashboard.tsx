@@ -565,13 +565,13 @@ export default function Dashboard() {
       <div className="px-4 sm:px-6 lg:px-12 py-6 sm:py-10 max-w-7xl mx-auto space-y-6">
         
         {/* HEADER */}
-        <header className="border-b border-white/5 pb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <header className="border-b border-white/10 pb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[10px] tracking-wider uppercase text-white/40 font-semibold mb-0.5">Overview</p>
-            <h1 className="font-serif text-3xl sm:text-4xl tracking-tight text-white/95">
+            <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Overview</p>
+            <h1 className="mt-2 font-serif text-4xl sm:text-5xl tracking-tight text-white">
               {greeting}, {displayName}
             </h1>
-            <p className="mt-0.5 text-xs text-white/50">
+            <p className="mt-2 text-sm text-white/50">
               Here's what's happening across your knowledge graph.
             </p>
           </div>
@@ -589,22 +589,20 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* BLOCO 1: PERFORMANCE & METRICS */}
-          <div className="border border-white/5 bg-neutral-900/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 lg:col-span-8 flex flex-col justify-between shadow-inner">
+          <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4 sm:p-6 lg:col-span-8 flex flex-col justify-between">
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
-                    <Share2 className="h-4 w-4 text-neutral-400" />
-                  </div>
                   <div>
-                    <h2 className="text-sm font-semibold text-neutral-200">Score evolution</h2>
-                    <p className="text-xs text-white/50\">Knowledge graph gravity index</p>
+                    <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Signal</p>
+                    <h2 className="mt-1 font-serif text-2xl text-white">Score evolution</h2>
+                    <p className="mt-1 text-xs text-white/50">Knowledge graph gravity index</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <p className="text-[9px] uppercase tracking-wider text-white/50 font-semibold">Current</p>
-                    <p className="font-mono text-lg sm:text-xl text-white/95 tabular-nums leading-none mt-0.5">
+                    <p className="text-[9px] uppercase tracking-widest text-white/30 font-mono">Current</p>
+                    <p className="font-mono text-2xl text-white tabular-nums leading-none mt-1">
                       {scoreStats.current.toFixed(2)}
                     </p>
                   </div>
