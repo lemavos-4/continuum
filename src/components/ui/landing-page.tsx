@@ -231,16 +231,16 @@ export function ScrollGlobe({ sections, globeConfig = defaultGlobeConfig, classN
                     key={i}
                     className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur-sm hover:border-white/20 hover:bg-white/[0.04] transition-all"
                   >
-                    <div className="aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-white/[0.04] via-white/[0.02] to-transparent">
+                    <div className="w-full overflow-hidden bg-gradient-to-br from-white/[0.04] via-white/[0.02] to-transparent">
                       {shot.src ? (
                         <img
                           src={shot.src}
                           alt={shot.alt}
                           loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                          className="block h-auto w-full object-contain transition-transform duration-700 group-hover:scale-[1.02]"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-white/30 text-xs uppercase tracking-[0.2em]">
+                        <div className="flex aspect-[4/3] w-full items-center justify-center text-white/30 text-xs uppercase tracking-[0.2em]">
                           {shot.alt}
                         </div>
                       )}

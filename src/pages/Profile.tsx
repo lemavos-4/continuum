@@ -23,6 +23,7 @@ import {
   MoonIcon,
 } from "@heroicons/react/24/outline";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const formatLimitValue = (value: number, suffix = "") => (value === -1 ? "Unlimited" : `${value}${suffix}`);
 
@@ -32,6 +33,7 @@ export default function Profile() {
   const { toast } = useToast();
   const { usage, loading: usageLoading } = usePlanGate();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -221,6 +223,24 @@ export default function Profile() {
                   <p className="text-xs font-medium text-foreground/70">Security Layer</p>
                   <p className="text-xs text-foreground/30">Active session tokens are isolated and protected.</p>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-4 py-4">
+                <CalendarIcon className="h-4 w-4 text-foreground/30 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-foreground/70">{t("common_language")}</p>
+                  <p className="text-xs text-foreground/30">{t("common_chooseLanguage")}</p>
+                </div>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as "en" | "es" | "pt" | "fr")}
+                  className="bg-transparent border border-white/10 text-xs text-foreground/80 rounded-sm px-2 py-1 focus:outline-none focus:border-white/30"
+                >
+                  <option value="en">English</option>
+                  <option value="pt">Português</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                </select>
               </div>
             </div>
           </div>
