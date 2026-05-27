@@ -42,6 +42,7 @@ const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateStri
 export const SideInspector = memo(function SideInspector({ isOpen, entity, onClose }: SideInspectorProps) {
   const navigate = useNavigate();
   const { openInspector, setLoadingEntityId } = useEntityStore();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [resolvedFromApi, setResolvedFromApi] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -148,8 +149,6 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
   if (!entity) {
     return null;
   }
-
-  const { toast } = useToast();
 
   const displayEntity = resolvedEntity || entity;
   const config = ENTITY_TYPE_CONFIG[displayEntity.type] || ENTITY_TYPE_CONFIG.TOPIC;
