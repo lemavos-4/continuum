@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "@/lib/heroicons";
 import { useAuth } from "@/contexts/AuthContext";
+import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 
 const LoginSuccess = () => {
   const navigate = useNavigate();
@@ -11,15 +12,12 @@ const LoginSuccess = () => {
   const [debugInfo, setDebugInfo] = useState<string>("");
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const rawHash = window.location.hash.replace(/^#/, "");
-    const hashQuery = rawHash.startsWith("/") ? rawHash.slice(1) : rawHash;
-    const hashParams = new URLSearchParams(hashQuery);
-    const getValue = (key: string) => searchParams.get(key) ?? hashParams.get(key);
+    const authTokens = extractAuthTokensFromLocation();
+    sanitizeAuthRedirectUrl();
 
-    const accessToken = getValue("access_token") ?? getValue("login_token") ?? getValue("token") ?? getValue("jwt");
-    const refreshToken = getValue("refresh_token");
-    const vaultId = getValue("vault_id") ?? getValue("vaultId");
+    const accessToken = authTokens?.accessToken;
+    const refreshToken = authTokens?.refreshToken;
+    const vaultId = authTokens?.vaultId;
 
     setDebugInfo(`Token: ${accessToken ? "present" : "missing"}, VaultId: ${vaultId || "none"}`);
 

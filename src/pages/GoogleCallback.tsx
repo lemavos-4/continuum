@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
+import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 import { Loader2 } from "@/lib/heroicons";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,20 +13,15 @@ export default function GoogleCallback() {
   const hasCalled = useRef(false);
 
   useEffect(() => {
-    const parseRedirectTokens = () => {
-      const searchParams = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      const getValue = (key: string) => searchParams.get(key) ?? hashParams.get(key);
+    const authTokens = extractAuthTokensFromLocation();
+    sanitizeAuthRedirectUrl();
 
-      return {
-        accessToken: getValue("access_token") ?? getValue("token") ?? getValue("jwt"),
-        refreshToken: getValue("refresh_token"),
-        code: getValue("code"),
-        state: getValue("state"),
-      };
-    };
-
-    const { accessToken, refreshToken, code, state } = parseRedirectTokens();
+    const accessToken = authTokens?.accessToken;
+    const refreshToken = authTokens?.refreshToken;
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const code = searchParams.get("code") ?? hashParams.get("code");
+    const state = searchParams.get("state") ?? hashParams.get("state");
 
     // Se já existem tokens na URL (redirecionamento direto)
     if (accessToken) {

@@ -32,19 +32,25 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         // Ativa proteção XSS do navegador
         response.setHeader("X-XSS-Protection", "1; mode=block");
 
+        boolean isSecure = request.isSecure() || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+
         // Strict-Transport-Security (HSTS)
-        // Força HTTPS em produção - comentado para dev, descomente em produção
-        // response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        // Força HTTPS em produção quando a requisição vier por proxy seguro
+        if (isSecure) {
+            response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        }
 
         // Content-Security-Policy
         // Controla quais recursos podem ser carregados
-        response.setHeader("Content-Security-Policy", 
+        response.setHeader("Content-Security-Policy",
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline'; " +
-            "style-src 'self' 'unsafe-inline'; " +
+            "script-src 'self'; " +
+            "style-src 'self'; " +
             "img-src 'self' data: https:; " +
             "font-src 'self'; " +
             "connect-src 'self' http://localhost:8080 https://api.stripe.com; " +
+            "frame-src 'self' blob:; " +
+            "object-src 'none'; " +
             "frame-ancestors 'none'; " +
             "base-uri 'self'; " +
             "form-action 'self'");

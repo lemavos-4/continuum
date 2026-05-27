@@ -22,20 +22,29 @@ const API_BASE_URL = getAPIBaseURL();
 export const ACCESS_TOKEN_KEY = "access_token";
 export const REFRESH_TOKEN_KEY = "refresh_token";
 
-export const setAuthTokens = (accessToken: string, refreshToken?: string) => {
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  if (refreshToken) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  }
+const getStoredToken = (key: string) => {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(key) ?? localStorage.getItem(key);
 };
 
-export const clearAuthTokens = () => {
+export const setAuthTokens = (accessToken: string, _refreshToken?: string) => {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 };
 
-export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
-export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+export const clearAuthTokens = () => {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+};
+
+export const getAccessToken = () => getStoredToken(ACCESS_TOKEN_KEY);
+export const getRefreshToken = () => getStoredToken(REFRESH_TOKEN_KEY);
 
 export const parseTokensFromUrl = () => {
   if (typeof window === "undefined") return null;
@@ -55,6 +64,7 @@ export const parseTokensFromUrl = () => {
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 type JsonRecord = Record<string, unknown>;
@@ -186,9 +196,10 @@ class RefreshTokenManager {
         expiresIn?: number;
       }>(
         `${API_BASE_URL}/api/auth/refresh`,
-        { refreshToken },
+        {},
         {
           timeout: 5000,
+          withCredentials: true,
           headers: { "Content-Type": "application/json" },
         }
       );
@@ -324,10 +335,7 @@ export const authApi = {
       redirectUri: window.location.origin + "/google-callback",
     }),
 
-  logout: () => {
-    const refreshToken = getRefreshToken();
-    return api.post("/api/auth/logout", { refreshToken });
-  },
+  logout: () => api.post("/api/auth/logout", {}),
   me: () => api.get("/api/auth/me"),
   updateMe: (data: Record<string, string>) => api.patch("/api/account/me", data),
   changePassword: (currentPassword: string, newPassword: string) =>

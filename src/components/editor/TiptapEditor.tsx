@@ -45,6 +45,23 @@ const isAudioFile = (file: File) => AUDIO_MIME_RE.test(file.type) || AUDIO_EXT_R
 
 const lowlight = createLowlight(common);
 
+const isSafeEditorUrl = (href: string) => {
+  const trimmed = href.trim();
+  if (!trimmed) return false;
+
+  const lowered = trimmed.toLowerCase();
+  if (lowered.startsWith("javascript:") || lowered.startsWith("data:") || lowered.startsWith("vbscript:")) return false;
+  if (lowered.startsWith("mailto:") || lowered.startsWith("tel:")) return true;
+  if (trimmed.startsWith("/") || trimmed.startsWith("#")) return true;
+
+  try {
+    const parsed = new URL(trimmed, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const NoteMention = Mention.extend({
   name: "noteMention",
   addAttributes() {
@@ -65,7 +82,10 @@ type Cache<T> = { token: string | null; at: number; data: T[]; pending: Promise<
 const entityCache: Cache<Entity> = { token: null, at: 0, data: [], pending: null };
 const noteCache: Cache<{ id: string; title: string }> = { token: null, at: 0, data: [], pending: null };
 
-const getToken = () => (typeof window !== "undefined" ? window.localStorage.getItem("access_token") : null);
+const getToken = () => {
+  if (typeof window === "undefined") return null;
+  return window.sessionStorage.getItem("access_token") ?? window.localStorage.getItem("access_token");
+};
 
 export const resetEditorCaches = () => {
   Object.assign(entityCache, { token: null, at: 0, data: [], pending: null });
@@ -249,6 +269,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         LinkExtension.configure({
           openOnClick: false,
           autolink: true,
+          validate: (href) => isSafeEditorUrl(href),
           HTMLAttributes: { class: "text-primary underline underline-offset-4 cursor-pointer" },
         }),
         Image.configure({ HTMLAttributes: { class: "rounded-lg my-4 max-w-full shadow-lg" } }),
@@ -481,6 +502,14 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
                   const url = window.prompt("URL", e.getAttributes("link").href || "https://");
                   if (url === null) return;
                   if (url === "") { e.chain().focus().unsetLink().run(); return; }
+                  if (!isSafeEditorUrl(url)) {
+                    toast({
+                      title: "Invalid link",
+                      description: "Only http(s), mailto, tel, or internal paths are allowed.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
                   e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
                 }}
                 active={editor.isActive("link")} icon={LinkIcon} label="Link" />

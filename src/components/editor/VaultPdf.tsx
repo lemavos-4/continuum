@@ -36,7 +36,14 @@ function VaultPdfView({ node }: NodeViewProps) {
         {error ? (
           <div className="p-6 text-sm text-destructive text-center">Failed to load PDF</div>
         ) : src ? (
-          <iframe src={src} title={fileName} className="w-full h-[600px] bg-white" />
+          <iframe
+            src={src}
+            title={fileName}
+            className="w-full h-[600px] bg-white"
+            sandbox="allow-same-origin allow-scripts"
+            referrerPolicy="no-referrer"
+            loading="lazy"
+          />
         ) : (
           <div className="flex items-center justify-center gap-2 p-12 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading PDF…

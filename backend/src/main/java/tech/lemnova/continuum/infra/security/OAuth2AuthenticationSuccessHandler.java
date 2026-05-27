@@ -53,8 +53,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         );
 
         String redirectUrl = frontendUrl + "/#/?access_token=" + URLEncoder.encode(tokenPair.accessToken(), StandardCharsets.UTF_8) +
-                "&refresh_token=" + URLEncoder.encode(tokenPair.refreshToken(), StandardCharsets.UTF_8) +
                 "&vault_id=" + URLEncoder.encode(user.getVaultId(), StandardCharsets.UTF_8);
+
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
 
         System.out.println("OAuth2 Success Handler: Redirecting to: " + redirectUrl);
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
