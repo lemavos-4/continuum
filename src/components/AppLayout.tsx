@@ -30,16 +30,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MobileSidebar } from "@/components/sidebar/MobileSidebar";
 import { SessionNavBar } from "@/components/ui/session-nav-bar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const mobileItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/notes", icon: StickyNote, label: "Notes" },
-  { to: "/entities", icon: Tag, label: "Entities" },
-  { to: "/insights", icon: Sparkles, label: "Insights" },
-  { to: "/vault", icon: Lock, label: "Vault" },
-  { to: "/projects", icon: FolderOpen, label: "Projects" },
-  { to: "/activities", icon: Clock, label: "Activities" },
-  { to: "/graph", icon: Layers, label: "Graph" },
+  { to: "/", icon: LayoutDashboard, key: "nav_dashboard", end: true },
+  { to: "/notes", icon: StickyNote, key: "nav_notes" },
+  { to: "/entities", icon: Tag, key: "nav_entities" },
+  { to: "/insights", icon: Sparkles, key: "nav_insights" },
+  { to: "/vault", icon: Lock, key: "nav_vault" },
+  { to: "/projects", icon: FolderOpen, key: "nav_projects" },
+  { to: "/activities", icon: Clock, key: "nav_activities" },
+  { to: "/graph", icon: Layers, key: "nav_graph" },
 ];
 
 
@@ -47,6 +48,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const isGraphPage = location.pathname.startsWith("/graph");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
@@ -114,7 +116,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 }
               >
                 <it.icon className="h-4 w-4" />
-                <span>{it.label}</span>
+                <span>{t(it.key)}</span>
               </NavLink>
             ))}
           </nav>
@@ -135,14 +137,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuLabel className="text-xs text-zinc-500">{user?.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => { navigate("/profile"); setSidebarOpen(false); }}>
-                  <UserIcon className="mr-2 h-4 w-4" /> Profile
+                  <UserIcon className="mr-2 h-4 w-4" /> {t("nav_profile")}
                 </DropdownMenuItem>
                 <DropdownMenuItem className="hidden" onClick={() => { navigate("/subscription"); setSidebarOpen(false); }}>
-                  <Settings className="mr-2 h-4 w-4" /> Subscription
+                  <Settings className="mr-2 h-4 w-4" /> {t("nav_subscription")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="hidden" />
                 <DropdownMenuItem onClick={handleLogoutRequest}>
-                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                  <LogOut className="mr-2 h-4 w-4" /> {t("nav_logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -152,9 +154,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <ConfirmDialog
         open={confirmLogoutOpen}
         onOpenChange={setConfirmLogoutOpen}
-        title="Sign out?"
-        description="You will be signed out of your account continue?"
-        confirmText="Logout"
+        title={t("auth_signOut")}
+        description={t("auth_signOutDesc")}
+        confirmText={t("nav_logout")}
         destructive
         onConfirm={async () => {
           setConfirmLogoutOpen(false);
