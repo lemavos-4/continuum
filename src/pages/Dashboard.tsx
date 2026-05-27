@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import AppLayout from "@/components/AppLayout";
 import { dashboardApi, graphApi, metricsApi, notesApi, vaultApi, insightsApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
@@ -303,6 +304,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { usage, applyUsageDelta } = usePlanGate();
+  const { t } = useLanguage();
   const limits = getPlanLimits(user);
   const [exporting, setExporting] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("14d");
@@ -560,7 +562,7 @@ export default function Dashboard() {
         {/* HEADER */}
         <header className="border-b border-white/10 pb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Overview</p>
+            <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("dashboard_overview")}</p>
             <h1 className="mt-2 font-serif text-4xl sm:text-5xl tracking-tight text-white">
               {greeting}, {displayName}
             </h1>
@@ -572,8 +574,8 @@ export default function Dashboard() {
 
         {/* CONTADORES / CARDS KPI */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard icon={FileText} label="Notes" value={totalNotes} hint={limits.maxNotes === -1 ? "Unlimited" : `of ${limits.maxNotes}`} />
-          <StatCard icon={Tag} label="Entities" value={totalEntities} hint={limits.maxEntities === -1 ? "Unlimited" : `of ${limits.maxEntities}`} />
+          <StatCard icon={FileText} label={t("notes_title")} value={totalNotes} hint={limits.maxNotes === -1 ? t("unlimited") || "Unlimited" : `of ${limits.maxNotes}`} />
+          <StatCard icon={Tag} label={t("entities_title")} value={totalEntities} hint={limits.maxEntities === -1 ? t("unlimited") || "Unlimited" : `of ${limits.maxEntities}`} />
           <StatCard icon={Network} label="Graph nodes" value={graphNodeCount} hint="In your network" />
           <StatCard icon={HardDrive} label="Storage" value={storageUsed} hint={`of ${storageLimit}`} />
         </section>
@@ -587,8 +589,8 @@ export default function Dashboard() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Signal</p>
-                    <h2 className="mt-1 font-serif text-2xl text-white">Score evolution</h2>
+                    <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("dashboard_signal")}</p>
+                    <h2 className="mt-1 font-serif text-2xl text-white">{t("dashboard_score_evolution") || "Score evolution"}</h2>
                     <p className="mt-1 text-xs text-white/50">Knowledge graph gravity index</p>
                   </div>
                 </div>

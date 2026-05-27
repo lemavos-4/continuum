@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { notesApi, vaultApi } from "@/lib/api";
