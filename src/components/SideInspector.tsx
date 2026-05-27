@@ -5,20 +5,19 @@ import { ArrowUpRight, Calendar, Link2, Network, StickyNote, X, Tag } from "@/li
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEntityStore, type InspectableEntity, type InspectableNote } from "@/contexts/EntityContext";
 import { entitiesApi, notesApi } from "@/lib/api";
 import { tiptapContentToPlainText } from "@/lib/tiptap-content";
 import type { Entity, EntityStats, Note } from "@/types";
 
-const ENTITY_TYPE_CONFIG: Record<string, { label: string; icon: string }> = {
-  NOTE: { label: "Note", icon: "📝" },
-  ACTIVITY: { label: "Activity", icon: "🟢" },
-  PROJECT: { label: "Project", icon: "🔵" },
-  PERSON: { label: "Person", icon: "🟡" },
-  TOPIC: { label: "Topic", icon: "🟣" },
-  ORGANIZATION: { label: "Organization", icon: "🟠" },
+const ENTITY_TYPE_CONFIG: Record<string, { label: string }> = {
+  NOTE: { label: "Note" },
+  ACTIVITY: { label: "Activity" },
+  PROJECT: { label: "Project" },
+  PERSON: { label: "Person" },
+  TOPIC: { label: "Topic" },
+  ORGANIZATION: { label: "Organization" },
 };
 
 interface RelatedNote {
@@ -176,22 +175,19 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 320 }}
           transition={{ duration: 0.25 }}
-          className="fixed right-0 top-0 bottom-0 z-40 w-80 border-l border-border bg-background/95 shadow-lg backdrop-blur-sm"
+          className="fixed right-0 top-0 bottom-0 z-40 w-80 border-l border-white/5 bg-black shadow-lg"
         >
           <ScrollArea className="h-full">
-            <div className="space-y-4 p-4">
+            <div className="space-y-3 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="text-2xl">{config.icon}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {config.label}
-                    </Badge>
-                  </div>
-                  <h2 className="truncate text-lg font-bold text-foreground">{displayEntity.title}</h2>
+                  <Badge variant="outline" className="mb-2 text-[9px] font-medium uppercase tracking-widest">
+                    {config.label}
+                  </Badge>
+                  <h2 className="truncate font-serif text-lg font-semibold text-white">{displayEntity.title}</h2>
                   {!loading && resolvedFromApi && displayEntity.createdAt && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Created on {formatDate(displayEntity.createdAt)}
+                    <p className="mt-1 text-[10px] font-mono text-white/40">
+                      {formatDate(displayEntity.createdAt)}
                     </p>
                   )}
                 </div>
@@ -199,36 +195,34 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={onClose}
-                  className="mt-1 rounded-md p-1.5 transition-colors hover:bg-muted"
+                  className="mt-1 rounded-sm p-1.5 transition-colors hover:bg-white/10"
                 >
-                  <X className="h-4 w-4 text-muted-foreground" />
+                  <X className="h-4 w-4 text-white/40" />
                 </motion.button>
               </div>
 
-              <div className="h-px bg-border/50" />
+              <div className="h-px bg-white/5" />
 
               {/* Graph Score Card - appears when score is available */}
               {(displayEntity as any)?.graphScore !== undefined && (
-                <Card className="border-primary/30 bg-primary/5">
-                  <CardContent className="pt-4">
-                    <div className="grid grid-cols-2 gap-3 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-primary">{(displayEntity as any).graphScore}</div>
-                        <p className="mt-1 text-xs text-muted-foreground">Graph Score</p>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-primary">{(displayEntity as any).graphDegree ?? 0}</div>
-                        <p className="mt-1 text-xs text-muted-foreground">Connections</p>
-                      </div>
+                <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="font-mono text-xl font-semibold text-white">{(displayEntity as any).graphScore}</div>
+                      <p className="mt-1.5 text-[9px] font-mono uppercase tracking-widest text-white/40">Graph Score</p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <div className="font-mono text-xl font-semibold text-white">{(displayEntity as any).graphDegree ?? 0}</div>
+                      <p className="mt-1.5 text-[9px] font-mono uppercase tracking-widest text-white/40">Connections</p>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {loading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, index) => (
-                    <div key={index} className="h-24 animate-pulse rounded bg-muted" />
+                    <div key={index} className="h-20 animate-pulse rounded-sm bg-white/5" />
                   ))}
                 </div>
               ) : (
@@ -236,48 +230,44 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {error && (
-                    <Card>
-                      <CardContent className="pt-6">
-                        <p className="text-sm text-muted-foreground">{error}</p>
-                      </CardContent>
-                    </Card>
+                    <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                      <p className="text-xs text-white/60">{error}</p>
+                    </div>
                   )}
 
                   {isNote ? (
                     <>
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold">Resumo</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <p className="text-sm leading-relaxed text-foreground">{notePreview}</p>
-                          <div className="space-y-2 text-xs text-muted-foreground">
-                            <div className="flex items-center justify-between">
+                      <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Resumo</h3>
+                        <div className="space-y-3">
+                          <p className="text-xs leading-relaxed text-white/70">{notePreview}</p>
+                          <div className="space-y-2 border-t border-white/5 pt-3">
+                            <div className="flex items-center justify-between text-[10px] font-mono text-white/40">
                               <span className="inline-flex items-center gap-1.5">
-                                <Link2 className="h-3.5 w-3.5" />
+                                <Link2 className="h-3 w-3" />
                                 Mentioned Entities
                               </span>
-                              <span>{(displayEntity as InspectableNote).entityIds?.length ?? 0}</span>
+                              <span className="font-semibold text-white/60">{(displayEntity as InspectableNote).entityIds?.length ?? 0}</span>
                             </div>
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between text-[10px] font-mono text-white/40">
                               <span className="inline-flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5" />
+                                <Calendar className="h-3 w-3" />
                                 Last Update
                               </span>
-                              <span>{formatDate((displayEntity as InspectableNote).updatedAt)}</span>
+                              <span className="font-semibold text-white/60">{formatDate((displayEntity as InspectableNote).updatedAt)}</span>
                             </div>
                               {/* Note Type display + clear action */}
                               {displayEntity?.noteType ? (
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between text-[10px] font-mono text-white/40">
                                   <span className="inline-flex items-center gap-1.5">
-                                    <Tag className="h-3.5 w-3.5" />
+                                    <Tag className="h-3 w-3" />
                                     Note Type
                                   </span>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold text-foreground">{(displayEntity as any).noteType}</span>
+                                    <span className="font-semibold text-white/60">{(displayEntity as any).noteType}</span>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -294,121 +284,106 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                                           setLoading(false);
                                         }
                                       }}
+                                      className="h-5 w-5 p-0 hover:bg-white/10"
                                     >
-                                      <X className="h-4 w-4" />
+                                      <X className="h-3 w-3 text-white/40" />
                                     </Button>
                                   </div>
                                 </div>
                               ) : null}
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
 
                       <Button
                         variant="outline"
-                        className="w-full gap-2"
+                        className="w-full gap-2 border-white/5 hover:bg-white/5"
                         onClick={() => {
                           navigate(`/notes/${displayEntity.id}`);
                           onClose();
                         }}
                       >
-                        <ArrowUpRight className="h-4 w-4" />
-                        Open Note
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">Open Note</span>
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold">Entity Metadata</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="grid grid-cols-1 gap-3 text-xs text-muted-foreground">
-                            <div className="rounded-md border border-border/50 bg-card/60 p-3">
-                              <div className="mb-1 inline-flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5" />
-                                Created At
-                              </div>
-                              <div className="text-sm font-semibold text-foreground">{formatDate(displayEntity.createdAt)}</div>
-                            </div>
-                            <div className="rounded-md border border-border/50 bg-card/60 p-3">
-                              <div className="mb-1 inline-flex items-center gap-1.5">
-                                <Network className="h-3.5 w-3.5" />
-                                Number of Connections
-                              </div>
-                              <div className="text-sm font-semibold text-foreground">{relatedEntities.length}</div>
-                            </div>
-                            <div className="rounded-md border border-border/50 bg-card/60 p-3">
-                              <div className="mb-1 inline-flex items-center gap-1.5">
-                                <Tag className="h-3.5 w-3.5" />
-                                Entity Type
-                              </div>
-                              <div className="text-sm font-semibold text-foreground">{config.label}</div>
-                            </div>
+                      <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Metadata</h3>
+                        <div className="space-y-2 text-[10px] font-mono text-white/40">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Calendar className="h-3 w-3" />
+                              Created
+                            </span>
+                            <span className="font-semibold text-white/60">{formatDate(displayEntity.createdAt)}</span>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Network className="h-3 w-3" />
+                              Connections
+                            </span>
+                            <span className="font-semibold text-white/60">{relatedEntities.length}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Tag className="h-3 w-3" />
+                              Type
+                            </span>
+                            <span className="font-semibold text-white/60">{config.label}</span>
+                          </div>
+                        </div>
+                      </div>
 
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold">Detalhes reais</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
+                      <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Details</h3>
+                        <div className="space-y-3">
                           {displayEntity.description ? (
-                            <p className="text-sm leading-relaxed text-foreground">{displayEntity.description}</p>
+                            <p className="text-xs leading-relaxed text-white/70">{displayEntity.description}</p>
                           ) : (
-                            <p className="text-sm text-muted-foreground">No description added.</p>
+                            <p className="text-xs text-white/40">No description added.</p>
                           )}
-                          <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-                            <div className="rounded-md border border-border/50 bg-card/60 p-3">
-                              <div className="mb-1 inline-flex items-center gap-1.5">
-                                <StickyNote className="h-3.5 w-3.5" />
-                                Notes
-                              </div>
-                              <div className="text-base font-semibold text-foreground">{relatedNotes.length}</div>
+                          <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
+                            <div className="text-center text-[10px] font-mono">
+                              <div className="font-semibold text-white">{relatedNotes.length}</div>
+                              <div className="mt-1 text-white/40">Notes</div>
                             </div>
-                            <div className="rounded-md border border-border/50 bg-card/60 p-3">
-                              <div className="mb-1 inline-flex items-center gap-1.5">
-                                <Network className="h-3.5 w-3.5" />
-                                Connections
-                              </div>
-                              <div className="text-base font-semibold text-foreground">{relatedEntities.length}</div>
+                            <div className="text-center text-[10px] font-mono">
+                              <div className="font-semibold text-white">{relatedEntities.length}</div>
+                              <div className="mt-1 text-white/40">Connections</div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
 
                       {displayEntity.type === "ACTIVITY" && stats && (
-                        <Card>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold">Activity Metrics</CardTitle>
-                          </CardHeader>
-                          <CardContent className="grid grid-cols-3 gap-3 text-center text-xs text-muted-foreground">
+                        <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                          <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Activity Metrics</h3>
+                          <div className="grid grid-cols-3 gap-3 text-center text-[10px] font-mono">
                             <div>
-                              <div className="text-lg font-semibold text-foreground">{stats.currentStreak}</div>
-                              <p>Streak</p>
+                              <div className="font-semibold text-white">{stats.currentStreak}</div>
+                              <p className="mt-1 text-white/40">Streak</p>
                             </div>
                             <div>
-                              <div className="text-lg font-semibold text-foreground">{stats.longestStreak}</div>
-                              <p>Longest</p>
+                              <div className="font-semibold text-white">{stats.longestStreak}</div>
+                              <p className="mt-1 text-white/40">Longest</p>
                             </div>
                             <div>
-                              <div className="text-lg font-semibold text-foreground">{Math.round(weeklyCompletionRate)}%</div>
-                              <p>Weekly Rate</p>
+                              <div className="font-semibold text-white">{Math.round(weeklyCompletionRate)}%</div>
+                              <p className="mt-1 text-white/40">Weekly</p>
                             </div>
-                          </CardContent>
-                          <CardContent className="pt-0 text-center text-xs text-muted-foreground">
+                          </div>
+                          <div className="mt-3 border-t border-white/5 pt-3 text-center text-[10px] font-mono text-white/40">
                             <span>Total tracked: </span>
-                            <span className="font-medium text-foreground">{activityTotalCompletions}</span>
-                          </CardContent>
-                        </Card>
+                            <span className="font-semibold text-white/60">{activityTotalCompletions}</span>
+                          </div>
+                        </div>
                       )}
 
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold">Connected Notes</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
+                      <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Connected Notes</h3>
+                        <div className="space-y-2">
                           {relatedNotes.length > 0 ? (
                             relatedNotes.slice(0, 5).map((note) => (
                               <button
@@ -417,60 +392,56 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                                   navigate(`/notes/${note.id}`);
                                   onClose();
                                 }}
-                                className="flex w-full items-start gap-2 rounded-md border border-border/40 px-3 py-2 text-left transition-colors hover:bg-accent"
+                                className="flex w-full items-start gap-2 rounded-sm border border-white/5 px-2.5 py-2 text-left transition-colors hover:border-white/10 hover:bg-white/5"
                               >
-                                <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                                <StickyNote className="mt-0.5 h-3 w-3 shrink-0 text-white/60" />
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm text-foreground">{note.title}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Updated {formatDate(note.updatedAt || note.createdAt)}
-                                  </p>
+                                  <p className="truncate text-xs text-white/80">{note.title}</p>
+                                  <p className="text-[9px] text-white/40">{formatDate(note.updatedAt || note.createdAt)}</p>
                                 </div>
                               </button>
                             ))
                           ) : (
-                            <p className="text-sm text-muted-foreground">No connected notes yet.</p>
+                            <p className="text-xs text-white/40">No connected notes yet.</p>
                           )}
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
 
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold">Related Entities</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
+                      <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
+                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Related Entities</h3>
+                        <div className="space-y-2">
                           {relatedEntities.length > 0 ? (
                             relatedEntities.slice(0, 5).map((relatedEntity) => (
                               <button
                                 key={relatedEntity.id}
                                 onClick={() => openInspector(relatedEntity)}
-                                className="flex w-full items-center justify-between rounded-md border border-border/40 px-3 py-2 text-left transition-colors hover:bg-accent"
+                                className="flex w-full items-center justify-between rounded-sm border border-white/5 px-2.5 py-2 text-left transition-colors hover:border-white/10 hover:bg-white/5"
                               >
                                 <div className="min-w-0">
-                                  <p className="truncate text-sm text-foreground">{relatedEntity.title}</p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="truncate text-xs text-white/80">{relatedEntity.title}</p>
+                                  <p className="text-[9px] text-white/40">
                                     {(ENTITY_TYPE_CONFIG[relatedEntity.type] || ENTITY_TYPE_CONFIG.TOPIC).label}
                                   </p>
                                 </div>
-                                <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <ArrowUpRight className="h-3 w-3 shrink-0 text-white/40" />
                               </button>
                             ))
                           ) : (
-                            <p className="text-sm text-muted-foreground">Nenhuma conexão real encontrada.</p>
+                            <p className="text-xs text-white/40">No related entities found.</p>
                           )}
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
 
                       <Button
                         variant="outline"
-                        className="w-full gap-2"
+                        className="w-full gap-2 border-white/5 hover:bg-white/5"
                         onClick={() => {
                           navigate(`/entities/${displayEntity.id}`);
                           onClose();
                         }}
                       >
-                        <ArrowUpRight className="h-4 w-4" />
-                        Open Entity
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">Open Entity</span>
                       </Button>
                     </>
                   )}

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   SparklesIcon,
@@ -217,6 +217,26 @@ export default function Insights() {
   const [search, setSearch] = useState("");
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+  // Edge swipe to open mobile filter drawer
+  const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  const onSwipeStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (t.clientX > 96) return; // Only left edge (0-96px)
+    swipeRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+
+  const onSwipeEnd = (e: React.TouchEvent) => {
+    const s = swipeRef.current;
+    if (!s) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x; // Δx (horizontal)
+    const dy = Math.abs(t.clientY - s.y); // Δy (vertical)
+    // Opens drawer if: >50px horizontal, <80px vertical, <700ms
+    if (dx > 50 && dy < 80 && Date.now() - s.t < 700) setFilterDrawerOpen(true);
+    swipeRef.current = null;
+  };
+
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
@@ -351,7 +371,17 @@ export default function Insights() {
 
   return (
     <AppLayout>
-      <div className="relative min-h-full">
+      <div
+        className="relative min-h-full"
+        onTouchStart={onSwipeStart}
+        onTouchEnd={onSwipeEnd}
+      >
+        {/* Edge swipe hint (mobile only) */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed left-0 top-1/2 z-20 hidden h-24 w-[3px] -translate-y-1/2 rounded-r bg-white/15 max-lg:block"
+        />
+
         {/* Menu Lateral Mobile */}
         <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
           <SheetContent side="left" className="w-[280px] border-white/10 bg-black/95 p-6">
