@@ -30,9 +30,12 @@ const getStoredToken = (key: string) => {
 export const setAuthTokens = (accessToken: string, _refreshToken?: string) => {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  // Persist refresh token across reloads so the client can renew sessions
+  // even when the backend doesn't issue an HttpOnly cookie.
+  if (_refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, _refreshToken);
+  }
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
 };
 
 export const clearAuthTokens = () => {
@@ -181,22 +184,19 @@ class RefreshTokenManager {
   private async doRefresh(): Promise<string | null> {
     const refreshToken = getRefreshToken();
 
-    if (!refreshToken) {
-      console.warn("[RefreshTokenManager] Refresh token não encontrado");
-      return null;
-    }
-
     try {
       console.log("[RefreshTokenManager] Iniciando refresh de token");
 
-      // Usa axios diretamente para evitar interceptadores (senão cria loop)
+      // Use axios directly to avoid the response interceptor loop.
+      // The backend may accept the refresh token either in the body or via
+      // an HttpOnly cookie (withCredentials). Send what we have.
       const { data } = await axios.post<{
         accessToken: string;
         refreshToken?: string;
         expiresIn?: number;
       }>(
         `${API_BASE_URL}/api/auth/refresh`,
-        {},
+        refreshToken ? { refreshToken } : {},
         {
           timeout: 5000,
           withCredentials: true,

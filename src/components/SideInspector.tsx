@@ -175,18 +175,18 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 320 }}
           transition={{ duration: 0.25 }}
-          className="fixed right-0 top-0 bottom-0 z-40 w-80 border-l border-white/5 bg-black shadow-lg"
+          className="fixed right-0 top-0 bottom-0 z-40 w-[22rem] border-l border-white/10 bg-black/95 backdrop-blur-xl shadow-2xl"
         >
           <ScrollArea className="h-full">
-            <div className="space-y-3 p-4">
-              <div className="flex items-start justify-between gap-2">
+            <div className="space-y-4 p-6">
+              <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <Badge variant="outline" className="mb-2 text-[9px] font-medium uppercase tracking-widest">
+                  <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">
                     {config.label}
-                  </Badge>
-                  <h2 className="truncate font-serif text-lg font-semibold text-white">{displayEntity.title}</h2>
+                  </p>
+                  <h2 className="mt-2 font-serif text-2xl tracking-tight text-white break-words">{displayEntity.title}</h2>
                   {!loading && resolvedFromApi && displayEntity.createdAt && (
-                    <p className="mt-1 text-[10px] font-mono text-white/40">
+                    <p className="mt-2 text-[10px] font-mono text-white/40">
                       {formatDate(displayEntity.createdAt)}
                     </p>
                   )}
@@ -195,13 +195,14 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.96 }}
                   onClick={onClose}
-                  className="mt-1 rounded-sm p-1.5 transition-colors hover:bg-white/10"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-sm border border-white/10 text-white/60 transition-colors hover:border-white/30 hover:text-white"
+                  aria-label="Close"
                 >
-                  <X className="h-4 w-4 text-white/40" />
+                  <X className="h-3.5 w-3.5" />
                 </motion.button>
               </div>
 
-              <div className="h-px bg-white/5" />
+              <div className="h-px bg-white/10" />
 
               {/* Graph Score Card - appears when score is available */}
               {(displayEntity as any)?.graphScore !== undefined && (
@@ -241,7 +242,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   {isNote ? (
                     <>
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Resumo</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Summary</h3>
                         <div className="space-y-3">
                           <p className="text-xs leading-relaxed text-white/70">{notePreview}</p>
                           <div className="space-y-2 border-t border-white/5 pt-3">
@@ -310,7 +311,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   ) : (
                     <>
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Metadata</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Metadata</h3>
                         <div className="space-y-2 text-[10px] font-mono text-white/40">
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-1.5">
@@ -337,7 +338,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                       </div>
 
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Details</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Details</h3>
                         <div className="space-y-3">
                           {displayEntity.description ? (
                             <p className="text-xs leading-relaxed text-white/70">{displayEntity.description}</p>
@@ -359,7 +360,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
 
                       {displayEntity.type === "ACTIVITY" && stats && (
                         <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                          <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Activity Metrics</h3>
+                          <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Activity Metrics</h3>
                           <div className="grid grid-cols-3 gap-3 text-center text-[10px] font-mono">
                             <div>
                               <div className="font-semibold text-white">{stats.currentStreak}</div>
@@ -382,7 +383,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                       )}
 
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Connected Notes</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Connected Notes</h3>
                         <div className="space-y-2">
                           {relatedNotes.length > 0 ? (
                             relatedNotes.slice(0, 5).map((note) => (
@@ -408,7 +409,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                       </div>
 
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-white">Related Entities</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Related Entities</h3>
                         <div className="space-y-2">
                           {relatedEntities.length > 0 ? (
                             relatedEntities.slice(0, 5).map((relatedEntity) => (
