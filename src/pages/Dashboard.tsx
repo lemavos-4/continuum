@@ -743,7 +743,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between gap-3 mb-5">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Account</p>
-                  <h2 className="mt-1 font-serif text-2xl text-white">Plan usage</h2>
+                  <h2 className="mt-1 font-serif text-2xl text-white">{t("planLimits")}</h2>
                 </div>
                 <span className="text-[9px] font-mono uppercase tracking-widest text-white/70 border border-white/10 px-2 py-1 rounded-sm">
                   {user?.plan || "FREE"}
@@ -754,7 +754,7 @@ export default function Dashboard() {
                 <div className="space-y-3.5">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-white/60">Notes</span>
+                      <span className="text-white/60">{t("notes")}</span>
                       <span className="text-white/80 font-mono text-[11px] tabular-nums">
                         {usage.notesCount} / {limits.maxNotes === -1 ? "∞" : limits.maxNotes}
                       </span>
@@ -763,7 +763,7 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-white/60">Entities</span>
+                      <span className="text-white/60">{t("entities")}</span>
                       <span className="text-white/80 font-mono text-[11px] tabular-nums">
                         {usage.entitiesCount} / {limits.maxEntities === -1 ? "∞" : limits.maxEntities}
                       </span>
@@ -772,7 +772,7 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-white/60">Vault storage</span>
+                      <span className="text-white/60">{t("vault")}</span>
                       <span className="text-white/80 font-mono text-[11px] tabular-nums">{storageUsed} / {storageLimit}</span>
                     </div>
                     <Progress value={limits.maxVaultSizeMB === -1 ? 0 : Math.min((usage.vaultSizeMB / limits.maxVaultSizeMB) * 100, 100)} className="h-1 bg-white/5" />
@@ -825,7 +825,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Stream</p>
-                <h2 className="mt-1 font-serif text-xl text-white">Recent notes</h2>
+                <h2 className="mt-1 font-serif text-xl text-white">{t("dashboard_recentNotes")}</h2>
               </div>
               <button type="button" onClick={() => navigate("/notes")} className="text-[11px] font-mono uppercase tracking-widest text-white/40 hover:text-white transition-colors">
                 View all
