@@ -10,6 +10,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FileText, Image as ImageIcon, File as FileGeneric,
   Loader2, HardDrive, Trash2, Music, ExternalLink,
@@ -180,6 +181,7 @@ function OtherFileRow({ file, onDelete }: { file: VaultFile; onDelete: (f: Vault
 /* ── Main Vault Page Component ────────────────────────────────────────── */
 
 export default function Vault() {
+  const { t } = useLanguage();
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<VaultFile | null>(null);

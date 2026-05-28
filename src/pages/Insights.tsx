@@ -17,6 +17,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { insightsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /* ── Types ────────────────────────────────────────────────────────────── */
 
@@ -202,6 +203,7 @@ function InsightRow({ item }: { item: InsightItem }) {
 /* ── Componente Principal ─────────────────────────────────────────────── */
 
 export default function Insights() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
 

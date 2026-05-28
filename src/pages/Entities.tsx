@@ -6,6 +6,7 @@ import { usePlanGate } from "@/hooks/usePlanGate";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CreateEntityDialog } from "@/components/CreateEntityDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Plus,
   Search,
@@ -89,6 +90,7 @@ function NavItem({ label, count, active, onClick }: NavItemProps) {
 /* ── Page ─────────────────────────────────────────────────────────────── */
 
 export default function Entities() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { refresh: refreshUsage, applyUsageDelta } = usePlanGate();
