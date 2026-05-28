@@ -119,6 +119,7 @@ function NavItem({ label, count, active, onClick }: NavItemProps) {
 /* ── Page ─────────────────────────────────────────────────────────────── */
 
 export default function Notes() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { loading: authLoading } = useRequireAuth();
