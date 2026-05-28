@@ -10,6 +10,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FileText, Image as ImageIcon, File as FileGeneric,
   Loader2, HardDrive, Trash2, Music, ExternalLink,
@@ -180,6 +181,7 @@ function OtherFileRow({ file, onDelete }: { file: VaultFile; onDelete: (f: Vault
 /* ── Main Vault Page Component ────────────────────────────────────────── */
 
 export default function Vault() {
+  const { t } = useLanguage();
   const [files, setFiles] = useState<VaultFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<VaultFile | null>(null);
@@ -253,7 +255,7 @@ export default function Vault() {
                 Storage
               </p>
               <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">
-                Vault
+                {t("vault_title")}
               </h1>
             </div>
             <p className="mt-3 text-sm text-white/40">
@@ -283,7 +285,7 @@ export default function Vault() {
             /* Empty State poético e limpo igual ao do seu Notes */
             <div className="py-24 text-center">
               <p className="font-serif text-2xl italic text-white/40">
-                Your vault is still empty.
+                {t("vault_empty")}
               </p>
             </div>
           ) : (

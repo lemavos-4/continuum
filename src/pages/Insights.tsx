@@ -17,6 +17,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { insightsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /* ── Types ────────────────────────────────────────────────────────────── */
 
@@ -202,6 +203,7 @@ function InsightRow({ item }: { item: InsightItem }) {
 /* ── Componente Principal ─────────────────────────────────────────────── */
 
 export default function Insights() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -402,7 +404,7 @@ export default function Insights() {
               <div className="flex items-end justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">Intelligence</p>
-                  <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">Insights</h1>
+                  <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">{t("insights_title")}</h1>
                   <p className="mt-2 text-sm text-white/50">
                     Surface structures that matter most across your graph.
                   </p>

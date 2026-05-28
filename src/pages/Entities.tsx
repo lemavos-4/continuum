@@ -6,6 +6,7 @@ import { usePlanGate } from "@/hooks/usePlanGate";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CreateEntityDialog } from "@/components/CreateEntityDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Plus,
   Search,
@@ -89,6 +90,7 @@ function NavItem({ label, count, active, onClick }: NavItemProps) {
 /* ── Page ─────────────────────────────────────────────────────────────── */
 
 export default function Entities() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { refresh: refreshUsage, applyUsageDelta } = usePlanGate();
@@ -260,7 +262,7 @@ export default function Entities() {
               <div className="flex items-end justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">{viewLabel}</p>
-                  <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">Entities</h1>
+                  <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">{t("entities_title")}</h1>
                   <p className="mt-2 text-sm text-white/50">
                     The atoms of your knowledge graph.
                   </p>
@@ -287,7 +289,7 @@ export default function Entities() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by name, type or description…"
+                  placeholder={t("common_search") + "…"}
                   className="w-full border-0 bg-transparent pl-6 text-sm text-white placeholder:italic placeholder:text-white/30 focus:outline-none focus:ring-0"
                 />
               </div>

@@ -229,7 +229,7 @@ export function SessionNavBar() {
                   >
                     {!isCollapsed && (
                       <>
-                        <span className="truncate text-sm font-medium">{display}</span>
+                        <span className="truncate text-sm font-medium normal-case tracking-normal">{display}</span>
                         <ChevronsUpDown className="ml-auto h-3.5 w-3.5 text-sidebar-foreground/70" />
                       </>
                     )}
@@ -243,7 +243,7 @@ export function SessionNavBar() {
                 className="w-56"
               >
                 <div className="flex flex-col gap-0.5 px-2 py-1.5">
-                  <span className="truncate text-sm font-medium text-[hsl(var(--popup-foreground))]">{display}</span>
+                  <span className="truncate text-sm font-medium normal-case tracking-normal text-[hsl(var(--popup-foreground))]">{display}</span>
                   <span className="truncate text-xs text-[hsl(var(--popup-muted))]">{user?.email}</span>
                   <span className="hidden mt-1 inline-flex w-fit items-center rounded border border-[hsl(var(--popup-border))] px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(var(--popup-muted))]">
                     {user?.plan || "FREE"}
