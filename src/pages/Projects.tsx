@@ -4,8 +4,10 @@ import { TimeTrackingList } from "@/components/TimeTrackingList";
 import { Button } from "@/components/ui/button";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Plus } from "@/lib/heroicons";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Projects() {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt">("updatedAt");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
@@ -18,7 +20,7 @@ export default function Projects() {
           <header className="mb-8">
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">Tracking</p>
-              <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">Projects</h1>
+              <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">{t("projects_title")}</h1>
             </div>
             <p className="mt-3 text-sm text-white/40">Track your project activities and milestones.</p>
           </header>
@@ -30,13 +32,13 @@ export default function Projects() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Navigate your timeline…"
+                  placeholder={t("common_search") + "…"}
                   className="w-full border-0 bg-transparent pl-6 text-sm text-white placeholder:italic placeholder:text-white/30 focus:outline-none focus:ring-0"
                 />
               </div>
               <Button className="gap-2" onClick={() => setCreateOpen(true)}>
                 <Plus className="h-3.5 w-3.5" />
-                New project
+                {t("projects_new")}
               </Button>
             </div>
           </div>

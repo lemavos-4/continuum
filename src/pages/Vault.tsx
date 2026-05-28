@@ -253,7 +253,7 @@ export default function Vault() {
                 Storage
               </p>
               <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">
-                Vault
+                {t("vault_title")}
               </h1>
             </div>
             <p className="mt-3 text-sm text-white/40">
@@ -283,7 +283,7 @@ export default function Vault() {
             /* Empty State poético e limpo igual ao do seu Notes */
             <div className="py-24 text-center">
               <p className="font-serif text-2xl italic text-white/40">
-                Your vault is still empty.
+                {t("vault_empty")}
               </p>
             </div>
           ) : (
