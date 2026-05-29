@@ -19,11 +19,13 @@ import {
   LockClosedIcon,
   ArrowPathIcon,
   ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   SunIcon,
   MoonIcon,
 } from "@heroicons/react/24/outline";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 
 const formatLimitValue = (value: number, suffix = "") => (value === -1 ? "Unlimited" : `${value}${suffix}`);
 
@@ -40,6 +42,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const handleExportData = async () => {
     if (exporting) return;
@@ -200,6 +203,24 @@ export default function Profile() {
                 <p className="text-xs text-white/30 truncate">Verified and connected via Google Sign-In.</p>
               </div>
             </div>
+
+            <div className="border border-white/5 bg-white/[0.01] p-5 rounded-sm space-y-3">
+              <div className="flex items-start gap-3">
+                <ArrowUpTrayIcon className="h-4 w-4 text-white/40 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-white/70">Import Markdown</p>
+                  <p className="text-xs text-white/30 mt-0.5">
+                    Bring notes from Obsidian, Logseq, or any folder of .md files. Entities are detected automatically — you confirm.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setImportOpen(true)}
+                className="w-full h-9 border border-white/15 bg-transparent hover:border-white/40 text-white/80 hover:text-white rounded-sm text-sm font-medium transition-colors"
+              >
+                Import Markdown Files
+              </button>
+            </div>
           </div>
 
           {/* PREFERENCES SECTION */}
@@ -305,6 +326,11 @@ export default function Profile() {
           </section>
         </div>
       </div>
+      <MarkdownImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => { refreshUser(); }}
+      />
     </AppLayout>
   );
 }
