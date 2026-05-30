@@ -22,11 +22,13 @@ interface PreviewCandidate {
   suggestedType: EntityType;
   occurrences: number;
   existing: boolean;
+  confidence?: "HIGH" | "LOW";
 }
 interface PreviewResponse {
   files: PreviewFile[];
   candidates: PreviewCandidate[];
   errors: string[];
+  skipped?: string[];
 }
 interface CommitResponse {
   notesCreated: number;
@@ -85,7 +87,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         const initial: Record<string, { accept: boolean; type: EntityType; name: string }> = {};
         for (const c of data.candidates) {
           initial[c.key] = {
-            accept: c.occurrences >= 1 && !c.existing,
+            // Only auto-accept high-confidence signals (wiki-links, hashtags,
+            // frontmatter). LOW = noisy heuristic — user opts in manually.
+            accept: c.confidence === "HIGH" && !c.existing,
             type: c.suggestedType,
             name: c.name,
           };
@@ -253,6 +257,11 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     </li>
                   ))}
                 </ul>
+                {preview.skipped && preview.skipped.length > 0 && (
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mt-2">
+                    {preview.skipped.length} skipped (duplicates or empty)
+                  </p>
+                )}
               </section>
 
               <section>
@@ -284,6 +293,18 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                             }
                             className="flex-1 bg-transparent border-b border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none px-0 py-1"
                           />
+                          {c.confidence && (
+                            <span
+                              className={
+                                "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm border " +
+                                (c.confidence === "HIGH"
+                                  ? "text-emerald-300/80 border-emerald-300/20 bg-emerald-300/5"
+                                  : "text-white/40 border-white/10 bg-white/[0.02]")
+                              }
+                            >
+                              {c.confidence}
+                            </span>
+                          )}
                           <select
                             value={d.type}
                             onChange={(e) =>
