@@ -62,10 +62,12 @@ public class MarkdownImportService {
             JsonNode content,
             List<String> candidateKeys,
             Map<String, Candidate> candidates,
-            int wordCount
+            int wordCount,
+            String contentHash,
+            boolean hasBody
     ) {}
 
-    public record Candidate(String key, String name, String suggestedType, int occurrences) {}
+    public record Candidate(String key, String name, String suggestedType, int occurrences, String confidence) {}
 
     public ParsedFile parse(String filename, String markdown) {
         Node root = parser.parse(markdown == null ? "" : markdown);
@@ -100,10 +102,32 @@ public class MarkdownImportService {
         detectFromFrontmatter(frontmatter, candidates);
         detectFromPlain(plain, candidates);
 
-        int wordCount = plain.isBlank() ? 0 : plain.split("\\s+").length;
+        // Drop noisy LOW-confidence candidates unless they show up multiple times.
+        candidates.values().removeIf(c -> "LOW".equals(c.confidence()) && c.occurrences() < 2);
+
+        int wordCount = plain.isBlank() ? 0 : plain.trim().split("\\s+").length;
+        boolean hasBody = !plain.trim().isEmpty();
+        String hash = sha1(normalizeForHash(plain) + "::" + title);
 
         return new ParsedFile(filename, title, doc,
-                new ArrayList<>(candidates.keySet()), candidates, wordCount);
+                new ArrayList<>(candidates.keySet()), candidates, wordCount, hash, hasBody);
+    }
+
+    private String normalizeForHash(String s) {
+        if (s == null) return "";
+        return s.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
+    }
+
+    private String sha1(String s) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-1");
+            byte[] d = md.digest(s.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : d) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            return Integer.toHexString(s.hashCode());
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -347,22 +371,22 @@ public class MarkdownImportService {
     // ─────────────────────────────────────────────────────────────────────
 
     private void detectFromFrontmatter(Map<String, List<String>> fm, Map<String, Candidate> out) {
-        addAll(fm.get("tags"), "TOPIC", out);
-        addAll(fm.get("topics"), "TOPIC", out);
-        addAll(fm.get("people"), "PERSON", out);
-        addAll(fm.get("person"), "PERSON", out);
-        addAll(fm.get("project"), "PROJECT", out);
-        addAll(fm.get("projects"), "PROJECT", out);
+        addAll(fm.get("tags"), "TOPIC", "HIGH", out);
+        addAll(fm.get("topics"), "TOPIC", "HIGH", out);
+        addAll(fm.get("people"), "PERSON", "HIGH", out);
+        addAll(fm.get("person"), "PERSON", "HIGH", out);
+        addAll(fm.get("project"), "PROJECT", "HIGH", out);
+        addAll(fm.get("projects"), "PROJECT", "HIGH", out);
     }
 
-    private void addAll(List<String> values, String type, Map<String, Candidate> out) {
+    private void addAll(List<String> values, String type, String confidence, Map<String, Candidate> out) {
         if (values == null) return;
         for (String raw : values) {
             if (raw == null) continue;
             // Frontmatter values can come as "[a, b, c]" or single strings
             for (String piece : raw.replaceAll("[\\[\\]]", "").split(",")) {
                 String name = piece.trim().replaceAll("^[\"']|[\"']$", "");
-                if (!name.isBlank()) bump(out, name, type);
+                if (!name.isBlank()) bump(out, name, type, confidence);
             }
         }
     }
@@ -374,14 +398,14 @@ public class MarkdownImportService {
         Matcher m = WIKI_LINK.matcher(text);
         while (m.find()) {
             String name = m.group(1).trim();
-            if (!name.isBlank()) bump(out, name, "TOPIC");
+            if (!name.isBlank()) bump(out, name, "TOPIC", "HIGH");
         }
 
         // Hashtags → TOPIC
         m = HASHTAG.matcher(text);
         while (m.find()) {
             String name = m.group(1).trim();
-            if (!name.isBlank()) bump(out, capitalize(name), "TOPIC");
+            if (!name.isBlank()) bump(out, capitalize(name), "TOPIC", "HIGH");
         }
 
         // Proper nouns (capitalized sequences)
@@ -394,22 +418,24 @@ public class MarkdownImportService {
             String full = name.toString();
             String lower = m.group(1).toLowerCase(Locale.ROOT);
             if (words == 1 && STOPLIST.contains(lower)) continue;
-            // Heuristic: single word = PERSON candidate, multi-word = PROJECT
-            String type = words == 1 ? "PERSON" : "PROJECT";
-            bump(out, full, type);
+            // Skip single-word proper nouns entirely — way too noisy without NER.
+            // Multi-word capitalized sequences are LOW confidence; will be dropped
+            // if they occur only once across the document.
+            if (words < 2) continue;
+            bump(out, full, "PROJECT", "LOW");
         }
     }
 
-    private void bump(Map<String, Candidate> out, String name, String type) {
+    private void bump(Map<String, Candidate> out, String name, String type, String confidence) {
         String key = name.toLowerCase(Locale.ROOT).trim();
         if (key.length() < 2 || key.length() > 80) return;
         Candidate existing = out.get(key);
         if (existing == null) {
-            out.put(key, new Candidate(key, name, type, 1));
+            out.put(key, new Candidate(key, name, type, 1, confidence));
         } else {
-            // Keep stronger type signal: wiki/frontmatter (TOPIC/PROJECT/PERSON via FM) wins on first insert.
-            // Just bump occurrences.
-            out.put(key, new Candidate(key, existing.name(), existing.suggestedType(), existing.occurrences() + 1));
+            // Promote to HIGH if any signal was HIGH.
+            String conf = ("HIGH".equals(existing.confidence()) || "HIGH".equals(confidence)) ? "HIGH" : "LOW";
+            out.put(key, new Candidate(key, existing.name(), existing.suggestedType(), existing.occurrences() + 1, conf));
         }
     }
 
