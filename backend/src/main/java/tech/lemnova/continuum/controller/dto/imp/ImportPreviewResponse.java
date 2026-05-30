@@ -6,7 +6,8 @@ import java.util.List;
 public record ImportPreviewResponse(
         List<PreviewFile> files,
         List<EntityCandidate> candidates,
-        List<String> errors
+        List<String> errors,
+        List<String> skipped
 ) {
     public record PreviewFile(
             String filename,
@@ -21,6 +22,7 @@ public record ImportPreviewResponse(
             String name,
             String suggestedType,
             int occurrences,
-            boolean existing
+            boolean existing,
+            String confidence
     ) {}
 }

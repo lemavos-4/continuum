@@ -66,13 +66,45 @@ public class MarkdownImportOrchestrator {
             if (e.getTitle() != null) existingByKey.put(e.getTitle().toLowerCase(Locale.ROOT).trim(), e);
         }
 
+        // Existing note titles for dedup against the DB.
+        Set<String> existingNoteTitles = new HashSet<>();
+        for (Note n : noteRepo.findByUserId(userId)) {
+            if (n.getTitle() != null) existingNoteTitles.add(n.getTitle().toLowerCase(Locale.ROOT).trim());
+        }
+
         List<ImportPreviewResponse.PreviewFile> previewFiles = new ArrayList<>();
         Map<String, ImportPreviewResponse.EntityCandidate> aggregated = new LinkedHashMap<>();
         List<String> errors = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+        Set<String> seenHashes = new HashSet<>();
+        Set<String> seenTitlesInBatch = new HashSet<>();
+        Set<String> seenFilenames = new HashSet<>();
 
         for (ParsedUpload up : files) {
             try {
+                String baseName = baseName(up.filename());
+                if (!seenFilenames.add(baseName.toLowerCase(Locale.ROOT))) {
+                    skipped.add(up.filename() + ": duplicate filename in upload");
+                    continue;
+                }
                 MarkdownImportService.ParsedFile pf = markdownService.parse(up.filename(), up.content());
+                String titleKey = pf.title() == null ? "" : pf.title().toLowerCase(Locale.ROOT).trim();
+                if (!pf.hasBody()) {
+                    skipped.add(up.filename() + ": empty content");
+                    continue;
+                }
+                if (!seenHashes.add(pf.contentHash())) {
+                    skipped.add(up.filename() + ": duplicate content in upload");
+                    continue;
+                }
+                if (!seenTitlesInBatch.add(titleKey)) {
+                    skipped.add(up.filename() + ": duplicate title in upload (" + pf.title() + ")");
+                    continue;
+                }
+                if (existingNoteTitles.contains(titleKey)) {
+                    skipped.add(up.filename() + ": note already exists (" + pf.title() + ")");
+                    continue;
+                }
                 previewFiles.add(new ImportPreviewResponse.PreviewFile(
                         pf.filename(), pf.title(), pf.content(),
                         new ArrayList<>(pf.candidateKeys()), pf.wordCount()
@@ -81,11 +113,12 @@ public class MarkdownImportOrchestrator {
                     aggregated.merge(c.key(),
                             new ImportPreviewResponse.EntityCandidate(
                                     c.key(), c.name(), c.suggestedType(), c.occurrences(),
-                                    existingByKey.containsKey(c.key())
+                                    existingByKey.containsKey(c.key()), c.confidence()
                             ),
                             (a, b) -> new ImportPreviewResponse.EntityCandidate(
                                     a.key(), a.name(), a.suggestedType(),
-                                    a.occurrences() + b.occurrences(), a.existing()
+                                    a.occurrences() + b.occurrences(), a.existing(),
+                                    ("HIGH".equals(a.confidence()) || "HIGH".equals(b.confidence())) ? "HIGH" : "LOW"
                             ));
                 }
             } catch (Exception e) {
@@ -93,7 +126,13 @@ public class MarkdownImportOrchestrator {
                 errors.add(up.filename() + ": " + e.getMessage());
             }
         }
-        return new ImportPreviewResponse(previewFiles, new ArrayList<>(aggregated.values()), errors);
+        return new ImportPreviewResponse(previewFiles, new ArrayList<>(aggregated.values()), errors, skipped);
+    }
+
+    private String baseName(String path) {
+        if (path == null) return "";
+        int slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+        return slash >= 0 ? path.substring(slash + 1) : path;
     }
 
     public ImportCommitResponse commit(ImportCommitRequest req) {
@@ -106,6 +145,13 @@ public class MarkdownImportOrchestrator {
         }
 
         List<String> errors = new ArrayList<>();
+
+        // Build dedup set from existing notes (defense-in-depth — preview already filtered).
+        Set<String> existingNoteTitles = new HashSet<>();
+        for (Note n : noteRepo.findByUserId(userId)) {
+            if (n.getTitle() != null) existingNoteTitles.add(n.getTitle().toLowerCase(Locale.ROOT).trim());
+        }
+        Set<String> committedTitles = new HashSet<>();
 
         // 1) Resolve / create entities the user accepted.
         List<Entity> existing = entityRepo.findByUserIdAndArchivedAtIsNull(userId);
@@ -165,6 +211,12 @@ public class MarkdownImportOrchestrator {
                     errors.add(f.filename() + ": empty content");
                     continue;
                 }
+                String safeTitle = safeTitle(f.title(), f.filename());
+                String titleKey = safeTitle.toLowerCase(Locale.ROOT).trim();
+                if (existingNoteTitles.contains(titleKey) || !committedTitles.add(titleKey)) {
+                    errors.add(f.filename() + ": skipped duplicate (" + safeTitle + ")");
+                    continue;
+                }
                 String contentStr = content.toString();
 
                 // Resolve entity IDs for this file from accepted candidates.
@@ -190,7 +242,7 @@ public class MarkdownImportOrchestrator {
                 note.setId(noteId);
                 note.setUserId(userId);
                 note.setVaultId(vaultId);
-                note.setTitle(safeTitle(f.title(), f.filename()));
+                note.setTitle(safeTitle);
                 note.setContent(contentStr);
                 note.setFileKey(fileKey);
                 note.setEntityIds(entityIds);
