@@ -22,7 +22,7 @@ interface PreviewCandidate {
   suggestedType: EntityType;
   occurrences: number;
   existing: boolean;
-  confidence?: "HIGH" | "LOW";
+  confidence?: "HIGH" | "MEDIUM" | "LOW";
 }
 interface PreviewResponse {
   files: PreviewFile[];
@@ -87,9 +87,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         const initial: Record<string, { accept: boolean; type: EntityType; name: string }> = {};
         for (const c of data.candidates) {
           initial[c.key] = {
-            // Only auto-accept high-confidence signals (wiki-links, hashtags,
-            // frontmatter). LOW = noisy heuristic — user opts in manually.
-            accept: c.confidence === "HIGH" && !c.existing,
+            // Auto-accept anything the AI or wiki-links/frontmatter surfaced.
+            // LOW = pure capitalisation heuristic → user opts in manually.
+            accept: (c.confidence === "HIGH" || c.confidence === "MEDIUM") && !c.existing,
             type: c.suggestedType,
             name: c.name,
           };
@@ -299,6 +299,8 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                                 "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm border " +
                                 (c.confidence === "HIGH"
                                   ? "text-emerald-300/80 border-emerald-300/20 bg-emerald-300/5"
+                                  : c.confidence === "MEDIUM"
+                                  ? "text-sky-300/80 border-sky-300/20 bg-sky-300/5"
                                   : "text-white/40 border-white/10 bg-white/[0.02]")
                               }
                             >
