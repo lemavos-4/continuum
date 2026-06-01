@@ -25,6 +25,9 @@ import tech.lemnova.continuum.infra.vault.VaultStorageService;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -80,14 +83,41 @@ public class MarkdownImportOrchestrator {
         Set<String> seenTitlesInBatch = new HashSet<>();
         Set<String> seenFilenames = new HashSet<>();
 
-        for (ParsedUpload up : files) {
+        // Parse in parallel (each call may hit Gemini Flash ~1s).
+        record Parsed(ParsedUpload upload, MarkdownImportService.ParsedFile pf, Exception error) {}
+        ForkJoinPool pool = new ForkJoinPool(Math.min(8, Math.max(2, files.size())));
+        List<Parsed> parsed;
+        try {
+            parsed = pool.submit(() ->
+                    files.parallelStream().map(up -> {
+                        try {
+                            return new Parsed(up, markdownService.parse(up.filename(), up.content()), null);
+                        } catch (Exception ex) {
+                            return new Parsed(up, null, ex);
+                        }
+                    }).collect(Collectors.toList())
+            ).get(5, TimeUnit.MINUTES);
+        } catch (Exception ex) {
+            errors.add("Parsing batch failed: " + ex.getMessage());
+            parsed = List.of();
+        } finally {
+            pool.shutdown();
+        }
+
+        for (Parsed p : parsed) {
+            ParsedUpload up = p.upload();
+            if (p.error() != null) {
+                log.warn("Failed to parse {}: {}", up.filename(), p.error().getMessage());
+                errors.add(up.filename() + ": " + p.error().getMessage());
+                continue;
+            }
             try {
                 String baseName = baseName(up.filename());
                 if (!seenFilenames.add(baseName.toLowerCase(Locale.ROOT))) {
                     skipped.add(up.filename() + ": duplicate filename in upload");
                     continue;
                 }
-                MarkdownImportService.ParsedFile pf = markdownService.parse(up.filename(), up.content());
+                MarkdownImportService.ParsedFile pf = p.pf();
                 String titleKey = pf.title() == null ? "" : pf.title().toLowerCase(Locale.ROOT).trim();
                 if (!pf.hasBody()) {
                     skipped.add(up.filename() + ": empty content");
@@ -118,7 +148,7 @@ public class MarkdownImportOrchestrator {
                             (a, b) -> new ImportPreviewResponse.EntityCandidate(
                                     a.key(), a.name(), a.suggestedType(),
                                     a.occurrences() + b.occurrences(), a.existing(),
-                                    ("HIGH".equals(a.confidence()) || "HIGH".equals(b.confidence())) ? "HIGH" : "LOW"
+                                    mergeConfidence(a.confidence(), b.confidence())
                             ));
                 }
             } catch (Exception e) {
@@ -127,6 +157,12 @@ public class MarkdownImportOrchestrator {
             }
         }
         return new ImportPreviewResponse(previewFiles, new ArrayList<>(aggregated.values()), errors, skipped);
+    }
+
+    private static String mergeConfidence(String a, String b) {
+        if ("HIGH".equals(a) || "HIGH".equals(b)) return "HIGH";
+        if ("MEDIUM".equals(a) || "MEDIUM".equals(b)) return "MEDIUM";
+        return "LOW";
     }
 
     private String baseName(String path) {
