@@ -496,7 +496,7 @@ export const importApi = {
     return api.post("/api/import/markdown/preview", form, {
       headers: { "Content-Type": "multipart/form-data" },
       transformRequest: [(data) => data],
-      timeout: 60000,
+      timeout: 180000,
     });
   },
   commitMarkdown: (payload: unknown) =>

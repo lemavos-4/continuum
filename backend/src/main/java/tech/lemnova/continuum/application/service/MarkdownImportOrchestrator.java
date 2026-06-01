@@ -1,6 +1,9 @@
 package tech.lemnova.continuum.application.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,9 @@ import tech.lemnova.continuum.infra.vault.VaultStorageService;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,6 +44,7 @@ public class MarkdownImportOrchestrator {
     private final UserService userService;
     private final PlanConfiguration planConfig;
     private final VaultStorageService storageService;
+    private final ObjectMapper jsonMapper = new ObjectMapper();
 
     public MarkdownImportOrchestrator(MarkdownImportService markdownService,
                                       EntityRepository entityRepo,
@@ -80,14 +87,41 @@ public class MarkdownImportOrchestrator {
         Set<String> seenTitlesInBatch = new HashSet<>();
         Set<String> seenFilenames = new HashSet<>();
 
-        for (ParsedUpload up : files) {
+        // Parse in parallel (each call may hit Gemini Flash ~1s).
+        record Parsed(ParsedUpload upload, MarkdownImportService.ParsedFile pf, Exception error) {}
+        ForkJoinPool pool = new ForkJoinPool(Math.min(8, Math.max(2, files.size())));
+        List<Parsed> parsed;
+        try {
+            parsed = pool.submit(() ->
+                    files.parallelStream().map(up -> {
+                        try {
+                            return new Parsed(up, markdownService.parse(up.filename(), up.content()), null);
+                        } catch (Exception ex) {
+                            return new Parsed(up, null, ex);
+                        }
+                    }).collect(Collectors.toList())
+            ).get(5, TimeUnit.MINUTES);
+        } catch (Exception ex) {
+            errors.add("Parsing batch failed: " + ex.getMessage());
+            parsed = List.of();
+        } finally {
+            pool.shutdown();
+        }
+
+        for (Parsed p : parsed) {
+            ParsedUpload up = p.upload();
+            if (p.error() != null) {
+                log.warn("Failed to parse {}: {}", up.filename(), p.error().getMessage());
+                errors.add(up.filename() + ": " + p.error().getMessage());
+                continue;
+            }
             try {
                 String baseName = baseName(up.filename());
                 if (!seenFilenames.add(baseName.toLowerCase(Locale.ROOT))) {
                     skipped.add(up.filename() + ": duplicate filename in upload");
                     continue;
                 }
-                MarkdownImportService.ParsedFile pf = markdownService.parse(up.filename(), up.content());
+                MarkdownImportService.ParsedFile pf = p.pf();
                 String titleKey = pf.title() == null ? "" : pf.title().toLowerCase(Locale.ROOT).trim();
                 if (!pf.hasBody()) {
                     skipped.add(up.filename() + ": empty content");
@@ -118,7 +152,7 @@ public class MarkdownImportOrchestrator {
                             (a, b) -> new ImportPreviewResponse.EntityCandidate(
                                     a.key(), a.name(), a.suggestedType(),
                                     a.occurrences() + b.occurrences(), a.existing(),
-                                    ("HIGH".equals(a.confidence()) || "HIGH".equals(b.confidence())) ? "HIGH" : "LOW"
+                                    mergeConfidence(a.confidence(), b.confidence())
                             ));
                 }
             } catch (Exception e) {
@@ -127,6 +161,12 @@ public class MarkdownImportOrchestrator {
             }
         }
         return new ImportPreviewResponse(previewFiles, new ArrayList<>(aggregated.values()), errors, skipped);
+    }
+
+    private static String mergeConfidence(String a, String b) {
+        if ("HIGH".equals(a) || "HIGH".equals(b)) return "HIGH";
+        if ("MEDIUM".equals(a) || "MEDIUM".equals(b)) return "MEDIUM";
+        return "LOW";
     }
 
     private String baseName(String path) {
@@ -217,17 +257,26 @@ public class MarkdownImportOrchestrator {
                     errors.add(f.filename() + ": skipped duplicate (" + safeTitle + ")");
                     continue;
                 }
-                String contentStr = content.toString();
-
                 // Resolve entity IDs for this file from accepted candidates.
                 List<String> entityIds = new ArrayList<>();
+                Map<String, tech.lemnova.continuum.domain.entity.Entity> mentionByName = new LinkedHashMap<>();
                 if (f.candidateKeys() != null) {
                     for (String k : f.candidateKeys()) {
                         if (k == null) continue;
                         Entity e = acceptedByKey.get(k.toLowerCase(Locale.ROOT).trim());
-                        if (e != null && !entityIds.contains(e.getId())) entityIds.add(e.getId());
+                        if (e != null) {
+                            if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
+                            mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
+                        }
                     }
                 }
+
+                // Rewrite Tiptap content: replace plain-text occurrences of accepted
+                // entity names with proper @mention nodes so they show as links.
+                JsonNode rewritten = mentionByName.isEmpty()
+                        ? content
+                        : applyMentions(content, mentionByName);
+                String contentStr = rewritten.toString();
 
                 String noteId = UUID.randomUUID().toString();
                 String fileKey;
@@ -300,4 +349,112 @@ public class MarkdownImportOrchestrator {
     }
 
     public record ParsedUpload(String filename, String content) {}
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Tiptap mention rewriting
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Walks the Tiptap doc and replaces literal text matches of entity names
+     * inside text nodes with mention nodes ({type:"mention", attrs:{id,label}}).
+     * Case-insensitive, word-boundary aware. Each entity is mentioned at most
+     * once per note to avoid noise.
+     */
+    private JsonNode applyMentions(JsonNode doc, Map<String, Entity> mentionByName) {
+        if (doc == null || !(doc instanceof ObjectNode)) return doc;
+        Set<String> alreadyLinked = new HashSet<>();
+        ObjectNode copy = doc.deepCopy();
+        walkAndLink(copy, mentionByName, alreadyLinked);
+        return copy;
+    }
+
+    private void walkAndLink(JsonNode node, Map<String, Entity> mentionByName, Set<String> alreadyLinked) {
+        if (node == null) return;
+        if (node.isObject() && "text".equals(node.path("type").asText())) {
+            // Handled by parent (we need to splice siblings).
+            return;
+        }
+        JsonNode contentNode = node.path("content");
+        if (contentNode.isArray()) {
+            ArrayNode arr = (ArrayNode) contentNode;
+            ArrayNode rebuilt = jsonMapper.createArrayNode();
+            for (JsonNode child : arr) {
+                if (child.isObject() && "text".equals(child.path("type").asText())) {
+                    splitTextWithMentions((ObjectNode) child, mentionByName, alreadyLinked, rebuilt);
+                } else {
+                    walkAndLink(child, mentionByName, alreadyLinked);
+                    rebuilt.add(child);
+                }
+            }
+            ((ObjectNode) node).set("content", rebuilt);
+        }
+    }
+
+    private void splitTextWithMentions(ObjectNode textNode, Map<String, Entity> mentionByName,
+                                       Set<String> alreadyLinked, ArrayNode out) {
+        String text = textNode.path("text").asText("");
+        if (text.isEmpty()) { out.add(textNode); return; }
+        JsonNode marks = textNode.get("marks");
+        // If text has marks, skip rewriting — keep formatting intact.
+        if (marks != null && marks.isArray() && marks.size() > 0) { out.add(textNode); return; }
+
+        String lower = text.toLowerCase(Locale.ROOT);
+        // Find earliest match among remaining entities.
+        int bestStart = -1, bestLen = 0;
+        Entity bestEntity = null;
+        for (Map.Entry<String, Entity> e : mentionByName.entrySet()) {
+            if (alreadyLinked.contains(e.getKey())) continue;
+            String name = e.getValue().getTitle();
+            if (name == null || name.length() < 2) continue;
+            int idx = findWordBoundary(lower, name.toLowerCase(Locale.ROOT));
+            if (idx >= 0 && (bestStart < 0 || idx < bestStart)) {
+                bestStart = idx;
+                bestLen = name.length();
+                bestEntity = e.getValue();
+            }
+        }
+        if (bestStart < 0 || bestEntity == null) {
+            out.add(textNode);
+            return;
+        }
+        // Pre-text
+        if (bestStart > 0) {
+            ObjectNode before = jsonMapper.createObjectNode();
+            before.put("type", "text");
+            before.put("text", text.substring(0, bestStart));
+            out.add(before);
+        }
+        // Mention
+        ObjectNode mention = jsonMapper.createObjectNode();
+        mention.put("type", "mention");
+        ObjectNode attrs = jsonMapper.createObjectNode();
+        attrs.put("id", bestEntity.getId());
+        attrs.put("label", bestEntity.getTitle());
+        mention.set("attrs", attrs);
+        out.add(mention);
+        alreadyLinked.add(bestEntity.getTitle().toLowerCase(Locale.ROOT));
+
+        // Recurse on tail to catch other entities.
+        String tail = text.substring(bestStart + bestLen);
+        if (!tail.isEmpty()) {
+            ObjectNode tailNode = jsonMapper.createObjectNode();
+            tailNode.put("type", "text");
+            tailNode.put("text", tail);
+            splitTextWithMentions(tailNode, mentionByName, alreadyLinked, out);
+        }
+    }
+
+    private int findWordBoundary(String haystack, String needle) {
+        int from = 0;
+        while (from <= haystack.length() - needle.length()) {
+            int idx = haystack.indexOf(needle, from);
+            if (idx < 0) return -1;
+            boolean leftOk = idx == 0 || !Character.isLetterOrDigit(haystack.charAt(idx - 1));
+            int end = idx + needle.length();
+            boolean rightOk = end == haystack.length() || !Character.isLetterOrDigit(haystack.charAt(end));
+            if (leftOk && rightOk) return idx;
+            from = idx + 1;
+        }
+        return -1;
+    }
 }
