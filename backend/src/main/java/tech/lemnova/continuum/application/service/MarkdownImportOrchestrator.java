@@ -349,4 +349,112 @@ public class MarkdownImportOrchestrator {
     }
 
     public record ParsedUpload(String filename, String content) {}
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Tiptap mention rewriting
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Walks the Tiptap doc and replaces literal text matches of entity names
+     * inside text nodes with mention nodes ({type:"mention", attrs:{id,label}}).
+     * Case-insensitive, word-boundary aware. Each entity is mentioned at most
+     * once per note to avoid noise.
+     */
+    private JsonNode applyMentions(JsonNode doc, Map<String, Entity> mentionByName) {
+        if (doc == null || !(doc instanceof ObjectNode)) return doc;
+        Set<String> alreadyLinked = new HashSet<>();
+        ObjectNode copy = doc.deepCopy();
+        walkAndLink(copy, mentionByName, alreadyLinked);
+        return copy;
+    }
+
+    private void walkAndLink(JsonNode node, Map<String, Entity> mentionByName, Set<String> alreadyLinked) {
+        if (node == null) return;
+        if (node.isObject() && "text".equals(node.path("type").asText())) {
+            // Handled by parent (we need to splice siblings).
+            return;
+        }
+        JsonNode contentNode = node.path("content");
+        if (contentNode.isArray()) {
+            ArrayNode arr = (ArrayNode) contentNode;
+            ArrayNode rebuilt = jsonMapper.createArrayNode();
+            for (JsonNode child : arr) {
+                if (child.isObject() && "text".equals(child.path("type").asText())) {
+                    splitTextWithMentions((ObjectNode) child, mentionByName, alreadyLinked, rebuilt);
+                } else {
+                    walkAndLink(child, mentionByName, alreadyLinked);
+                    rebuilt.add(child);
+                }
+            }
+            ((ObjectNode) node).set("content", rebuilt);
+        }
+    }
+
+    private void splitTextWithMentions(ObjectNode textNode, Map<String, Entity> mentionByName,
+                                       Set<String> alreadyLinked, ArrayNode out) {
+        String text = textNode.path("text").asText("");
+        if (text.isEmpty()) { out.add(textNode); return; }
+        JsonNode marks = textNode.get("marks");
+        // If text has marks, skip rewriting — keep formatting intact.
+        if (marks != null && marks.isArray() && marks.size() > 0) { out.add(textNode); return; }
+
+        String lower = text.toLowerCase(Locale.ROOT);
+        // Find earliest match among remaining entities.
+        int bestStart = -1, bestLen = 0;
+        Entity bestEntity = null;
+        for (Map.Entry<String, Entity> e : mentionByName.entrySet()) {
+            if (alreadyLinked.contains(e.getKey())) continue;
+            String name = e.getValue().getTitle();
+            if (name == null || name.length() < 2) continue;
+            int idx = findWordBoundary(lower, name.toLowerCase(Locale.ROOT));
+            if (idx >= 0 && (bestStart < 0 || idx < bestStart)) {
+                bestStart = idx;
+                bestLen = name.length();
+                bestEntity = e.getValue();
+            }
+        }
+        if (bestStart < 0 || bestEntity == null) {
+            out.add(textNode);
+            return;
+        }
+        // Pre-text
+        if (bestStart > 0) {
+            ObjectNode before = jsonMapper.createObjectNode();
+            before.put("type", "text");
+            before.put("text", text.substring(0, bestStart));
+            out.add(before);
+        }
+        // Mention
+        ObjectNode mention = jsonMapper.createObjectNode();
+        mention.put("type", "mention");
+        ObjectNode attrs = jsonMapper.createObjectNode();
+        attrs.put("id", bestEntity.getId());
+        attrs.put("label", bestEntity.getTitle());
+        mention.set("attrs", attrs);
+        out.add(mention);
+        alreadyLinked.add(bestEntity.getTitle().toLowerCase(Locale.ROOT));
+
+        // Recurse on tail to catch other entities.
+        String tail = text.substring(bestStart + bestLen);
+        if (!tail.isEmpty()) {
+            ObjectNode tailNode = jsonMapper.createObjectNode();
+            tailNode.put("type", "text");
+            tailNode.put("text", tail);
+            splitTextWithMentions(tailNode, mentionByName, alreadyLinked, out);
+        }
+    }
+
+    private int findWordBoundary(String haystack, String needle) {
+        int from = 0;
+        while (from <= haystack.length() - needle.length()) {
+            int idx = haystack.indexOf(needle, from);
+            if (idx < 0) return -1;
+            boolean leftOk = idx == 0 || !Character.isLetterOrDigit(haystack.charAt(idx - 1));
+            int end = idx + needle.length();
+            boolean rightOk = end == haystack.length() || !Character.isLetterOrDigit(haystack.charAt(end));
+            if (leftOk && rightOk) return idx;
+            from = idx + 1;
+        }
+        return -1;
+    }
 }
