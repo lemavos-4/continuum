@@ -1,6 +1,9 @@
 package tech.lemnova.continuum.application.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -41,6 +44,7 @@ public class MarkdownImportOrchestrator {
     private final UserService userService;
     private final PlanConfiguration planConfig;
     private final VaultStorageService storageService;
+    private final ObjectMapper jsonMapper = new ObjectMapper();
 
     public MarkdownImportOrchestrator(MarkdownImportService markdownService,
                                       EntityRepository entityRepo,
@@ -253,17 +257,26 @@ public class MarkdownImportOrchestrator {
                     errors.add(f.filename() + ": skipped duplicate (" + safeTitle + ")");
                     continue;
                 }
-                String contentStr = content.toString();
-
                 // Resolve entity IDs for this file from accepted candidates.
                 List<String> entityIds = new ArrayList<>();
+                Map<String, tech.lemnova.continuum.domain.entity.Entity> mentionByName = new LinkedHashMap<>();
                 if (f.candidateKeys() != null) {
                     for (String k : f.candidateKeys()) {
                         if (k == null) continue;
                         Entity e = acceptedByKey.get(k.toLowerCase(Locale.ROOT).trim());
-                        if (e != null && !entityIds.contains(e.getId())) entityIds.add(e.getId());
+                        if (e != null) {
+                            if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
+                            mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
+                        }
                     }
                 }
+
+                // Rewrite Tiptap content: replace plain-text occurrences of accepted
+                // entity names with proper @mention nodes so they show as links.
+                JsonNode rewritten = mentionByName.isEmpty()
+                        ? content
+                        : applyMentions(content, mentionByName);
+                String contentStr = rewritten.toString();
 
                 String noteId = UUID.randomUUID().toString();
                 String fileKey;
