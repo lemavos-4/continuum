@@ -448,12 +448,27 @@ public class MarkdownImportService {
             String full = name.toString();
             String lower = m.group(1).toLowerCase(Locale.ROOT);
             if (words == 1 && STOPLIST.contains(lower)) continue;
-            // Skip single-word proper nouns entirely — way too noisy without NER.
-            // Multi-word capitalized sequences are LOW confidence; will be dropped
-            // if they occur only once across the document.
-            if (words < 2) continue;
-            bump(out, full, "PROJECT", "LOW");
+            // Skip matches at the start of a sentence (capitalization is grammatical, not a proper noun).
+            if (isSentenceStart(text, m.start())) continue;
+            // Single-word → PERSON candidate; multi-word → PROJECT candidate.
+            // Both are LOW confidence and require 2+ occurrences (filtered later).
+            String type = words == 1 ? "PERSON" : "PROJECT";
+            bump(out, full, type, "LOW");
         }
+    }
+
+    /**
+     * A position is "sentence start" if it's the beginning of the text, or the
+     * previous non-whitespace character is a sentence terminator. This catches
+     * the common false positive of "... ended. Today was good" capturing "Today".
+     */
+    private boolean isSentenceStart(String text, int pos) {
+        int i = pos - 1;
+        while (i >= 0 && Character.isWhitespace(text.charAt(i))) i--;
+        if (i < 0) return true;
+        char c = text.charAt(i);
+        return c == '.' || c == '!' || c == '?' || c == ':' || c == ';'
+                || c == '-' || c == '•' || c == '*' || c == '|';
     }
 
     private void bump(Map<String, Candidate> out, String name, String type, String confidence) {
