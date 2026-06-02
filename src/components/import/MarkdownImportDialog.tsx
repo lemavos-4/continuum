@@ -70,12 +70,22 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const handleFiles = useCallback(
     async (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
-      const files = Array.from(fileList).filter((f) =>
-        /\.(md|markdown|txt)$/i.test(f.name)
-      );
+      const all = Array.from(fileList);
+      const files = all.filter((f) => /\.md$/i.test(f.name));
+      const skipped = all.length - files.length;
       if (files.length === 0) {
-        toast({ title: "No Markdown files found", description: "Select .md or .markdown files.", variant: "destructive" });
+        toast({
+          title: "No Markdown files found",
+          description: "Only .md files are supported. Other formats (images, audio, PDFs) are ignored.",
+          variant: "destructive",
+        });
         return;
+      }
+      if (skipped > 0) {
+        toast({
+          title: `${skipped} file${skipped === 1 ? "" : "s"} ignored`,
+          description: "Only .md files are imported. Other formats were skipped.",
+        });
       }
       setBusy(true);
       setProgress(15);
@@ -162,18 +172,18 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         onOpenChange(v);
       }}
     >
-      <DialogContent className="max-w-3xl bg-black/95 border border-white/10 text-white p-0 overflow-hidden">
-        <DialogHeader className="p-6 border-b border-white/10">
+      <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] sm:max-h-[85vh] bg-black/95 border border-white/10 text-white p-0 overflow-hidden rounded-sm flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 border-b border-white/10 text-left">
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">Onboarding</p>
-          <DialogTitle className="font-serif text-2xl tracking-tight text-white mt-2">
+          <DialogTitle className="font-serif text-xl sm:text-2xl tracking-tight text-white mt-2">
             Import Markdown
           </DialogTitle>
-          <p className="text-xs text-white/50 mt-1">
-            Upload .md files or a whole folder. We will detect people, projects and topics — you confirm what becomes an entity.
+          <p className="text-xs text-white/50 mt-1 leading-relaxed">
+            Upload .md files or a whole folder. Other formats are ignored. We detect people, projects and topics — you confirm what becomes an entity.
           </p>
         </DialogHeader>
 
-        <div className="p-6 min-h-[360px] max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
           {step === "upload" && (
             <div className="space-y-4">
               <div
@@ -182,18 +192,18 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   e.preventDefault();
                   handleFiles(e.dataTransfer.files);
                 }}
-                className="border border-dashed border-white/15 rounded-sm p-10 text-center hover:border-white/30 transition-colors"
+                className="border border-dashed border-white/15 rounded-sm p-6 sm:p-10 text-center hover:border-white/30 transition-colors"
               >
                 <ArrowUpTrayIcon className="w-8 h-8 mx-auto text-white/40" />
-                <p className="text-sm text-white/70 mt-3">Drag .md files here</p>
+                <p className="text-sm text-white/70 mt-3">Drop .md files here</p>
                 <p className="text-xs text-white/40 mt-1">or pick from your device</p>
-                <div className="flex items-center justify-center gap-2 mt-5">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 mt-5">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => inputRef.current?.click()}
                     disabled={busy}
-                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5"
+                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5 w-full sm:w-auto"
                   >
                     Select files
                   </Button>
@@ -202,7 +212,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     size="sm"
                     onClick={() => folderInputRef.current?.click()}
                     disabled={busy}
-                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5"
+                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5 w-full sm:w-auto"
                   >
                     Select folder
                   </Button>
@@ -210,7 +220,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 <input
                   ref={inputRef}
                   type="file"
-                  accept=".md,.markdown,.txt"
+                  accept=".md,text/markdown"
                   multiple
                   className="hidden"
                   onChange={(e) => handleFiles(e.target.files)}
@@ -240,7 +250,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
 
           {step === "review" && preview && (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <Stat label="Files" value={preview.files.length} />
                 <Stat label="Candidates" value={preview.candidates.length} />
                 <Stat label="Accepted" value={acceptedCount} />
@@ -275,54 +285,58 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     {preview.candidates.map((c) => {
                       const d = decisions[c.key] ?? { accept: false, type: c.suggestedType, name: c.name };
                       return (
-                        <li key={c.key} className="flex items-center gap-3 py-2 border-b border-white/[0.04]">
-                          <input
-                            type="checkbox"
-                            checked={d.accept}
-                            onChange={(e) =>
-                              setDecisions((s) => ({ ...s, [c.key]: { ...d, accept: e.target.checked } }))
-                            }
-                            className="w-3.5 h-3.5 accent-white/80"
-                            disabled={c.existing}
-                          />
-                          <input
-                            type="text"
-                            value={d.name}
-                            onChange={(e) =>
-                              setDecisions((s) => ({ ...s, [c.key]: { ...d, name: e.target.value } }))
-                            }
-                            className="flex-1 bg-transparent border-b border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none px-0 py-1"
-                          />
-                          {c.confidence && (
-                            <span
-                              className={
-                                "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm border " +
-                                (c.confidence === "HIGH"
-                                  ? "text-emerald-300/80 border-emerald-300/20 bg-emerald-300/5"
-                                  : c.confidence === "MEDIUM"
-                                  ? "text-sky-300/80 border-sky-300/20 bg-sky-300/5"
-                                  : "text-white/40 border-white/10 bg-white/[0.02]")
+                        <li key={c.key} className="py-2 border-b border-white/[0.04]">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <input
+                              type="checkbox"
+                              checked={d.accept}
+                              onChange={(e) =>
+                                setDecisions((s) => ({ ...s, [c.key]: { ...d, accept: e.target.checked } }))
                               }
-                            >
-                              {c.confidence}
+                              className="w-4 h-4 accent-white/80 shrink-0"
+                              disabled={c.existing}
+                            />
+                            <input
+                              type="text"
+                              value={d.name}
+                              onChange={(e) =>
+                                setDecisions((s) => ({ ...s, [c.key]: { ...d, name: e.target.value } }))
+                              }
+                              className="flex-1 min-w-0 bg-transparent border-b border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none px-0 py-1"
+                            />
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 tabular-nums shrink-0">
+                              {c.existing ? "exists" : `${c.occurrences}×`}
                             </span>
-                          )}
-                          <select
-                            value={d.type}
-                            onChange={(e) =>
-                              setDecisions((s) => ({ ...s, [c.key]: { ...d, type: e.target.value as EntityType } }))
-                            }
-                            className="bg-transparent border border-white/10 text-xs text-white/80 rounded-sm px-2 py-1 focus:outline-none focus:border-white/30"
-                          >
-                            {TYPES.map((t) => (
-                              <option key={t} value={t} className="bg-black">
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 w-14 text-right tabular-nums">
-                            {c.existing ? "exists" : `${c.occurrences}×`}
-                          </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2 pl-6">
+                            <select
+                              value={d.type}
+                              onChange={(e) =>
+                                setDecisions((s) => ({ ...s, [c.key]: { ...d, type: e.target.value as EntityType } }))
+                              }
+                              className="bg-transparent border border-white/10 text-xs text-white/80 rounded-sm px-2 py-1 focus:outline-none focus:border-white/30"
+                            >
+                              {TYPES.map((t) => (
+                                <option key={t} value={t} className="bg-black">
+                                  {t}
+                                </option>
+                              ))}
+                            </select>
+                            {c.confidence && (
+                              <span
+                                className={
+                                  "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm border " +
+                                  (c.confidence === "HIGH"
+                                    ? "text-emerald-300/80 border-emerald-300/20 bg-emerald-300/5"
+                                    : c.confidence === "MEDIUM"
+                                    ? "text-sky-300/80 border-sky-300/20 bg-sky-300/5"
+                                    : "text-white/40 border-white/10 bg-white/[0.02]")
+                                }
+                              >
+                                {c.confidence}
+                              </span>
+                            )}
+                          </div>
                         </li>
                       );
                     })}
@@ -340,13 +354,13 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
 
               {busy && <Progress value={progress} className="h-[2px] bg-white/5 rounded-none" />}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 sticky bottom-0 bg-black/95 -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={reset}
                   disabled={busy}
-                  className="text-white/60 hover:text-white"
+                  className="text-white/60 hover:text-white w-full sm:w-auto"
                 >
                   Back
                 </Button>
@@ -354,7 +368,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   size="sm"
                   onClick={handleCommit}
                   disabled={busy}
-                  className="bg-white text-black hover:bg-white/90"
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
                 >
                   {busy && <ArrowPathIcon className="w-3.5 h-3.5 mr-2 animate-spin" />}
                   Import {preview.files.length} {preview.files.length === 1 ? "file" : "files"}
@@ -372,7 +386,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   <p className="text-xs text-white/50">Your knowledge graph just grew.</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
                 <Stat label="Notes" value={result.notesCreated} />
                 <Stat label="New entities" value={result.entitiesCreated} />
                 <Stat label="Reused" value={result.entitiesReused} />
@@ -392,7 +406,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     reset();
                     onOpenChange(false);
                   }}
-                  className="bg-white text-black hover:bg-white/90"
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
                 >
                   Done
                 </Button>
@@ -407,9 +421,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border border-white/5 bg-white/[0.02] p-4 rounded-sm">
+    <div className="border border-white/5 bg-white/[0.02] p-3 sm:p-4 rounded-sm">
       <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">{label}</p>
-      <p className="text-2xl font-serif text-white mt-1 tabular-nums">{value}</p>
+      <p className="text-xl sm:text-2xl font-serif text-white mt-1 tabular-nums">{value}</p>
     </div>
   );
 }

@@ -46,7 +46,11 @@ public class ImportController {
         for (MultipartFile f : files) {
             if (f == null || f.isEmpty()) continue;
             String name = f.getOriginalFilename() == null ? "untitled.md" : f.getOriginalFilename();
-            if (!name.toLowerCase().endsWith(".md") && !name.toLowerCase().endsWith(".markdown") && !name.toLowerCase().endsWith(".txt")) {
+            String lower = name.toLowerCase();
+            // Only accept plain .md files. Reject .markdown/.txt and any binary
+            // assets (.png, .jpg, .mp3, .pdf…) that may slip through a folder upload —
+            // they pollute entity detection and bloat the payload.
+            if (!lower.endsWith(".md")) {
                 continue;
             }
             if (f.getSize() > MAX_BYTES_PER_FILE) continue;
