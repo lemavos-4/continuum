@@ -70,12 +70,22 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const handleFiles = useCallback(
     async (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
-      const files = Array.from(fileList).filter((f) =>
-        /\.(md|markdown|txt)$/i.test(f.name)
-      );
+      const all = Array.from(fileList);
+      const files = all.filter((f) => /\.md$/i.test(f.name));
+      const skipped = all.length - files.length;
       if (files.length === 0) {
-        toast({ title: "No Markdown files found", description: "Select .md or .markdown files.", variant: "destructive" });
+        toast({
+          title: "No Markdown files found",
+          description: "Only .md files are supported. Other formats (images, audio, PDFs) are ignored.",
+          variant: "destructive",
+        });
         return;
+      }
+      if (skipped > 0) {
+        toast({
+          title: `${skipped} file${skipped === 1 ? "" : "s"} ignored`,
+          description: "Only .md files are imported. Other formats were skipped.",
+        });
       }
       setBusy(true);
       setProgress(15);
