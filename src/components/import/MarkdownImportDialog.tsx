@@ -172,18 +172,18 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         onOpenChange(v);
       }}
     >
-      <DialogContent className="max-w-3xl bg-black/95 border border-white/10 text-white p-0 overflow-hidden">
-        <DialogHeader className="p-6 border-b border-white/10">
+      <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] sm:max-h-[85vh] bg-black/95 border border-white/10 text-white p-0 overflow-hidden rounded-sm flex flex-col">
+        <DialogHeader className="p-4 sm:p-6 border-b border-white/10 text-left">
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">Onboarding</p>
-          <DialogTitle className="font-serif text-2xl tracking-tight text-white mt-2">
+          <DialogTitle className="font-serif text-xl sm:text-2xl tracking-tight text-white mt-2">
             Import Markdown
           </DialogTitle>
-          <p className="text-xs text-white/50 mt-1">
-            Upload .md files or a whole folder. We will detect people, projects and topics — you confirm what becomes an entity.
+          <p className="text-xs text-white/50 mt-1 leading-relaxed">
+            Upload .md files or a whole folder. Other formats are ignored. We detect people, projects and topics — you confirm what becomes an entity.
           </p>
         </DialogHeader>
 
-        <div className="p-6 min-h-[360px] max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
           {step === "upload" && (
             <div className="space-y-4">
               <div
@@ -192,18 +192,18 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   e.preventDefault();
                   handleFiles(e.dataTransfer.files);
                 }}
-                className="border border-dashed border-white/15 rounded-sm p-10 text-center hover:border-white/30 transition-colors"
+                className="border border-dashed border-white/15 rounded-sm p-6 sm:p-10 text-center hover:border-white/30 transition-colors"
               >
                 <ArrowUpTrayIcon className="w-8 h-8 mx-auto text-white/40" />
-                <p className="text-sm text-white/70 mt-3">Drag .md files here</p>
+                <p className="text-sm text-white/70 mt-3">Drop .md files here</p>
                 <p className="text-xs text-white/40 mt-1">or pick from your device</p>
-                <div className="flex items-center justify-center gap-2 mt-5">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 mt-5">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => inputRef.current?.click()}
                     disabled={busy}
-                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5"
+                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5 w-full sm:w-auto"
                   >
                     Select files
                   </Button>
@@ -212,7 +212,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     size="sm"
                     onClick={() => folderInputRef.current?.click()}
                     disabled={busy}
-                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5"
+                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5 w-full sm:w-auto"
                   >
                     Select folder
                   </Button>
@@ -220,7 +220,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 <input
                   ref={inputRef}
                   type="file"
-                  accept=".md,.markdown,.txt"
+                  accept=".md,text/markdown"
                   multiple
                   className="hidden"
                   onChange={(e) => handleFiles(e.target.files)}
