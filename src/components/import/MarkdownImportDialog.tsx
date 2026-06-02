@@ -250,7 +250,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
 
           {step === "review" && preview && (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <Stat label="Files" value={preview.files.length} />
                 <Stat label="Candidates" value={preview.candidates.length} />
                 <Stat label="Accepted" value={acceptedCount} />
@@ -285,54 +285,58 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     {preview.candidates.map((c) => {
                       const d = decisions[c.key] ?? { accept: false, type: c.suggestedType, name: c.name };
                       return (
-                        <li key={c.key} className="flex items-center gap-3 py-2 border-b border-white/[0.04]">
-                          <input
-                            type="checkbox"
-                            checked={d.accept}
-                            onChange={(e) =>
-                              setDecisions((s) => ({ ...s, [c.key]: { ...d, accept: e.target.checked } }))
-                            }
-                            className="w-3.5 h-3.5 accent-white/80"
-                            disabled={c.existing}
-                          />
-                          <input
-                            type="text"
-                            value={d.name}
-                            onChange={(e) =>
-                              setDecisions((s) => ({ ...s, [c.key]: { ...d, name: e.target.value } }))
-                            }
-                            className="flex-1 bg-transparent border-b border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none px-0 py-1"
-                          />
-                          {c.confidence && (
-                            <span
-                              className={
-                                "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm border " +
-                                (c.confidence === "HIGH"
-                                  ? "text-emerald-300/80 border-emerald-300/20 bg-emerald-300/5"
-                                  : c.confidence === "MEDIUM"
-                                  ? "text-sky-300/80 border-sky-300/20 bg-sky-300/5"
-                                  : "text-white/40 border-white/10 bg-white/[0.02]")
+                        <li key={c.key} className="py-2 border-b border-white/[0.04]">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <input
+                              type="checkbox"
+                              checked={d.accept}
+                              onChange={(e) =>
+                                setDecisions((s) => ({ ...s, [c.key]: { ...d, accept: e.target.checked } }))
                               }
-                            >
-                              {c.confidence}
+                              className="w-4 h-4 accent-white/80 shrink-0"
+                              disabled={c.existing}
+                            />
+                            <input
+                              type="text"
+                              value={d.name}
+                              onChange={(e) =>
+                                setDecisions((s) => ({ ...s, [c.key]: { ...d, name: e.target.value } }))
+                              }
+                              className="flex-1 min-w-0 bg-transparent border-b border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none px-0 py-1"
+                            />
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 tabular-nums shrink-0">
+                              {c.existing ? "exists" : `${c.occurrences}×`}
                             </span>
-                          )}
-                          <select
-                            value={d.type}
-                            onChange={(e) =>
-                              setDecisions((s) => ({ ...s, [c.key]: { ...d, type: e.target.value as EntityType } }))
-                            }
-                            className="bg-transparent border border-white/10 text-xs text-white/80 rounded-sm px-2 py-1 focus:outline-none focus:border-white/30"
-                          >
-                            {TYPES.map((t) => (
-                              <option key={t} value={t} className="bg-black">
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 w-14 text-right tabular-nums">
-                            {c.existing ? "exists" : `${c.occurrences}×`}
-                          </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2 pl-6">
+                            <select
+                              value={d.type}
+                              onChange={(e) =>
+                                setDecisions((s) => ({ ...s, [c.key]: { ...d, type: e.target.value as EntityType } }))
+                              }
+                              className="bg-transparent border border-white/10 text-xs text-white/80 rounded-sm px-2 py-1 focus:outline-none focus:border-white/30"
+                            >
+                              {TYPES.map((t) => (
+                                <option key={t} value={t} className="bg-black">
+                                  {t}
+                                </option>
+                              ))}
+                            </select>
+                            {c.confidence && (
+                              <span
+                                className={
+                                  "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm border " +
+                                  (c.confidence === "HIGH"
+                                    ? "text-emerald-300/80 border-emerald-300/20 bg-emerald-300/5"
+                                    : c.confidence === "MEDIUM"
+                                    ? "text-sky-300/80 border-sky-300/20 bg-sky-300/5"
+                                    : "text-white/40 border-white/10 bg-white/[0.02]")
+                                }
+                              >
+                                {c.confidence}
+                              </span>
+                            )}
+                          </div>
                         </li>
                       );
                     })}
@@ -350,13 +354,13 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
 
               {busy && <Progress value={progress} className="h-[2px] bg-white/5 rounded-none" />}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 sticky bottom-0 bg-black/95 -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={reset}
                   disabled={busy}
-                  className="text-white/60 hover:text-white"
+                  className="text-white/60 hover:text-white w-full sm:w-auto"
                 >
                   Back
                 </Button>
@@ -364,7 +368,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   size="sm"
                   onClick={handleCommit}
                   disabled={busy}
-                  className="bg-white text-black hover:bg-white/90"
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
                 >
                   {busy && <ArrowPathIcon className="w-3.5 h-3.5 mr-2 animate-spin" />}
                   Import {preview.files.length} {preview.files.length === 1 ? "file" : "files"}
@@ -382,7 +386,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   <p className="text-xs text-white/50">Your knowledge graph just grew.</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
                 <Stat label="Notes" value={result.notesCreated} />
                 <Stat label="New entities" value={result.entitiesCreated} />
                 <Stat label="Reused" value={result.entitiesReused} />
@@ -402,7 +406,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     reset();
                     onOpenChange(false);
                   }}
-                  className="bg-white text-black hover:bg-white/90"
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
                 >
                   Done
                 </Button>
