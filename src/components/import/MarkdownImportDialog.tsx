@@ -421,9 +421,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border border-white/5 bg-white/[0.02] p-4 rounded-sm">
+    <div className="border border-white/5 bg-white/[0.02] p-3 sm:p-4 rounded-sm">
       <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">{label}</p>
-      <p className="text-2xl font-serif text-white mt-1 tabular-nums">{value}</p>
+      <p className="text-xl sm:text-2xl font-serif text-white mt-1 tabular-nums">{value}</p>
     </div>
   );
 }
