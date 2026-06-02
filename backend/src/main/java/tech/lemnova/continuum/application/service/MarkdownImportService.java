@@ -11,7 +11,6 @@ import org.commonmark.ext.front.matter.YamlFrontMatterVisitor;
 import org.commonmark.node.*;
 import org.commonmark.parser.Parser;
 import org.springframework.stereotype.Service;
-import tech.lemnova.continuum.infra.ai.GeminiService;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -27,7 +26,6 @@ public class MarkdownImportService {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final Parser parser;
-    private final GeminiService geminiService;
 
     // Wiki-style links: [[Foo]] or [[Foo|alias]]
     private static final Pattern WIKI_LINK = Pattern.compile("\\[\\[([^\\]|]+)(?:\\|[^\\]]+)?\\]\\]");
@@ -65,8 +63,7 @@ public class MarkdownImportService {
             "nota","note","texto","text","arquivo","file","pasta","folder"
     );
 
-    public MarkdownImportService(GeminiService geminiService) {
-        this.geminiService = geminiService;
+    public MarkdownImportService() {
         List<org.commonmark.Extension> extensions = Arrays.asList(
                 YamlFrontMatterExtension.create(),
                 TablesExtension.create()
@@ -120,37 +117,11 @@ public class MarkdownImportService {
         detectFromFrontmatter(frontmatter, candidates);
         detectFromPlain(plain, candidates);
 
-        // Drop noisy LOW-confidence candidates unless they show up multiple times.
-        candidates.values().removeIf(c -> "LOW".equals(c.confidence()) && c.occurrences() < 2);
-        // Drop generic concepts.
+        // Conservative rule: only keep LOW-confidence candidates that occur 2+ times.
+        // HIGH (wiki-links / hashtags / frontmatter) always pass.
+        candidates.values().removeIf(c -> !"HIGH".equals(c.confidence()) && c.occurrences() < 2);
+        // Drop generic concepts / noise words.
         candidates.values().removeIf(c -> isNoise(c.name()));
-
-        // Ask Gemini for a clean title + high-quality entities. Falls back silently.
-        if (geminiService != null && geminiService.isAvailable() && !plain.isBlank()) {
-            try {
-                GeminiService.Analysis ai = geminiService.analyze(filename, title, plain);
-                if (ai != null) {
-                    if (ai.title() != null && !ai.title().isBlank()
-                            && ai.title().length() <= 120) {
-                        title = ai.title().trim();
-                    }
-                    if (ai.entities() != null) {
-                        for (GeminiService.EntitySuggestion s : ai.entities()) {
-                            if (s == null || s.name() == null || s.name().isBlank()) continue;
-                            if (isNoise(s.name())) continue;
-                            String type = switch (s.type() == null ? "TOPIC" : s.type()) {
-                                case "PERSON", "PROJECT", "TOPIC", "ORGANIZATION" -> s.type();
-                                default -> "TOPIC";
-                            };
-                            String conf = "HIGH".equals(s.confidence()) ? "HIGH" : "MEDIUM";
-                            bumpAi(candidates, s.name().trim(), type, conf);
-                        }
-                    }
-                }
-            } catch (Exception ex) {
-                // Stay silent — heuristics already populated candidates.
-            }
-        }
 
         int wordCount = plain.isBlank() ? 0 : plain.trim().split("\\s+").length;
         boolean hasBody = !plain.trim().isEmpty();
@@ -170,26 +141,6 @@ public class MarkdownImportService {
     private static String stripAccents(String s) {
         return java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    }
-
-    /**
-     * Merge an AI-suggested entity. AI signals dominate type and never demote
-     * a HIGH heuristic signal (wiki-links/frontmatter) — they reinforce it.
-     */
-    private void bumpAi(Map<String, Candidate> out, String name, String type, String confidence) {
-        String key = name.toLowerCase(Locale.ROOT).trim();
-        if (key.length() < 2 || key.length() > 80) return;
-        Candidate existing = out.get(key);
-        if (existing == null) {
-            out.put(key, new Candidate(key, name, type, 1, confidence));
-            return;
-        }
-        String conf = "HIGH".equals(existing.confidence()) || "HIGH".equals(confidence)
-                ? "HIGH"
-                : ("MEDIUM".equals(existing.confidence()) || "MEDIUM".equals(confidence) ? "MEDIUM" : "LOW");
-        // AI overrides type unless heuristic was HIGH (wiki-link/frontmatter trusted).
-        String finalType = "HIGH".equals(existing.confidence()) ? existing.suggestedType() : type;
-        out.put(key, new Candidate(key, existing.name(), finalType, existing.occurrences() + 1, conf));
     }
 
     private String normalizeForHash(String s) {
