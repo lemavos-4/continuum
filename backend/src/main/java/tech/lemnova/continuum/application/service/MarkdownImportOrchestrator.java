@@ -254,7 +254,7 @@ public class MarkdownImportOrchestrator {
             Set<String> matchedCustomKeys = new LinkedHashSet<>();
             for (ImportCommitRequest.CommitFile f : req.files()) {
                 if (f == null || f.content() == null || f.content().isNull()) continue;
-                String plain = extractPlainFromTiptap(f.content()).toLowerCase(Locale.ROOT);
+                String plain = normalizeSearchText(extractPlainFromTiptap(f.content()));
                 for (CustomSpec spec : customSpecs.values()) {
                     if (findWordBoundary(plain, spec.key()) >= 0) matchedCustomKeys.add(spec.key());
                 }
@@ -330,7 +330,7 @@ public class MarkdownImportOrchestrator {
                 // Scan the note for any user-supplied custom entities and link them
                 // whenever their name appears (case-insensitive, word boundary).
                 if (!customByKey.isEmpty()) {
-                    String plain = extractPlainFromTiptap(content).toLowerCase(Locale.ROOT);
+                    String plain = normalizeSearchText(extractPlainFromTiptap(content));
                     for (Map.Entry<String, Entity> ce : customByKey.entrySet()) {
                         if (findWordBoundary(plain, ce.getKey()) >= 0) {
                             Entity e = ce.getValue();
