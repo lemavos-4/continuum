@@ -419,7 +419,7 @@ public class MarkdownImportOrchestrator {
     private boolean isUnsafeManualEntityName(String name) {
         if (name == null || name.length() < 2 || name.length() > 80) return true;
         String lower = name.toLowerCase(Locale.ROOT);
-        return lower.contains("/") || lower.contains("\\\\") || lower.contains("://")
+        return lower.contains("/") || lower.contains("\\") || lower.contains("://")
                 || lower.startsWith("www.") || BLOCKED_ENTITY_FILE_EXT.matcher(lower).matches();
     }
 
@@ -495,14 +495,14 @@ public class MarkdownImportOrchestrator {
         // If text has marks, skip rewriting — keep formatting intact.
         if (marks != null && marks.isArray() && marks.size() > 0) { out.add(textNode); return; }
 
-        String lower = normalizeSearchText(text);
+        String lower = text.toLowerCase(Locale.ROOT);
         // Find earliest match among remaining entities.
         int bestStart = -1, bestLen = 0;
         Entity bestEntity = null;
         for (Map.Entry<String, Entity> e : mentionByName.entrySet()) {
             String name = e.getValue().getTitle();
             if (name == null || name.length() < 2) continue;
-            int idx = findWordBoundary(lower, e.getKey());
+            int idx = findWordBoundary(lower, name.toLowerCase(Locale.ROOT));
             if (idx >= 0 && (bestStart < 0 || idx < bestStart || (idx == bestStart && name.length() > bestLen))) {
                 bestStart = idx;
                 bestLen = name.length();
