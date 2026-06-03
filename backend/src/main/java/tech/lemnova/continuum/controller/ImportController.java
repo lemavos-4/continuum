@@ -12,6 +12,10 @@ import tech.lemnova.continuum.controller.dto.imp.ImportCommitRequest;
 import tech.lemnova.continuum.controller.dto.imp.ImportCommitResponse;
 import tech.lemnova.continuum.controller.dto.imp.ImportPreviewResponse;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,20 +53,47 @@ public class ImportController {
             // Strip directory path to compare just the basename.
             int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
             String base = slash >= 0 ? name.substring(slash + 1) : name;
-            String lower = base.toLowerCase();
-            // Only accept plain `.md` files. Reject every other extension
-            // (.markdown, .txt, .png, .jpg, .mp3, .pdf, .json, .html…) as well as
-            // hidden files (`.DS_Store`, `.obsidian/…`) and dotfiles that may
-            // sneak in through a folder upload. They pollute entity detection
-            // and bloat the payload.
-            if (base.startsWith(".")) continue;
-            if (!lower.endsWith(".md")) continue;
+            // Only accept real `.md` files. Reject every other extension
+            // (.markdown, .txt, .png, .jpg, .opus, .mp3, .pdf, .json, .html…),
+            // hidden files/folders (`.DS_Store`, `.obsidian/…`) and obvious
+            // binary content renamed as .md.
+            if (!isAcceptedMarkdownFilename(name, base)) continue;
             if (f.getSize() > MAX_BYTES_PER_FILE) continue;
+            byte[] bytes = f.getBytes();
+            if (!isTextUtf8(bytes)) continue;
             total += f.getSize();
             if (total > MAX_TOTAL_BYTES) break;
-            uploads.add(new ParsedUpload(name, new String(f.getBytes(), StandardCharsets.UTF_8)));
+            uploads.add(new ParsedUpload(name, new String(bytes, StandardCharsets.UTF_8)));
         }
         return ResponseEntity.ok(orchestrator.preview(uploads));
+    }
+
+    private boolean isAcceptedMarkdownFilename(String originalName, String base) {
+        if (base == null || base.isBlank() || base.startsWith(".")) return false;
+        String normalized = originalName == null ? base : originalName.replace('\\', '/');
+        for (String segment : normalized.split("/")) {
+            if (segment.isBlank() || segment.startsWith(".")) return false;
+        }
+        String lower = base.toLowerCase();
+        if (!lower.endsWith(".md")) return false;
+        String withoutMd = lower.substring(0, lower.length() - 3);
+        return !withoutMd.matches(".*\\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|mp3|wav|m4a|ogg|opus|flac|aac|mp4|mov|webm|avi|mkv|pdf|docx?|xlsx?|pptx?|csv|tsv|zip|rar|7z|tar|gz|exe|dmg|apk|html?|css|js|ts|tsx|jsx|json|xml|yaml|yml)$");
+    }
+
+    private boolean isTextUtf8(byte[] bytes) {
+        if (bytes == null) return false;
+        for (byte b : bytes) {
+            if (b == 0) return false;
+        }
+        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        try {
+            decoder.decode(ByteBuffer.wrap(bytes));
+            return true;
+        } catch (CharacterCodingException ex) {
+            return false;
+        }
     }
 
     @PostMapping(value = "/markdown/commit", consumes = MediaType.APPLICATION_JSON_VALUE)
