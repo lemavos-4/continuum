@@ -159,6 +159,8 @@ public class MarkdownImportService {
         if (name == null) return true;
         String n = stripAccents(name.toLowerCase(Locale.ROOT).trim());
         if (n.length() < 2) return true;
+        if (looksLikePathOrUrl(n)) return true;
+        if (FILE_EXT.matcher(n).find()) return true;
         return NOISE.contains(n);
     }
 
