@@ -114,7 +114,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     async (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
       const all = Array.from(fileList);
-      const files = all.filter((f) => /\.md$/i.test(f.name));
+      const files = all.filter(isStrictMarkdownFile);
       const skipped = all.length - files.length;
       if (files.length === 0) {
         toast({
@@ -136,6 +136,14 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         const res = await importApi.previewMarkdown(files);
         setProgress(90);
         const data = res.data as PreviewResponse;
+        if (data.files.length === 0) {
+          toast({
+            title: "No importable notes",
+            description: "Only valid UTF-8 .md files with content can be imported.",
+            variant: "destructive",
+          });
+          return;
+        }
         setPreview(data);
         const initial: Record<string, { accept: boolean; type: EntityType; name: string }> = {};
         for (const c of data.candidates) {
@@ -274,7 +282,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 <input
                   ref={inputRef}
                   type="file"
-                  accept=".md,text/markdown"
+                  accept=".md"
                   multiple
                   className="hidden"
                   onChange={(e) => handleFiles(e.target.files)}
