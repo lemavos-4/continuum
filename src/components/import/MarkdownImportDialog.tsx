@@ -57,6 +57,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [decisions, setDecisions] = useState<Record<string, { accept: boolean; type: EntityType; name: string }>>({});
   const [result, setResult] = useState<CommitResponse | null>(null);
+  const [customEntities, setCustomEntities] = useState<{ name: string; type: EntityType }[]>([]);
+  const [customDraftName, setCustomDraftName] = useState("");
+  const [customDraftType, setCustomDraftType] = useState<EntityType>("PERSON");
 
   const reset = useCallback(() => {
     setStep("upload");
@@ -65,6 +68,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     setResult(null);
     setProgress(0);
     setBusy(false);
+    setCustomEntities([]);
+    setCustomDraftName("");
+    setCustomDraftType("PERSON");
   }, []);
 
   const handleFiles = useCallback(
@@ -141,6 +147,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
             accept: d?.accept ?? false,
           };
         }),
+        customEntities: customEntities.map((c) => ({ name: c.name, type: c.type })),
       };
       setProgress(60);
       const res = await importApi.commitMarkdown(payload);
@@ -157,7 +164,17 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     } finally {
       setBusy(false);
     }
-  }, [preview, decisions, onImported, toast]);
+  }, [preview, decisions, customEntities, onImported, toast]);
+
+  const addCustomEntity = useCallback(() => {
+    const name = customDraftName.trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    setCustomEntities((s) =>
+      s.some((c) => c.name.toLowerCase() === key) ? s : [...s, { name, type: customDraftType }]
+    );
+    setCustomDraftName("");
+  }, [customDraftName, customDraftType]);
 
   const acceptedCount = useMemo(
     () => Object.values(decisions).filter((d) => d.accept).length,
@@ -271,6 +288,75 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mt-2">
                     {preview.skipped.length} skipped (duplicates or empty)
                   </p>
+                )}
+              </section>
+
+              <section>
+                <h3 className="text-[10px] uppercase tracking-[0.32em] text-white/40 mb-3">
+                  Add your own entities
+                </h3>
+                <p className="text-[11px] text-white/40 mb-3 leading-relaxed">
+                  Type a name we missed. We'll scan every note for it and link it wherever it appears.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={customDraftName}
+                    onChange={(e) => setCustomDraftName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustomEntity();
+                      }
+                    }}
+                    placeholder="e.g. Emilly, Project Phoenix…"
+                    className="flex-1 min-w-0 bg-transparent border border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none rounded-sm px-3 py-2"
+                  />
+                  <select
+                    value={customDraftType}
+                    onChange={(e) => setCustomDraftType(e.target.value as EntityType)}
+                    className="bg-transparent border border-white/10 text-xs text-white/80 rounded-sm px-2 py-2 focus:outline-none focus:border-white/30"
+                  >
+                    {TYPES.map((t) => (
+                      <option key={t} value={t} className="bg-black">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={addCustomEntity}
+                    disabled={busy || !customDraftName.trim()}
+                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {customEntities.length > 0 && (
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {customEntities.map((c, i) => (
+                      <li
+                        key={`${c.name}-${i}`}
+                        className="flex items-center gap-2 border border-white/10 bg-white/[0.03] rounded-sm pl-2 pr-1 py-1"
+                      >
+                        <span className="text-xs text-white/90">{c.name}</span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-white/40">
+                          {c.type}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${c.name}`}
+                          onClick={() =>
+                            setCustomEntities((s) => s.filter((_, idx) => idx !== i))
+                          }
+                          className="text-white/40 hover:text-white px-1"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </section>
 

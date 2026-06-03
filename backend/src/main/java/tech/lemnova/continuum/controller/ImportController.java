@@ -46,13 +46,17 @@ public class ImportController {
         for (MultipartFile f : files) {
             if (f == null || f.isEmpty()) continue;
             String name = f.getOriginalFilename() == null ? "untitled.md" : f.getOriginalFilename();
-            String lower = name.toLowerCase();
-            // Only accept plain .md files. Reject .markdown/.txt and any binary
-            // assets (.png, .jpg, .mp3, .pdf…) that may slip through a folder upload —
-            // they pollute entity detection and bloat the payload.
-            if (!lower.endsWith(".md")) {
-                continue;
-            }
+            // Strip directory path to compare just the basename.
+            int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
+            String base = slash >= 0 ? name.substring(slash + 1) : name;
+            String lower = base.toLowerCase();
+            // Only accept plain `.md` files. Reject every other extension
+            // (.markdown, .txt, .png, .jpg, .mp3, .pdf, .json, .html…) as well as
+            // hidden files (`.DS_Store`, `.obsidian/…`) and dotfiles that may
+            // sneak in through a folder upload. They pollute entity detection
+            // and bloat the payload.
+            if (base.startsWith(".")) continue;
+            if (!lower.endsWith(".md")) continue;
             if (f.getSize() > MAX_BYTES_PER_FILE) continue;
             total += f.getSize();
             if (total > MAX_TOTAL_BYTES) break;

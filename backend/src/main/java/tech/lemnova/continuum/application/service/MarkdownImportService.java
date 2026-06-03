@@ -63,6 +63,30 @@ public class MarkdownImportService {
             "nota","note","texto","text","arquivo","file","pasta","folder"
     );
 
+    /**
+     * File extensions we frequently see leaking into entity detection through
+     * Obsidian-style embeds like {@code ![[image.png]]} or {@code [[audio.mp3]]}.
+     * Any candidate whose name ends with one of these is dropped.
+     */
+    private static final Pattern FILE_EXT = Pattern.compile(
+            "(?i)\\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|" +
+            "mp3|wav|m4a|ogg|flac|aac|" +
+            "mp4|mov|webm|avi|mkv|" +
+            "pdf|docx?|xlsx?|pptx?|csv|tsv|" +
+            "zip|rar|7z|tar|gz|" +
+            "exe|dmg|apk|" +
+            "html?|css|js|ts|tsx|jsx|json|xml|yaml|yml)$"
+    );
+
+    /**
+     * Anything looking like a path or URL — drop too.
+     */
+    private static boolean looksLikePathOrUrl(String s) {
+        if (s == null) return false;
+        return s.contains("/") || s.contains("\\") || s.startsWith("http")
+                || s.contains("://") || s.startsWith("www.");
+    }
+
     public MarkdownImportService() {
         List<org.commonmark.Extension> extensions = Arrays.asList(
                 YamlFrontMatterExtension.create(),
@@ -135,6 +159,8 @@ public class MarkdownImportService {
         if (name == null) return true;
         String n = stripAccents(name.toLowerCase(Locale.ROOT).trim());
         if (n.length() < 2) return true;
+        if (looksLikePathOrUrl(n)) return true;
+        if (FILE_EXT.matcher(n).find()) return true;
         return NOISE.contains(n);
     }
 
