@@ -74,7 +74,7 @@ public class MarkdownImportOrchestrator {
         List<Entity> existing = entityRepo.findByUserIdAndArchivedAtIsNull(userId);
         Map<String, Entity> existingByKey = new HashMap<>();
         for (Entity e : existing) {
-            if (e.getTitle() != null) existingByKey.put(e.getTitle().toLowerCase(Locale.ROOT).trim(), e);
+            if (e.getTitle() != null) existingByKey.put(normalizeEntityKey(e.getTitle()), e);
         }
 
         // Existing note titles for dedup against the DB.
@@ -151,7 +151,7 @@ public class MarkdownImportOrchestrator {
                     aggregated.merge(c.key(),
                             new ImportPreviewResponse.EntityCandidate(
                                     c.key(), c.name(), c.suggestedType(), c.occurrences(),
-                                    existingByKey.containsKey(c.key()), c.confidence()
+                                    existingByKey.containsKey(normalizeEntityKey(c.key())), c.confidence()
                             ),
                             (a, b) -> new ImportPreviewResponse.EntityCandidate(
                                     a.key(), a.name(), a.suggestedType(),
