@@ -41,13 +41,10 @@ public class ImportController {
         if (files == null || files.length == 0) {
             return ResponseEntity.badRequest().build();
         }
-        if (files.length > MAX_FILES) {
-            return ResponseEntity.badRequest().build();
-        }
-
         long total = 0;
         List<ParsedUpload> uploads = new ArrayList<>();
         for (MultipartFile f : files) {
+            if (uploads.size() >= MAX_FILES) break;
             if (f == null || f.isEmpty()) continue;
             String name = f.getOriginalFilename() == null ? "untitled.md" : f.getOriginalFilename();
             // Strip directory path to compare just the basename.
