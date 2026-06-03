@@ -70,7 +70,7 @@ public class MarkdownImportService {
      */
     private static final Pattern FILE_EXT = Pattern.compile(
             "(?i)\\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|" +
-            "mp3|wav|m4a|ogg|flac|aac|" +
+            "mp3|wav|m4a|ogg|opus|flac|aac|" +
             "mp4|mov|webm|avi|mkv|" +
             "pdf|docx?|xlsx?|pptx?|csv|tsv|" +
             "zip|rar|7z|tar|gz|" +

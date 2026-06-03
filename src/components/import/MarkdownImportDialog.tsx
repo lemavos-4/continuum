@@ -39,6 +39,43 @@ interface CommitResponse {
 }
 
 const TYPES: EntityType[] = ["PERSON", "PROJECT", "TOPIC", "ORGANIZATION", "ACTIVITY"];
+const BLOCKED_EXTENSION_BEFORE_MD = /\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|mp3|wav|m4a|ogg|opus|flac|aac|mp4|mov|webm|avi|mkv|pdf|docx?|xlsx?|pptx?|csv|tsv|zip|rar|7z|tar|gz|exe|dmg|apk|html?|css|js|ts|tsx|jsx|json|xml|yaml|yml)$/i;
+const BINARY_MIME = /^(audio|video|image)\//i;
+
+const uploadPath = (file: File) =>
+  (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+
+const isStrictMarkdownFile = (file: File) => {
+  const path = uploadPath(file).replace(/\\/g, "/");
+  const parts = path.split("/").filter(Boolean);
+  const base = parts[parts.length - 1] ?? file.name;
+  if (!base || parts.some((part) => part.startsWith("."))) return false;
+  if (!/^[^/\\]+\.md$/i.test(base)) return false;
+  const stem = base.slice(0, -3);
+  if (BLOCKED_EXTENSION_BEFORE_MD.test(stem)) return false;
+  if (file.type && BINARY_MIME.test(file.type)) return false;
+  return true;
+};
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const tiptapPlainText = (node: unknown): string => {
+  if (!node || typeof node !== "object") return "";
+  const record = node as { type?: string; text?: string; attrs?: { label?: string }; content?: unknown[] };
+  if (record.type === "text") return record.text ?? "";
+  if (record.type === "mention") return record.attrs?.label ?? "";
+  return Array.isArray(record.content) ? record.content.map(tiptapPlainText).join(" ") : "";
+};
+
+const normalizeSearchText = (value: string) =>
+  value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+
+const textContainsEntity = (plainText: string, name: string) => {
+  const normalizedText = normalizeSearchText(plainText);
+  const normalizedName = normalizeSearchText(name);
+  if (!normalizedName) return false;
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(normalizedName)}($|[^\\p{L}\\p{N}])`, "u").test(normalizedText);
+};
 
 interface Props {
   open: boolean;
@@ -57,7 +94,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [decisions, setDecisions] = useState<Record<string, { accept: boolean; type: EntityType; name: string }>>({});
   const [result, setResult] = useState<CommitResponse | null>(null);
-  const [customEntities, setCustomEntities] = useState<{ name: string; type: EntityType }[]>([]);
+  const [customEntities, setCustomEntities] = useState<{ name: string; type: EntityType; matches: number }[]>([]);
   const [customDraftName, setCustomDraftName] = useState("");
   const [customDraftType, setCustomDraftType] = useState<EntityType>("PERSON");
 
@@ -77,7 +114,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     async (fileList: FileList | null) => {
       if (!fileList || fileList.length === 0) return;
       const all = Array.from(fileList);
-      const files = all.filter((f) => /\.md$/i.test(f.name));
+      const files = all.filter(isStrictMarkdownFile);
       const skipped = all.length - files.length;
       if (files.length === 0) {
         toast({
@@ -99,6 +136,14 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         const res = await importApi.previewMarkdown(files);
         setProgress(90);
         const data = res.data as PreviewResponse;
+        if (data.files.length === 0) {
+          toast({
+            title: "No importable notes",
+            description: "Only valid UTF-8 .md files with content can be imported.",
+            variant: "destructive",
+          });
+          return;
+        }
         setPreview(data);
         const initial: Record<string, { accept: boolean; type: EntityType; name: string }> = {};
         for (const c of data.candidates) {
@@ -169,12 +214,29 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const addCustomEntity = useCallback(() => {
     const name = customDraftName.trim();
     if (!name) return;
+    if (BLOCKED_EXTENSION_BEFORE_MD.test(name) || name.includes("/") || name.includes("\\")) {
+      toast({
+        title: "Invalid entity name",
+        description: "Files, paths and extensions are not valid entities.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const matches = preview?.files.filter((file) => textContainsEntity(tiptapPlainText(file.content), name)).length ?? 0;
+    if (matches === 0) {
+      toast({
+        title: "Entity not found",
+        description: "This name was not found in the notes selected for import.",
+        variant: "destructive",
+      });
+      return;
+    }
     const key = name.toLowerCase();
     setCustomEntities((s) =>
-      s.some((c) => c.name.toLowerCase() === key) ? s : [...s, { name, type: customDraftType }]
+      s.some((c) => c.name.toLowerCase() === key) ? s : [...s, { name, type: customDraftType, matches }]
     );
     setCustomDraftName("");
-  }, [customDraftName, customDraftType]);
+  }, [customDraftName, customDraftType, preview, toast]);
 
   const acceptedCount = useMemo(
     () => Object.values(decisions).filter((d) => d.accept).length,
@@ -237,7 +299,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 <input
                   ref={inputRef}
                   type="file"
-                  accept=".md,text/markdown"
+                  accept=".md"
                   multiple
                   className="hidden"
                   onChange={(e) => handleFiles(e.target.files)}
@@ -248,6 +310,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   /* @ts-expect-error non-standard */
                   webkitdirectory=""
                   directory=""
+                  accept=".md"
                   multiple
                   className="hidden"
                   onChange={(e) => handleFiles(e.target.files)}
@@ -343,6 +406,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                         <span className="text-xs text-white/90">{c.name}</span>
                         <span className="text-[9px] uppercase tracking-[0.2em] text-white/40">
                           {c.type}
+                        </span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-white/30">
+                          {c.matches} {c.matches === 1 ? "note" : "notes"}
                         </span>
                         <button
                           type="button"

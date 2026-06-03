@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,6 +46,9 @@ public class MarkdownImportOrchestrator {
     private final PlanConfiguration planConfig;
     private final VaultStorageService storageService;
     private final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final Pattern BLOCKED_ENTITY_FILE_EXT = Pattern.compile(
+            "(?i).+\\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|mp3|wav|m4a|ogg|opus|flac|aac|mp4|mov|webm|avi|mkv|pdf|docx?|xlsx?|pptx?|csv|tsv|zip|rar|7z|tar|gz|exe|dmg|apk|html?|css|js|ts|tsx|jsx|json|xml|yaml|yml)$"
+    );
 
     public MarkdownImportOrchestrator(MarkdownImportService markdownService,
                                       EntityRepository entityRepo,
@@ -70,7 +74,7 @@ public class MarkdownImportOrchestrator {
         List<Entity> existing = entityRepo.findByUserIdAndArchivedAtIsNull(userId);
         Map<String, Entity> existingByKey = new HashMap<>();
         for (Entity e : existing) {
-            if (e.getTitle() != null) existingByKey.put(e.getTitle().toLowerCase(Locale.ROOT).trim(), e);
+            if (e.getTitle() != null) existingByKey.put(normalizeEntityKey(e.getTitle()), e);
         }
 
         // Existing note titles for dedup against the DB.
@@ -147,7 +151,7 @@ public class MarkdownImportOrchestrator {
                     aggregated.merge(c.key(),
                             new ImportPreviewResponse.EntityCandidate(
                                     c.key(), c.name(), c.suggestedType(), c.occurrences(),
-                                    existingByKey.containsKey(c.key()), c.confidence()
+                                    existingByKey.containsKey(normalizeEntityKey(c.key())), c.confidence()
                             ),
                             (a, b) -> new ImportPreviewResponse.EntityCandidate(
                                     a.key(), a.name(), a.suggestedType(),
@@ -197,7 +201,7 @@ public class MarkdownImportOrchestrator {
         List<Entity> existing = entityRepo.findByUserIdAndArchivedAtIsNull(userId);
         Map<String, Entity> entityByKey = new HashMap<>();
         for (Entity e : existing) {
-            if (e.getTitle() != null) entityByKey.put(e.getTitle().toLowerCase(Locale.ROOT).trim(), e);
+            if (e.getTitle() != null) entityByKey.put(normalizeEntityKey(e.getTitle()), e);
         }
 
         int entitiesCreated = 0;
@@ -206,10 +210,11 @@ public class MarkdownImportOrchestrator {
         if (req.entities() != null) {
             for (ImportCommitRequest.EntityDecision d : req.entities()) {
                 if (d == null || !d.accept() || d.name() == null || d.name().isBlank()) continue;
-                String key = (d.key() != null ? d.key() : d.name()).toLowerCase(Locale.ROOT).trim();
-                Entity already = entityByKey.get(key);
+                String candidateKey = normalizeEntityKey(d.key() != null ? d.key() : d.name());
+                String entityKey = normalizeEntityKey(d.name());
+                Entity already = entityByKey.get(entityKey);
                 if (already != null) {
-                    acceptedByKey.put(key, already);
+                    acceptedByKey.put(candidateKey, already);
                     entitiesReused++;
                     continue;
                 }
@@ -217,33 +222,52 @@ public class MarkdownImportOrchestrator {
                     errors.add("Entity limit reached, stopping at " + d.name());
                     break;
                 }
-                EntityType type;
-                try { type = EntityType.fromValue(d.type() == null ? "TOPIC" : d.type()); }
-                catch (Exception ex) { type = EntityType.TOPIC; }
                 Entity created = Entity.builder()
                         .userId(userId)
                         .vaultId(vaultId)
                         .title(d.name().trim())
-                        .type(type)
+                        .type(parseEntityType(d.type()))
                         .createdAt(Instant.now())
                         .build();
                 created = entityRepo.save(created);
                 userService.incrementEntityCount(userId);
-                entityByKey.put(key, created);
-                acceptedByKey.put(key, created);
+                entityByKey.put(entityKey, created);
+                acceptedByKey.put(candidateKey, created);
                 entitiesCreated++;
             }
         }
 
-        // 1b) User-supplied custom entities — same treatment as accepted candidates,
-        //     but they're scanned against every file below.
+        // 1b) User-supplied custom entities. First scan the imported notes; only
+        //     create/reuse manual entities that actually appear in the batch.
         Map<String, Entity> customByKey = new LinkedHashMap<>();
+        record CustomSpec(String key, String name, EntityType type) {}
+        Map<String, CustomSpec> customSpecs = new LinkedHashMap<>();
         if (req.customEntities() != null) {
             for (ImportCommitRequest.CustomEntity ce : req.customEntities()) {
                 if (ce == null || ce.name() == null || ce.name().isBlank()) continue;
-                String name = ce.name().trim();
-                String key = name.toLowerCase(Locale.ROOT);
-                if (customByKey.containsKey(key)) continue;
+                String name = cleanManualEntityName(ce.name());
+                if (isUnsafeManualEntityName(name)) continue;
+                String key = normalizeEntityKey(name);
+                if (customSpecs.containsKey(key)) continue;
+                customSpecs.put(key, new CustomSpec(key, name, parseEntityType(ce.type())));
+            }
+        }
+        if (!customSpecs.isEmpty()) {
+            Set<String> matchedCustomKeys = new LinkedHashSet<>();
+            for (ImportCommitRequest.CommitFile f : req.files()) {
+                if (f == null || f.content() == null || f.content().isNull()) continue;
+                String plain = normalizeSearchText(extractPlainFromTiptap(f.content()));
+                for (CustomSpec spec : customSpecs.values()) {
+                    if (findWordBoundary(plain, spec.key()) >= 0) matchedCustomKeys.add(spec.key());
+                }
+            }
+            for (CustomSpec spec : customSpecs.values()) {
+                String key = spec.key();
+                String name = spec.name();
+                if (!matchedCustomKeys.contains(key)) {
+                    errors.add("Manual entity not found in imported notes: " + name);
+                    continue;
+                }
                 Entity already = entityByKey.get(key);
                 if (already != null) {
                     customByKey.put(key, already);
@@ -254,14 +278,11 @@ public class MarkdownImportOrchestrator {
                     errors.add("Entity limit reached, stopping at " + name);
                     break;
                 }
-                EntityType type;
-                try { type = EntityType.fromValue(ce.type() == null ? "TOPIC" : ce.type()); }
-                catch (Exception ex) { type = EntityType.TOPIC; }
                 Entity created = Entity.builder()
                         .userId(userId)
                         .vaultId(vaultId)
                         .title(name)
-                        .type(type)
+                        .type(spec.type())
                         .createdAt(Instant.now())
                         .build();
                 created = entityRepo.save(created);
@@ -279,6 +300,10 @@ public class MarkdownImportOrchestrator {
 
         for (ImportCommitRequest.CommitFile f : req.files()) {
             try {
+                if (f == null || !isMarkdownFilename(f.filename())) {
+                    errors.add((f == null ? "unknown" : f.filename()) + ": skipped non-Markdown file");
+                    continue;
+                }
                 if (!planConfig.canCreateNote(user.getPlan(), currentNoteCount + notesCreated)) {
                     errors.add("Note limit reached, stopping at " + f.filename());
                     break;
@@ -300,10 +325,10 @@ public class MarkdownImportOrchestrator {
                 if (f.candidateKeys() != null) {
                     for (String k : f.candidateKeys()) {
                         if (k == null) continue;
-                        Entity e = acceptedByKey.get(k.toLowerCase(Locale.ROOT).trim());
+                        Entity e = acceptedByKey.get(normalizeEntityKey(k));
                         if (e != null) {
                             if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
-                            mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
+                            mentionByName.putIfAbsent(normalizeEntityKey(e.getTitle()), e);
                         }
                     }
                 }
@@ -311,12 +336,12 @@ public class MarkdownImportOrchestrator {
                 // Scan the note for any user-supplied custom entities and link them
                 // whenever their name appears (case-insensitive, word boundary).
                 if (!customByKey.isEmpty()) {
-                    String plain = extractPlainFromTiptap(content).toLowerCase(Locale.ROOT);
+                    String plain = normalizeSearchText(extractPlainFromTiptap(content));
                     for (Map.Entry<String, Entity> ce : customByKey.entrySet()) {
                         if (findWordBoundary(plain, ce.getKey()) >= 0) {
                             Entity e = ce.getValue();
                             if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
-                            mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
+                            mentionByName.putIfAbsent(normalizeEntityKey(e.getTitle()), e);
                         }
                     }
                 }
@@ -386,6 +411,44 @@ public class MarkdownImportOrchestrator {
         return filename == null ? "Untitled" : filename;
     }
 
+    private boolean isMarkdownFilename(String filename) {
+        if (filename == null || filename.isBlank()) return false;
+        String normalized = filename.replace('\\', '/');
+        for (String part : normalized.split("/")) {
+            if (part.isBlank() || part.startsWith(".")) return false;
+        }
+        String base = normalized.substring(normalized.lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
+        if (!base.endsWith(".md")) return false;
+        String stem = base.substring(0, base.length() - 3);
+        return !BLOCKED_ENTITY_FILE_EXT.matcher(stem).matches();
+    }
+
+    private EntityType parseEntityType(String value) {
+        try { return EntityType.fromValue(value == null ? "TOPIC" : value); }
+        catch (Exception ex) { return EntityType.TOPIC; }
+    }
+
+    private String cleanManualEntityName(String raw) {
+        return raw == null ? "" : raw.trim().replaceAll("\\s+", " ");
+    }
+
+    private boolean isUnsafeManualEntityName(String name) {
+        if (name == null || name.length() < 2 || name.length() > 80) return true;
+        String lower = name.toLowerCase(Locale.ROOT);
+        return lower.contains("/") || lower.contains("\\") || lower.contains("://")
+                || lower.startsWith("www.") || BLOCKED_ENTITY_FILE_EXT.matcher(lower).matches();
+    }
+
+    private String normalizeEntityKey(String value) {
+        return normalizeSearchText(value).trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizeSearchText(String value) {
+        if (value == null) return "";
+        return java.text.Normalizer.normalize(value.toLowerCase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+    }
+
     private String currentUserId() {
         Object p = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (p instanceof CustomUserDetails u) return u.getUserId();
@@ -407,8 +470,8 @@ public class MarkdownImportOrchestrator {
     /**
      * Walks the Tiptap doc and replaces literal text matches of entity names
      * inside text nodes with mention nodes ({type:"mention", attrs:{id,label}}).
-     * Case-insensitive, word-boundary aware. Each entity is mentioned at most
-     * once per note to avoid noise.
+     * Case-insensitive, word-boundary aware. User-approved/manual entities are
+     * linked on every exact occurrence so the imported note is immediately usable.
      */
     private JsonNode applyMentions(JsonNode doc, Map<String, Entity> mentionByName) {
         if (doc == null || !(doc instanceof ObjectNode)) return doc;
@@ -453,11 +516,10 @@ public class MarkdownImportOrchestrator {
         int bestStart = -1, bestLen = 0;
         Entity bestEntity = null;
         for (Map.Entry<String, Entity> e : mentionByName.entrySet()) {
-            if (alreadyLinked.contains(e.getKey())) continue;
             String name = e.getValue().getTitle();
             if (name == null || name.length() < 2) continue;
             int idx = findWordBoundary(lower, name.toLowerCase(Locale.ROOT));
-            if (idx >= 0 && (bestStart < 0 || idx < bestStart)) {
+            if (idx >= 0 && (bestStart < 0 || idx < bestStart || (idx == bestStart && name.length() > bestLen))) {
                 bestStart = idx;
                 bestLen = name.length();
                 bestEntity = e.getValue();
@@ -482,7 +544,6 @@ public class MarkdownImportOrchestrator {
         attrs.put("label", bestEntity.getTitle());
         mention.set("attrs", attrs);
         out.add(mention);
-        alreadyLinked.add(bestEntity.getTitle().toLowerCase(Locale.ROOT));
 
         // Recurse on tail to catch other entities.
         String tail = text.substring(bestStart + bestLen);
