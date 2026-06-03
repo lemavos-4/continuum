@@ -94,7 +94,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [decisions, setDecisions] = useState<Record<string, { accept: boolean; type: EntityType; name: string }>>({});
   const [result, setResult] = useState<CommitResponse | null>(null);
-  const [customEntities, setCustomEntities] = useState<{ name: string; type: EntityType }[]>([]);
+  const [customEntities, setCustomEntities] = useState<{ name: string; type: EntityType; matches: number }[]>([]);
   const [customDraftName, setCustomDraftName] = useState("");
   const [customDraftType, setCustomDraftType] = useState<EntityType>("PERSON");
 
@@ -214,12 +214,29 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const addCustomEntity = useCallback(() => {
     const name = customDraftName.trim();
     if (!name) return;
+    if (BLOCKED_EXTENSION_BEFORE_MD.test(name) || name.includes("/") || name.includes("\\")) {
+      toast({
+        title: "Invalid entity name",
+        description: "Files, paths and extensions are not valid entities.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const matches = preview?.files.filter((file) => textContainsEntity(tiptapPlainText(file.content), name)).length ?? 0;
+    if (matches === 0) {
+      toast({
+        title: "Entity not found",
+        description: "This name was not found in the notes selected for import.",
+        variant: "destructive",
+      });
+      return;
+    }
     const key = name.toLowerCase();
     setCustomEntities((s) =>
-      s.some((c) => c.name.toLowerCase() === key) ? s : [...s, { name, type: customDraftType }]
+      s.some((c) => c.name.toLowerCase() === key) ? s : [...s, { name, type: customDraftType, matches }]
     );
     setCustomDraftName("");
-  }, [customDraftName, customDraftType]);
+  }, [customDraftName, customDraftType, preview, toast]);
 
   const acceptedCount = useMemo(
     () => Object.values(decisions).filter((d) => d.accept).length,
