@@ -235,6 +235,43 @@ public class MarkdownImportOrchestrator {
             }
         }
 
+        // 1b) User-supplied custom entities — same treatment as accepted candidates,
+        //     but they're scanned against every file below.
+        Map<String, Entity> customByKey = new LinkedHashMap<>();
+        if (req.customEntities() != null) {
+            for (ImportCommitRequest.CustomEntity ce : req.customEntities()) {
+                if (ce == null || ce.name() == null || ce.name().isBlank()) continue;
+                String name = ce.name().trim();
+                String key = name.toLowerCase(Locale.ROOT);
+                if (customByKey.containsKey(key)) continue;
+                Entity already = entityByKey.get(key);
+                if (already != null) {
+                    customByKey.put(key, already);
+                    if (!acceptedByKey.containsKey(key)) entitiesReused++;
+                    continue;
+                }
+                if (!planConfig.canCreateEntity(user.getPlan(), user.getEntityCount() + entitiesCreated)) {
+                    errors.add("Entity limit reached, stopping at " + name);
+                    break;
+                }
+                EntityType type;
+                try { type = EntityType.fromValue(ce.type() == null ? "TOPIC" : ce.type()); }
+                catch (Exception ex) { type = EntityType.TOPIC; }
+                Entity created = Entity.builder()
+                        .userId(userId)
+                        .vaultId(vaultId)
+                        .title(name)
+                        .type(type)
+                        .createdAt(Instant.now())
+                        .build();
+                created = entityRepo.save(created);
+                userService.incrementEntityCount(userId);
+                entityByKey.put(key, created);
+                customByKey.put(key, created);
+                entitiesCreated++;
+            }
+        }
+
         // 2) Create notes + links.
         int notesCreated = 0;
         int linksCreated = 0;
@@ -265,6 +302,19 @@ public class MarkdownImportOrchestrator {
                         if (k == null) continue;
                         Entity e = acceptedByKey.get(k.toLowerCase(Locale.ROOT).trim());
                         if (e != null) {
+                            if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
+                            mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
+                        }
+                    }
+                }
+
+                // Scan the note for any user-supplied custom entities and link them
+                // whenever their name appears (case-insensitive, word boundary).
+                if (!customByKey.isEmpty()) {
+                    String plain = extractPlainFromTiptap(content).toLowerCase(Locale.ROOT);
+                    for (Map.Entry<String, Entity> ce : customByKey.entrySet()) {
+                        if (findWordBoundary(plain, ce.getKey()) >= 0) {
+                            Entity e = ce.getValue();
                             if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
                             mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
                         }
