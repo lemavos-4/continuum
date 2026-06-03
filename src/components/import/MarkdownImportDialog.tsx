@@ -67,6 +67,16 @@ const tiptapPlainText = (node: unknown): string => {
   return Array.isArray(record.content) ? record.content.map(tiptapPlainText).join(" ") : "";
 };
 
+const normalizeSearchText = (value: string) =>
+  value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+
+const textContainsEntity = (plainText: string, name: string) => {
+  const normalizedText = normalizeSearchText(plainText);
+  const normalizedName = normalizeSearchText(name);
+  if (!normalizedName) return false;
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(normalizedName)}($|[^\\p{L}\\p{N}])`, "u").test(normalizedText);
+};
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
