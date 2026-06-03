@@ -407,8 +407,8 @@ public class MarkdownImportOrchestrator {
     /**
      * Walks the Tiptap doc and replaces literal text matches of entity names
      * inside text nodes with mention nodes ({type:"mention", attrs:{id,label}}).
-     * Case-insensitive, word-boundary aware. Each entity is mentioned at most
-     * once per note to avoid noise.
+     * Case-insensitive, word-boundary aware. User-approved/manual entities are
+     * linked on every exact occurrence so the imported note is immediately usable.
      */
     private JsonNode applyMentions(JsonNode doc, Map<String, Entity> mentionByName) {
         if (doc == null || !(doc instanceof ObjectNode)) return doc;
@@ -453,11 +453,10 @@ public class MarkdownImportOrchestrator {
         int bestStart = -1, bestLen = 0;
         Entity bestEntity = null;
         for (Map.Entry<String, Entity> e : mentionByName.entrySet()) {
-            if (alreadyLinked.contains(e.getKey())) continue;
             String name = e.getValue().getTitle();
             if (name == null || name.length() < 2) continue;
             int idx = findWordBoundary(lower, name.toLowerCase(Locale.ROOT));
-            if (idx >= 0 && (bestStart < 0 || idx < bestStart)) {
+            if (idx >= 0 && (bestStart < 0 || idx < bestStart || (idx == bestStart && name.length() > bestLen))) {
                 bestStart = idx;
                 bestLen = name.length();
                 bestEntity = e.getValue();
@@ -482,7 +481,6 @@ public class MarkdownImportOrchestrator {
         attrs.put("label", bestEntity.getTitle());
         mention.set("attrs", attrs);
         out.add(mention);
-        alreadyLinked.add(bestEntity.getTitle().toLowerCase(Locale.ROOT));
 
         // Recurse on tail to catch other entities.
         String tail = text.substring(bestStart + bestLen);
