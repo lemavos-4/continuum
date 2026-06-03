@@ -57,6 +57,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [decisions, setDecisions] = useState<Record<string, { accept: boolean; type: EntityType; name: string }>>({});
   const [result, setResult] = useState<CommitResponse | null>(null);
+  const [customEntities, setCustomEntities] = useState<{ name: string; type: EntityType }[]>([]);
+  const [customDraftName, setCustomDraftName] = useState("");
+  const [customDraftType, setCustomDraftType] = useState<EntityType>("PERSON");
 
   const reset = useCallback(() => {
     setStep("upload");
@@ -65,6 +68,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     setResult(null);
     setProgress(0);
     setBusy(false);
+    setCustomEntities([]);
+    setCustomDraftName("");
+    setCustomDraftType("PERSON");
   }, []);
 
   const handleFiles = useCallback(
@@ -141,6 +147,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
             accept: d?.accept ?? false,
           };
         }),
+        customEntities: customEntities.map((c) => ({ name: c.name, type: c.type })),
       };
       setProgress(60);
       const res = await importApi.commitMarkdown(payload);
@@ -157,7 +164,17 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     } finally {
       setBusy(false);
     }
-  }, [preview, decisions, onImported, toast]);
+  }, [preview, decisions, customEntities, onImported, toast]);
+
+  const addCustomEntity = useCallback(() => {
+    const name = customDraftName.trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    setCustomEntities((s) =>
+      s.some((c) => c.name.toLowerCase() === key) ? s : [...s, { name, type: customDraftType }]
+    );
+    setCustomDraftName("");
+  }, [customDraftName, customDraftType]);
 
   const acceptedCount = useMemo(
     () => Object.values(decisions).filter((d) => d.accept).length,
