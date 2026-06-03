@@ -495,14 +495,14 @@ public class MarkdownImportOrchestrator {
         // If text has marks, skip rewriting — keep formatting intact.
         if (marks != null && marks.isArray() && marks.size() > 0) { out.add(textNode); return; }
 
-        String lower = text.toLowerCase(Locale.ROOT);
+        String lower = normalizeSearchText(text);
         // Find earliest match among remaining entities.
         int bestStart = -1, bestLen = 0;
         Entity bestEntity = null;
         for (Map.Entry<String, Entity> e : mentionByName.entrySet()) {
             String name = e.getValue().getTitle();
             if (name == null || name.length() < 2) continue;
-            int idx = findWordBoundary(lower, name.toLowerCase(Locale.ROOT));
+            int idx = findWordBoundary(lower, e.getKey());
             if (idx >= 0 && (bestStart < 0 || idx < bestStart || (idx == bestStart && name.length() > bestLen))) {
                 bestStart = idx;
                 bestLen = name.length();
