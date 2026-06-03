@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,6 +46,9 @@ public class MarkdownImportOrchestrator {
     private final PlanConfiguration planConfig;
     private final VaultStorageService storageService;
     private final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final Pattern BLOCKED_ENTITY_FILE_EXT = Pattern.compile(
+            "(?i).+\\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|mp3|wav|m4a|ogg|opus|flac|aac|mp4|mov|webm|avi|mkv|pdf|docx?|xlsx?|pptx?|csv|tsv|zip|rar|7z|tar|gz|exe|dmg|apk|html?|css|js|ts|tsx|jsx|json|xml|yaml|yml)$"
+    );
 
     public MarkdownImportOrchestrator(MarkdownImportService markdownService,
                                       EntityRepository entityRepo,
