@@ -39,6 +39,33 @@ interface CommitResponse {
 }
 
 const TYPES: EntityType[] = ["PERSON", "PROJECT", "TOPIC", "ORGANIZATION", "ACTIVITY"];
+const BLOCKED_EXTENSION_BEFORE_MD = /\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|mp3|wav|m4a|ogg|opus|flac|aac|mp4|mov|webm|avi|mkv|pdf|docx?|xlsx?|pptx?|csv|tsv|zip|rar|7z|tar|gz|exe|dmg|apk|html?|css|js|ts|tsx|jsx|json|xml|yaml|yml)$/i;
+const BINARY_MIME = /^(audio|video|image)\//i;
+
+const uploadPath = (file: File) =>
+  (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+
+const isStrictMarkdownFile = (file: File) => {
+  const path = uploadPath(file).replace(/\\/g, "/");
+  const parts = path.split("/").filter(Boolean);
+  const base = parts.at(-1) ?? file.name;
+  if (!base || parts.some((part) => part.startsWith("."))) return false;
+  if (!/^[^/\\]+\.md$/i.test(base)) return false;
+  const stem = base.slice(0, -3);
+  if (BLOCKED_EXTENSION_BEFORE_MD.test(stem)) return false;
+  if (file.type && BINARY_MIME.test(file.type)) return false;
+  return true;
+};
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const tiptapPlainText = (node: unknown): string => {
+  if (!node || typeof node !== "object") return "";
+  const record = node as { type?: string; text?: string; attrs?: { label?: string }; content?: unknown[] };
+  if (record.type === "text") return record.text ?? "";
+  if (record.type === "mention") return record.attrs?.label ?? "";
+  return Array.isArray(record.content) ? record.content.map(tiptapPlainText).join(" ") : "";
+};
 
 interface Props {
   open: boolean;
