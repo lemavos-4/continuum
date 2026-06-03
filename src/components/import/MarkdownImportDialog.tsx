@@ -310,6 +310,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   /* @ts-expect-error non-standard */
                   webkitdirectory=""
                   directory=""
+                  accept=".md"
                   multiple
                   className="hidden"
                   onChange={(e) => handleFiles(e.target.files)}
