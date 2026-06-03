@@ -235,15 +235,37 @@ public class MarkdownImportOrchestrator {
             }
         }
 
-        // 1b) User-supplied custom entities — same treatment as accepted candidates,
-        //     but they're scanned against every file below.
+        // 1b) User-supplied custom entities. First scan the imported notes; only
+        //     create/reuse manual entities that actually appear in the batch.
         Map<String, Entity> customByKey = new LinkedHashMap<>();
+        record CustomSpec(String key, String name, EntityType type) {}
+        Map<String, CustomSpec> customSpecs = new LinkedHashMap<>();
         if (req.customEntities() != null) {
             for (ImportCommitRequest.CustomEntity ce : req.customEntities()) {
                 if (ce == null || ce.name() == null || ce.name().isBlank()) continue;
-                String name = ce.name().trim();
-                String key = name.toLowerCase(Locale.ROOT);
-                if (customByKey.containsKey(key)) continue;
+                String name = cleanManualEntityName(ce.name());
+                if (isUnsafeManualEntityName(name)) continue;
+                String key = normalizeEntityKey(name);
+                if (customSpecs.containsKey(key)) continue;
+                customSpecs.put(key, new CustomSpec(key, name, parseEntityType(ce.type())));
+            }
+        }
+        if (!customSpecs.isEmpty()) {
+            Set<String> matchedCustomKeys = new LinkedHashSet<>();
+            for (ImportCommitRequest.CommitFile f : req.files()) {
+                if (f == null || f.content() == null || f.content().isNull()) continue;
+                String plain = extractPlainFromTiptap(f.content()).toLowerCase(Locale.ROOT);
+                for (CustomSpec spec : customSpecs.values()) {
+                    if (findWordBoundary(plain, spec.key()) >= 0) matchedCustomKeys.add(spec.key());
+                }
+            }
+            for (CustomSpec spec : customSpecs.values()) {
+                String key = spec.key();
+                String name = spec.name();
+                if (!matchedCustomKeys.contains(key)) {
+                    errors.add("Manual entity not found in imported notes: " + name);
+                    continue;
+                }
                 Entity already = entityByKey.get(key);
                 if (already != null) {
                     customByKey.put(key, already);
@@ -254,14 +276,11 @@ public class MarkdownImportOrchestrator {
                     errors.add("Entity limit reached, stopping at " + name);
                     break;
                 }
-                EntityType type;
-                try { type = EntityType.fromValue(ce.type() == null ? "TOPIC" : ce.type()); }
-                catch (Exception ex) { type = EntityType.TOPIC; }
                 Entity created = Entity.builder()
                         .userId(userId)
                         .vaultId(vaultId)
                         .title(name)
-                        .type(type)
+                        .type(spec.type())
                         .createdAt(Instant.now())
                         .build();
                 created = entityRepo.save(created);
