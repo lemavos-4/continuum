@@ -326,7 +326,7 @@ public class MarkdownImportOrchestrator {
                         Entity e = acceptedByKey.get(normalizeEntityKey(k));
                         if (e != null) {
                             if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
-                            mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
+                            mentionByName.putIfAbsent(normalizeEntityKey(e.getTitle()), e);
                         }
                     }
                 }
@@ -339,7 +339,7 @@ public class MarkdownImportOrchestrator {
                         if (findWordBoundary(plain, ce.getKey()) >= 0) {
                             Entity e = ce.getValue();
                             if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
-                            mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
+                            mentionByName.putIfAbsent(normalizeEntityKey(e.getTitle()), e);
                         }
                     }
                 }
@@ -407,6 +407,32 @@ public class MarkdownImportOrchestrator {
     private String safeTitle(String title, String filename) {
         if (title != null && !title.isBlank()) return title.trim();
         return filename == null ? "Untitled" : filename;
+    }
+
+    private EntityType parseEntityType(String value) {
+        try { return EntityType.fromValue(value == null ? "TOPIC" : value); }
+        catch (Exception ex) { return EntityType.TOPIC; }
+    }
+
+    private String cleanManualEntityName(String raw) {
+        return raw == null ? "" : raw.trim().replaceAll("\\s+", " ");
+    }
+
+    private boolean isUnsafeManualEntityName(String name) {
+        if (name == null || name.length() < 2 || name.length() > 80) return true;
+        String lower = name.toLowerCase(Locale.ROOT);
+        return lower.contains("/") || lower.contains("\\\\") || lower.contains("://")
+                || lower.startsWith("www.") || BLOCKED_ENTITY_FILE_EXT.matcher(lower).matches();
+    }
+
+    private String normalizeEntityKey(String value) {
+        return normalizeSearchText(value).trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizeSearchText(String value) {
+        if (value == null) return "";
+        return java.text.Normalizer.normalize(value.toLowerCase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     private String currentUserId() {
