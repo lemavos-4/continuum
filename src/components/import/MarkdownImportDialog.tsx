@@ -406,6 +406,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                         <span className="text-[9px] uppercase tracking-[0.2em] text-white/40">
                           {c.type}
                         </span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-white/30">
+                          {c.matches} {c.matches === 1 ? "note" : "notes"}
+                        </span>
                         <button
                           type="button"
                           aria-label={`Remove ${c.name}`}
