@@ -48,7 +48,7 @@ const uploadPath = (file: File) =>
 const isStrictMarkdownFile = (file: File) => {
   const path = uploadPath(file).replace(/\\/g, "/");
   const parts = path.split("/").filter(Boolean);
-  const base = parts.at(-1) ?? file.name;
+  const base = parts[parts.length - 1] ?? file.name;
   if (!base || parts.some((part) => part.startsWith("."))) return false;
   if (!/^[^/\\]+\.md$/i.test(base)) return false;
   const stem = base.slice(0, -3);
