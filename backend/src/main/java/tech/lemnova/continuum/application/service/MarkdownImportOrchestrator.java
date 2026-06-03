@@ -210,10 +210,11 @@ public class MarkdownImportOrchestrator {
         if (req.entities() != null) {
             for (ImportCommitRequest.EntityDecision d : req.entities()) {
                 if (d == null || !d.accept() || d.name() == null || d.name().isBlank()) continue;
-                String key = normalizeEntityKey(d.key() != null ? d.key() : d.name());
-                Entity already = entityByKey.get(key);
+                String candidateKey = normalizeEntityKey(d.key() != null ? d.key() : d.name());
+                String entityKey = normalizeEntityKey(d.name());
+                Entity already = entityByKey.get(entityKey);
                 if (already != null) {
-                    acceptedByKey.put(key, already);
+                    acceptedByKey.put(candidateKey, already);
                     entitiesReused++;
                     continue;
                 }
@@ -221,20 +222,17 @@ public class MarkdownImportOrchestrator {
                     errors.add("Entity limit reached, stopping at " + d.name());
                     break;
                 }
-                EntityType type;
-                try { type = EntityType.fromValue(d.type() == null ? "TOPIC" : d.type()); }
-                catch (Exception ex) { type = EntityType.TOPIC; }
                 Entity created = Entity.builder()
                         .userId(userId)
                         .vaultId(vaultId)
                         .title(d.name().trim())
-                        .type(type)
+                        .type(parseEntityType(d.type()))
                         .createdAt(Instant.now())
                         .build();
                 created = entityRepo.save(created);
                 userService.incrementEntityCount(userId);
-                entityByKey.put(key, created);
-                    acceptedByKey.put(key, created);
+                entityByKey.put(entityKey, created);
+                acceptedByKey.put(candidateKey, created);
                 entitiesCreated++;
             }
         }
