@@ -300,6 +300,10 @@ public class MarkdownImportOrchestrator {
 
         for (ImportCommitRequest.CommitFile f : req.files()) {
             try {
+                if (f == null || !isMarkdownFilename(f.filename())) {
+                    errors.add((f == null ? "unknown" : f.filename()) + ": skipped non-Markdown file");
+                    continue;
+                }
                 if (!planConfig.canCreateNote(user.getPlan(), currentNoteCount + notesCreated)) {
                     errors.add("Note limit reached, stopping at " + f.filename());
                     break;
@@ -405,6 +409,18 @@ public class MarkdownImportOrchestrator {
     private String safeTitle(String title, String filename) {
         if (title != null && !title.isBlank()) return title.trim();
         return filename == null ? "Untitled" : filename;
+    }
+
+    private boolean isMarkdownFilename(String filename) {
+        if (filename == null || filename.isBlank()) return false;
+        String normalized = filename.replace('\\', '/');
+        for (String part : normalized.split("/")) {
+            if (part.isBlank() || part.startsWith(".")) return false;
+        }
+        String base = normalized.substring(normalized.lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
+        if (!base.endsWith(".md")) return false;
+        String stem = base.substring(0, base.length() - 3);
+        return !BLOCKED_ENTITY_FILE_EXT.matcher(stem).matches();
     }
 
     private EntityType parseEntityType(String value) {
