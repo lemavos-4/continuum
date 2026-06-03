@@ -197,7 +197,7 @@ public class MarkdownImportOrchestrator {
         List<Entity> existing = entityRepo.findByUserIdAndArchivedAtIsNull(userId);
         Map<String, Entity> entityByKey = new HashMap<>();
         for (Entity e : existing) {
-            if (e.getTitle() != null) entityByKey.put(e.getTitle().toLowerCase(Locale.ROOT).trim(), e);
+            if (e.getTitle() != null) entityByKey.put(normalizeEntityKey(e.getTitle()), e);
         }
 
         int entitiesCreated = 0;
@@ -206,7 +206,7 @@ public class MarkdownImportOrchestrator {
         if (req.entities() != null) {
             for (ImportCommitRequest.EntityDecision d : req.entities()) {
                 if (d == null || !d.accept() || d.name() == null || d.name().isBlank()) continue;
-                String key = (d.key() != null ? d.key() : d.name()).toLowerCase(Locale.ROOT).trim();
+                String key = normalizeEntityKey(d.key() != null ? d.key() : d.name());
                 Entity already = entityByKey.get(key);
                 if (already != null) {
                     acceptedByKey.put(key, already);
@@ -230,7 +230,7 @@ public class MarkdownImportOrchestrator {
                 created = entityRepo.save(created);
                 userService.incrementEntityCount(userId);
                 entityByKey.put(key, created);
-                acceptedByKey.put(key, created);
+                    acceptedByKey.put(key, created);
                 entitiesCreated++;
             }
         }
@@ -319,7 +319,7 @@ public class MarkdownImportOrchestrator {
                 if (f.candidateKeys() != null) {
                     for (String k : f.candidateKeys()) {
                         if (k == null) continue;
-                        Entity e = acceptedByKey.get(k.toLowerCase(Locale.ROOT).trim());
+                        Entity e = acceptedByKey.get(normalizeEntityKey(k));
                         if (e != null) {
                             if (!entityIds.contains(e.getId())) entityIds.add(e.getId());
                             mentionByName.putIfAbsent(e.getTitle().toLowerCase(Locale.ROOT), e);
