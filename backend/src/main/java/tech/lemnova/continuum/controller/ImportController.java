@@ -57,10 +57,6 @@ public class ImportController {
             // and bloat the payload.
             if (base.startsWith(".")) continue;
             if (!lower.endsWith(".md")) continue;
-            // Reject names with more than one extension like `foo.png.md` — likely
-            // a renamed binary trying to bypass the filter.
-            String stem = base.substring(0, base.length() - 3);
-            if (stem.contains(".")) continue;
             if (f.getSize() > MAX_BYTES_PER_FILE) continue;
             total += f.getSize();
             if (total > MAX_TOTAL_BYTES) break;
