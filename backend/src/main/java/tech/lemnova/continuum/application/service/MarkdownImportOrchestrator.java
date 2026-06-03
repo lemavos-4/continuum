@@ -507,4 +507,27 @@ public class MarkdownImportOrchestrator {
         }
         return -1;
     }
+
+    /** Concatenates all text node values inside a Tiptap doc. */
+    private String extractPlainFromTiptap(JsonNode doc) {
+        StringBuilder sb = new StringBuilder();
+        collectText(doc, sb);
+        return sb.toString();
+    }
+
+    private void collectText(JsonNode node, StringBuilder sb) {
+        if (node == null) return;
+        if (node.isObject()) {
+            if ("text".equals(node.path("type").asText())) {
+                sb.append(node.path("text").asText("")).append(' ');
+                return;
+            }
+            JsonNode content = node.path("content");
+            if (content.isArray()) {
+                for (JsonNode c : content) collectText(c, sb);
+            }
+        } else if (node.isArray()) {
+            for (JsonNode c : node) collectText(c, sb);
+        }
+    }
 }
