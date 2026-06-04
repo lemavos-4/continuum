@@ -53,6 +53,10 @@ public interface VaultStorageService {
     void saveRefs(String vaultId, String refsJson);
     Optional<String> loadRefs(String vaultId);
 
+    // ── User preferences (UI settings, e.g. wallpaper) ────────────────────────
+    void savePreferences(String vaultId, String prefsJson);
+    Optional<String> loadPreferences(String vaultId);
+
     // ── Files ─────────────────────────────────────────────────────────────────
     void saveFile(String vaultId, String fileId, byte[] content, String contentType);
     Optional<byte[]> loadFile(String vaultId, String fileId);

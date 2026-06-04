@@ -1,7 +1,5 @@
-import { vaultApi } from "@/lib/api";
+import { preferencesApi, vaultApi } from "@/lib/api";
 import { invalidateVaultBlob, resolveVaultBlob } from "@/lib/vault-blob";
-
-const STORAGE_KEY = "continuum:note-wallpaper";
 
 export interface NoteWallpaperSettings {
   fileId: string | null;
@@ -17,34 +15,85 @@ export const DEFAULT_WALLPAPER: NoteWallpaperSettings = {
 
 const listeners = new Set<(s: NoteWallpaperSettings) => void>();
 
+let cache: NoteWallpaperSettings = { ...DEFAULT_WALLPAPER };
+let loaded = false;
+let loadPromise: Promise<NoteWallpaperSettings> | null = null;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingPayload: NoteWallpaperSettings | null = null;
+
+function normalize(raw: any): NoteWallpaperSettings {
+  const wp = raw?.wallpaper ?? raw ?? {};
+  return {
+    fileId: typeof wp?.fileId === "string" ? wp.fileId : null,
+    blur: Number.isFinite(wp?.blur) ? Math.max(0, Math.min(40, Number(wp.blur))) : 0,
+    brightness: Number.isFinite(wp?.brightness)
+      ? Math.max(20, Math.min(150, Number(wp.brightness)))
+      : 100,
+  };
+}
+
+/**
+ * Synchronously returns the current cached settings.
+ * Triggers a background fetch from the server on first call so consumers
+ * automatically receive the persisted value via `subscribeWallpaper`.
+ */
 export function loadWallpaperSettings(): NoteWallpaperSettings {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_WALLPAPER };
-    const parsed = JSON.parse(raw);
-    return {
-      fileId: typeof parsed?.fileId === "string" ? parsed.fileId : null,
-      blur: Number.isFinite(parsed?.blur) ? Math.max(0, Math.min(40, parsed.blur)) : 0,
-      brightness: Number.isFinite(parsed?.brightness)
-        ? Math.max(20, Math.min(150, parsed.brightness))
-        : 100,
-    };
-  } catch {
-    return { ...DEFAULT_WALLPAPER };
+  if (!loaded && !loadPromise) {
+    loadPromise = (async () => {
+      try {
+        const res = await preferencesApi.get();
+        const data: any = typeof res.data === "string" ? safeParse(res.data) : res.data;
+        cache = normalize(data);
+      } catch {
+        cache = { ...DEFAULT_WALLPAPER };
+      } finally {
+        loaded = true;
+        listeners.forEach((l) => l(cache));
+      }
+      return cache;
+    })();
   }
+  return cache;
+}
+
+function safeParse(s: string): any {
+  try { return JSON.parse(s); } catch { return {}; }
+}
+
+function scheduleServerSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    saveTimer = null;
+    const payload = pendingPayload;
+    pendingPayload = null;
+    if (!payload) return;
+    try {
+      // Merge into any other prefs the server already stores.
+      let existing: any = {};
+      try {
+        const res = await preferencesApi.get();
+        existing = typeof res.data === "string" ? safeParse(res.data) : (res.data ?? {});
+      } catch { /* ignore */ }
+      const next = { ...(existing && typeof existing === "object" ? existing : {}), wallpaper: payload };
+      await preferencesApi.save(next);
+    } catch {
+      /* ignore — keep in-memory cache */
+    }
+  }, 400);
 }
 
 export function saveWallpaperSettings(settings: NoteWallpaperSettings) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch {
-    /* ignore */
-  }
-  listeners.forEach((l) => l(settings));
+  cache = normalize(settings);
+  loaded = true;
+  pendingPayload = cache;
+  scheduleServerSave();
+  listeners.forEach((l) => l(cache));
 }
 
 export function subscribeWallpaper(fn: (s: NoteWallpaperSettings) => void) {
   listeners.add(fn);
+  // Kick off initial load so the new subscriber gets the server value.
+  if (!loaded) loadWallpaperSettings();
   return () => listeners.delete(fn);
 }
 

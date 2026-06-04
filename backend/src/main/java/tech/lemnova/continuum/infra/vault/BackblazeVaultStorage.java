@@ -286,6 +286,20 @@ public class BackblazeVaultStorage implements VaultStorageService {
         return get(key(vaultId, "_refs/refs.json"));
     }
 
+    // ── Preferences ──────────────────────────────────────────────────────────
+
+    @Override
+    public void savePreferences(String vaultId, String prefsJson) {
+        if (!configured) return;
+        put(key(vaultId, "_prefs/preferences.json"), prefsJson, "application/json");
+    }
+
+    @Override
+    public Optional<String> loadPreferences(String vaultId) {
+        if (!configured) return Optional.of("{}");
+        return get(key(vaultId, "_prefs/preferences.json"));
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private String decodeFileName(String fileId) {
