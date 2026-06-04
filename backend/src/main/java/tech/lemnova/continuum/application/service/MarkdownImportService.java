@@ -197,21 +197,14 @@ public class MarkdownImportService {
                 return v.get(0).trim();
             }
         }
-        // First heading
-        Node n = root.getFirstChild();
-        while (n != null) {
-            if (n instanceof Heading h) {
-                String t = inlineText(h).trim();
-                if (!t.isBlank()) return t;
-            }
-            n = n.getNext();
-        }
-        // Fallback: filename without extension
+        // Prefer the actual filename (without extension) as the note title.
+        // Do NOT fall back to the first heading — users want the file name preserved.
         String name = filename == null ? "Untitled" : filename;
         int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
         if (slash >= 0) name = name.substring(slash + 1);
         int dot = name.lastIndexOf('.');
         if (dot > 0) name = name.substring(0, dot);
+        name = name.trim();
         return name.isBlank() ? "Untitled" : name;
     }
 
