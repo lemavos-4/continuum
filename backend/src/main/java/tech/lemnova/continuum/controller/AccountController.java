@@ -17,6 +17,7 @@ import tech.lemnova.continuum.domain.plan.PlanConfiguration;
 import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
 import tech.lemnova.continuum.infra.security.CustomUserDetails;
+import tech.lemnova.continuum.infra.vault.VaultStorageService;
 
 import java.util.Map;
 import java.nio.charset.StandardCharsets;
@@ -31,13 +32,15 @@ public class AccountController {
     private final UserService userService;
     private final PlanConfiguration planConfig;
     private final UserRepository userRepo;
+    private final VaultStorageService vaultStorageService;
 
-    public AccountController(AuthService authService, ExportService exportService, UserService userService, PlanConfiguration planConfig, UserRepository userRepo) {
+    public AccountController(AuthService authService, ExportService exportService, UserService userService, PlanConfiguration planConfig, UserRepository userRepo, VaultStorageService vaultStorageService) {
         this.authService = authService;
         this.exportService = exportService;
         this.userService = userService;
         this.planConfig = planConfig;
         this.userRepo = userRepo;
+        this.vaultStorageService = vaultStorageService;
     }
 
     @GetMapping("/me")
@@ -139,6 +142,25 @@ public class AccountController {
     @Operation(summary = "Delete account", description = "Permanently deletes the user account and all associated data (notes, entities, subscriptions)")
     public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal CustomUserDetails user) {
         userService.deleteUserWithCascade(user.getUserId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping(value = "/preferences", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get user preferences", description = "Returns user UI preferences (wallpaper, etc.) stored in the vault")
+    public ResponseEntity<String> getPreferences(@AuthenticationPrincipal CustomUserDetails user) {
+        User u = userRepo.findById(user.getUserId()).orElseThrow();
+        String json = vaultStorageService.loadPreferences(u.getVaultId()).orElse("{}");
+        return ResponseEntity.ok(json);
+    }
+
+    @PutMapping(value = "/preferences", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Save user preferences", description = "Persists user UI preferences (wallpaper, etc.) in the vault")
+    public ResponseEntity<Void> savePreferences(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody String body) {
+        User u = userRepo.findById(user.getUserId()).orElseThrow();
+        String payload = (body == null || body.isBlank()) ? "{}" : body;
+        vaultStorageService.savePreferences(u.getVaultId(), payload);
         return ResponseEntity.noContent().build();
     }
 }
