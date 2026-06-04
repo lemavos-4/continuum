@@ -416,33 +416,44 @@ export default function NoteEditor() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-3.5rem)] bg-background">
-        
+      <div className="flex h-[calc(100vh-3.5rem)] bg-background relative">
+        {/* Wallpaper layer (global, per-user) - covers entire editor area including sidebar */}
+        {wallpaperUrl && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${wallpaperUrl})`,
+              filter: `blur(${wallpaper.blur}px) brightness(${wallpaper.brightness}%)`,
+              transform: wallpaper.blur > 0 ? "scale(1.05)" : undefined,
+            }}
+          />
+        )}
+        {wallpaperUrl && (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-background/55" />
+        )}
+
         {/* Main Editor Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-          {/* Wallpaper layer (global, per-user) */}
-          {wallpaperUrl && (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${wallpaperUrl})`,
-                filter: `blur(${wallpaper.blur}px) brightness(${wallpaper.brightness}%)`,
-                transform: wallpaper.blur > 0 ? "scale(1.05)" : undefined,
-              }}
-            />
-          )}
-          {wallpaperUrl && (
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-background/55" />
-          )}
 
           {/* Top Toolbar */}
-          <header className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/80 backdrop-blur shrink-0">
+          <header className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/30 backdrop-blur-md shrink-0">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/notes"))} className="text-muted-foreground hover:text-foreground w-8 h-8">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              
+              {/* Wallpaper preview in topbar (blurred) */}
+              {wallpaperUrl && (
+                <div className="hidden sm:block w-12 h-8 rounded-md overflow-hidden mr-2 pointer-events-none">
+                  <img
+                    src={wallpaperUrl}
+                    alt="Wallpaper"
+                    className="w-full h-full object-cover"
+                    style={{ filter: `blur(6px) brightness(${wallpaper.brightness}%)` }}
+                  />
+                </div>
+              )}
+
               <div className="h-4 w-[1px] bg-border mx-2" />
               
               {/* Status Indicator */}
