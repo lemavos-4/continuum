@@ -79,6 +79,55 @@ export default function NoteEditor() {
   const [showBacklinks, setShowBacklinks] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 
+  // ── Wallpaper (global to all notes, persisted in localStorage) ──────────
+  const [wallpaper, setWallpaper] = useState<NoteWallpaperSettings>(() => loadWallpaperSettings());
+  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
+  const [wallpaperUploading, setWallpaperUploading] = useState(false);
+  const wallpaperInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => subscribeWallpaper(setWallpaper), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!wallpaper.fileId) { setWallpaperUrl(null); return; }
+    resolveVaultBlob(wallpaper.fileId)
+      .then((url) => { if (!cancelled) setWallpaperUrl(url); })
+      .catch(() => { if (!cancelled) setWallpaperUrl(null); });
+    return () => { cancelled = true; };
+  }, [wallpaper.fileId]);
+
+  const handleWallpaperFile = async (file: File | undefined | null) => {
+    if (!file) return;
+    if (!isAllowedWallpaperFile(file)) {
+      toast({ title: "Unsupported format", description: "Only .jpg and .png images are allowed.", variant: "destructive" });
+      return;
+    }
+    setWallpaperUploading(true);
+    try {
+      await uploadWallpaper(file);
+      toast({ title: "Wallpaper updated" });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Could not upload wallpaper.", variant: "destructive" });
+    } finally {
+      setWallpaperUploading(false);
+      if (wallpaperInputRef.current) wallpaperInputRef.current.value = "";
+    }
+  };
+
+  const handleWallpaperRemove = async () => {
+    try {
+      await removeWallpaper();
+      toast({ title: "Wallpaper removed" });
+    } catch {
+      toast({ title: "Could not remove wallpaper", variant: "destructive" });
+    }
+  };
+
+  const updateWallpaperAdjustment = (patch: Partial<NoteWallpaperSettings>) => {
+    const next = { ...wallpaper, ...patch };
+    saveWallpaperSettings(next);
+  };
+
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedJSON = useRef<string>("");
   const lastSavedTitle = useRef<string>("");
