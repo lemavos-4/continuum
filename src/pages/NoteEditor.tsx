@@ -533,7 +533,7 @@ export default function NoteEditor() {
           </header>
 
           {/* Editor Canvas */}
-          <div className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="relative z-10 flex-1 overflow-y-auto scroll-smooth">
             <div className="max-w-[750px] mx-auto w-full px-6 py-12 lg:px-12 pb-32">
               <Input
                 value={title}
