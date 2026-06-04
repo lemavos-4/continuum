@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { 
   ArrowLeft, Save, Loader2, Check, PanelRight, 
   Settings2, ImageIcon, FileText, X, Clock,
@@ -27,6 +28,16 @@ import { useToast } from "@/hooks/use-toast";
 import { TiptapEditor, type TiptapEditorHandle } from "@/components/TiptapEditor";
 import { BacklinksPanel } from "@/components/BacklinksPanel";
 import { countTiptapMentions, extractMentionIds, extractMentionLabels, parseTiptapContent, sanitizeTiptapMentions, tiptapContentToPlainText } from "@/lib/tiptap-content";
+import {
+  isAllowedWallpaperFile,
+  loadWallpaperSettings,
+  removeWallpaper,
+  resolveVaultBlob,
+  saveWallpaperSettings,
+  subscribeWallpaper,
+  uploadWallpaper,
+  type NoteWallpaperSettings,
+} from "@/lib/note-wallpaper";
 
 interface NoteData {
   id: string;
@@ -66,6 +77,58 @@ export default function NoteEditor() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "creating">("idle");
   const [showBacklinks, setShowBacklinks] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+
+  // ── Wallpaper (global to all notes, persisted in localStorage) ──────────
+  const [wallpaper, setWallpaper] = useState<NoteWallpaperSettings>(() => loadWallpaperSettings());
+  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
+  const [wallpaperUploading, setWallpaperUploading] = useState(false);
+  const wallpaperInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeWallpaper(setWallpaper);
+    return () => { unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!wallpaper.fileId) { setWallpaperUrl(null); return; }
+    resolveVaultBlob(wallpaper.fileId)
+      .then((url) => { if (!cancelled) setWallpaperUrl(url); })
+      .catch(() => { if (!cancelled) setWallpaperUrl(null); });
+    return () => { cancelled = true; };
+  }, [wallpaper.fileId]);
+
+  const handleWallpaperFile = async (file: File | undefined | null) => {
+    if (!file) return;
+    if (!isAllowedWallpaperFile(file)) {
+      toast({ title: "Unsupported format", description: "Only .jpg and .png images are allowed.", variant: "destructive" });
+      return;
+    }
+    setWallpaperUploading(true);
+    try {
+      await uploadWallpaper(file);
+      toast({ title: "Wallpaper updated" });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Could not upload wallpaper.", variant: "destructive" });
+    } finally {
+      setWallpaperUploading(false);
+      if (wallpaperInputRef.current) wallpaperInputRef.current.value = "";
+    }
+  };
+
+  const handleWallpaperRemove = async () => {
+    try {
+      await removeWallpaper();
+      toast({ title: "Wallpaper removed" });
+    } catch {
+      toast({ title: "Could not remove wallpaper", variant: "destructive" });
+    }
+  };
+
+  const updateWallpaperAdjustment = (patch: Partial<NoteWallpaperSettings>) => {
+    const next = { ...wallpaper, ...patch };
+    saveWallpaperSettings(next);
+  };
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedJSON = useRef<string>("");
@@ -357,9 +420,24 @@ export default function NoteEditor() {
         
         {/* Main Editor Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-          
+          {/* Wallpaper layer (global, per-user) */}
+          {wallpaperUrl && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${wallpaperUrl})`,
+                filter: `blur(${wallpaper.blur}px) brightness(${wallpaper.brightness}%)`,
+                transform: wallpaper.blur > 0 ? "scale(1.05)" : undefined,
+              }}
+            />
+          )}
+          {wallpaperUrl && (
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-background/55" />
+          )}
+
           {/* Top Toolbar */}
-          <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/95 backdrop-blur z-10 shrink-0">
+          <header className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/80 backdrop-blur shrink-0">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/notes"))} className="text-muted-foreground hover:text-foreground w-8 h-8">
                 <ArrowLeft className="w-4 h-4" />
@@ -442,6 +520,80 @@ export default function NoteEditor() {
                         <Label htmlFor="auto-save" className="text-xs text-foreground cursor-pointer">Auto Save</Label>
                         <Switch id="auto-save" checked={autoSaveEnabled} onCheckedChange={setAutoSaveEnabled} className="scale-75 origin-right" />
                       </div>
+
+                      {/* Wallpaper Settings */}
+                      <div className="pt-3 border-t border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Wallpaper</Label>
+                          {wallpaper.fileId && (
+                            <button
+                              type="button"
+                              onClick={handleWallpaperRemove}
+                              className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+
+                        <input
+                          ref={wallpaperInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                          className="hidden"
+                          onChange={(e) => handleWallpaperFile(e.target.files?.[0])}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={wallpaperUploading}
+                          onClick={() => wallpaperInputRef.current?.click()}
+                          className="w-full h-8 text-xs bg-white/5 border-white/10 hover:bg-white/10"
+                        >
+                          {wallpaperUploading ? (
+                            <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Uploading…</>
+                          ) : wallpaper.fileId ? (
+                            <><ImageIcon className="w-3 h-3 mr-1.5" /> Replace image (.jpg/.png)</>
+                          ) : (
+                            <><ImageIcon className="w-3 h-3 mr-1.5" /> Upload image (.jpg/.png)</>
+                          )}
+                        </Button>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Blur</Label>
+                            <span className="text-[10px] text-muted-foreground tabular-nums">{wallpaper.blur}px</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={40}
+                            step={1}
+                            value={[wallpaper.blur]}
+                            onValueChange={([v]) => updateWallpaperAdjustment({ blur: v })}
+                            disabled={!wallpaper.fileId}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Brightness</Label>
+                            <span className="text-[10px] text-muted-foreground tabular-nums">{wallpaper.brightness}%</span>
+                          </div>
+                          <Slider
+                            min={20}
+                            max={150}
+                            step={1}
+                            value={[wallpaper.brightness]}
+                            onValueChange={([v]) => updateWallpaperAdjustment({ brightness: v })}
+                            disabled={!wallpaper.fileId}
+                          />
+                        </div>
+
+                        <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                          Applies to every note. Saved in your vault — replacing or removing deletes the old image.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </PopoverContent>
@@ -454,7 +606,7 @@ export default function NoteEditor() {
           </header>
 
           {/* Editor Canvas */}
-          <div className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="relative z-10 flex-1 overflow-y-auto scroll-smooth">
             <div className="max-w-[750px] mx-auto w-full px-6 py-12 lg:px-12 pb-32">
               <Input
                 value={title}
