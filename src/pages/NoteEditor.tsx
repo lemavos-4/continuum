@@ -29,7 +29,6 @@ import { TiptapEditor, type TiptapEditorHandle } from "@/components/TiptapEditor
 import { BacklinksPanel } from "@/components/BacklinksPanel";
 import { countTiptapMentions, extractMentionIds, extractMentionLabels, parseTiptapContent, sanitizeTiptapMentions, tiptapContentToPlainText } from "@/lib/tiptap-content";
 import {
-  DEFAULT_WALLPAPER,
   isAllowedWallpaperFile,
   loadWallpaperSettings,
   removeWallpaper,
