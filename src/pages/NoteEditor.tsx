@@ -629,7 +629,7 @@ export default function NoteEditor() {
           
           {/* Footer Metadata */}
           {note?.updatedAt && (
-            <div className="absolute bottom-0 left-4 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-background/80 backdrop-blur px-2 py-0 rounded-md border border-white/5">
+            <div className="absolute bottom-[-4px] left-4 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-background/80 backdrop-blur px-2 py-0 rounded-md border border-white/5">
               <Clock className="w-3 h-3" />
               Edited {new Date(note.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
             </div>
