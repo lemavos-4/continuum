@@ -466,6 +466,14 @@ export const vaultApi = {
   entityIndex: () => api.get("/api/vault/entity-index"),
 };
 
+export const preferencesApi = {
+  get: () => api.get("/api/account/preferences"),
+  save: (data: unknown) =>
+    api.put("/api/account/preferences", data, {
+      headers: { "Content-Type": "application/json" },
+    }),
+};
+
 export const timeTrackingApi = {
   startTimer: (entityId: string) => api.post("/api/time-tracking/start", { entityId }),
   stopTimer: (sessionId: string, note?: string) => api.post("/api/time-tracking/stop", { sessionId, note: note || null }),
