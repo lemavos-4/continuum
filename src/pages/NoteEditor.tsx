@@ -421,9 +421,24 @@ export default function NoteEditor() {
         
         {/* Main Editor Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-          
+          {/* Wallpaper layer (global, per-user) */}
+          {wallpaperUrl && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${wallpaperUrl})`,
+                filter: `blur(${wallpaper.blur}px) brightness(${wallpaper.brightness}%)`,
+                transform: wallpaper.blur > 0 ? "scale(1.05)" : undefined,
+              }}
+            />
+          )}
+          {wallpaperUrl && (
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-background/55" />
+          )}
+
           {/* Top Toolbar */}
-          <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/95 backdrop-blur z-10 shrink-0">
+          <header className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/80 backdrop-blur shrink-0">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/notes"))} className="text-muted-foreground hover:text-foreground w-8 h-8">
                 <ArrowLeft className="w-4 h-4" />
