@@ -421,7 +421,7 @@ export default function NoteEditor() {
         {wallpaperUrl && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center"
+            className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center"
             style={{
               backgroundImage: `url(${wallpaperUrl})`,
               filter: `blur(${wallpaper.blur}px) brightness(${wallpaper.brightness}%)`,
@@ -430,7 +430,7 @@ export default function NoteEditor() {
           />
         )}
         {wallpaperUrl && (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-background/55" />
+          <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 bg-background/55" />
         )}
 
         {/* Main Editor Area */}
@@ -442,18 +442,6 @@ export default function NoteEditor() {
               <Button variant="ghost" size="icon" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/notes"))} className="text-muted-foreground hover:text-foreground w-8 h-8">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              {/* Wallpaper preview in topbar (blurred) */}
-              {wallpaperUrl && (
-                <div className="hidden sm:block w-12 h-8 rounded-md overflow-hidden mr-2 pointer-events-none">
-                  <img
-                    src={wallpaperUrl}
-                    alt="Wallpaper"
-                    className="w-full h-full object-cover"
-                    style={{ filter: `blur(6px) brightness(${wallpaper.brightness}%)` }}
-                  />
-                </div>
-              )}
-
               <div className="h-4 w-[1px] bg-border mx-2" />
               
               {/* Status Indicator */}
