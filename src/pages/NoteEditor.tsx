@@ -85,7 +85,10 @@ export default function NoteEditor() {
   const [wallpaperUploading, setWallpaperUploading] = useState(false);
   const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => subscribeWallpaper(setWallpaper), []);
+  useEffect(() => {
+    const unsubscribe = subscribeWallpaper(setWallpaper);
+    return () => { unsubscribe(); };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
