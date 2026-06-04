@@ -56,8 +56,34 @@ export function loadWallpaperSettings(): NoteWallpaperSettings {
   return cache;
 }
 
+/** Ensures the cached value reflects the server value before continuing. */
+export async function ensureWallpaperLoaded(): Promise<NoteWallpaperSettings> {
+  loadWallpaperSettings();
+  if (loadPromise) {
+    try { await loadPromise; } catch { /* ignore */ }
+  }
+  return cache;
+}
+
 function safeParse(s: string): any {
   try { return JSON.parse(s); } catch { return {}; }
+}
+
+async function flushServerSave(payload: NoteWallpaperSettings): Promise<void> {
+  try {
+    let existing: any = {};
+    try {
+      const res = await preferencesApi.get();
+      existing = typeof res.data === "string" ? safeParse(res.data) : (res.data ?? {});
+    } catch { /* ignore */ }
+    const next = {
+      ...(existing && typeof existing === "object" ? existing : {}),
+      wallpaper: payload,
+    };
+    await preferencesApi.save(next);
+  } catch {
+    /* ignore — keep in-memory cache */
+  }
 }
 
 function scheduleServerSave() {
@@ -67,27 +93,24 @@ function scheduleServerSave() {
     const payload = pendingPayload;
     pendingPayload = null;
     if (!payload) return;
-    try {
-      // Merge into any other prefs the server already stores.
-      let existing: any = {};
-      try {
-        const res = await preferencesApi.get();
-        existing = typeof res.data === "string" ? safeParse(res.data) : (res.data ?? {});
-      } catch { /* ignore */ }
-      const next = { ...(existing && typeof existing === "object" ? existing : {}), wallpaper: payload };
-      await preferencesApi.save(next);
-    } catch {
-      /* ignore — keep in-memory cache */
-    }
+    await flushServerSave(payload);
   }, 400);
 }
 
-export function saveWallpaperSettings(settings: NoteWallpaperSettings) {
+export function saveWallpaperSettings(
+  settings: NoteWallpaperSettings,
+  options: { immediate?: boolean } = {}
+): Promise<void> | void {
   cache = normalize(settings);
   loaded = true;
+  listeners.forEach((l) => l(cache));
+  if (options.immediate) {
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    pendingPayload = null;
+    return flushServerSave(cache);
+  }
   pendingPayload = cache;
   scheduleServerSave();
-  listeners.forEach((l) => l(cache));
 }
 
 export function subscribeWallpaper(fn: (s: NoteWallpaperSettings) => void) {
@@ -109,7 +132,7 @@ export async function uploadWallpaper(file: File): Promise<NoteWallpaperSettings
   if (!isAllowedWallpaperFile(file)) {
     throw new Error("Only .jpg and .png images are allowed");
   }
-  const current = loadWallpaperSettings();
+  const current = await ensureWallpaperLoaded();
 
   const form = new FormData();
   form.append("file", file);
@@ -134,12 +157,12 @@ export async function uploadWallpaper(file: File): Promise<NoteWallpaperSettings
     blur: current.blur,
     brightness: current.brightness,
   };
-  saveWallpaperSettings(next);
+  await saveWallpaperSettings(next, { immediate: true });
   return next;
 }
 
 export async function removeWallpaper(): Promise<NoteWallpaperSettings> {
-  const current = loadWallpaperSettings();
+  const current = await ensureWallpaperLoaded();
   if (current.fileId) {
     try {
       await vaultApi.delete(current.fileId);
@@ -149,7 +172,7 @@ export async function removeWallpaper(): Promise<NoteWallpaperSettings> {
     invalidateVaultBlob(current.fileId);
   }
   const next = { ...DEFAULT_WALLPAPER };
-  saveWallpaperSettings(next);
+  await saveWallpaperSettings(next, { immediate: true });
   return next;
 }
 
