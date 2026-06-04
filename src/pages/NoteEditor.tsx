@@ -521,6 +521,80 @@ export default function NoteEditor() {
                         <Label htmlFor="auto-save" className="text-xs text-foreground cursor-pointer">Auto Save</Label>
                         <Switch id="auto-save" checked={autoSaveEnabled} onCheckedChange={setAutoSaveEnabled} className="scale-75 origin-right" />
                       </div>
+
+                      {/* Wallpaper Settings */}
+                      <div className="pt-3 border-t border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Wallpaper</Label>
+                          {wallpaper.fileId && (
+                            <button
+                              type="button"
+                              onClick={handleWallpaperRemove}
+                              className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+
+                        <input
+                          ref={wallpaperInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                          className="hidden"
+                          onChange={(e) => handleWallpaperFile(e.target.files?.[0])}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={wallpaperUploading}
+                          onClick={() => wallpaperInputRef.current?.click()}
+                          className="w-full h-8 text-xs bg-white/5 border-white/10 hover:bg-white/10"
+                        >
+                          {wallpaperUploading ? (
+                            <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Uploading…</>
+                          ) : wallpaper.fileId ? (
+                            <><ImageIcon className="w-3 h-3 mr-1.5" /> Replace image (.jpg/.png)</>
+                          ) : (
+                            <><ImageIcon className="w-3 h-3 mr-1.5" /> Upload image (.jpg/.png)</>
+                          )}
+                        </Button>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Blur</Label>
+                            <span className="text-[10px] text-muted-foreground tabular-nums">{wallpaper.blur}px</span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={40}
+                            step={1}
+                            value={[wallpaper.blur]}
+                            onValueChange={([v]) => updateWallpaperAdjustment({ blur: v })}
+                            disabled={!wallpaper.fileId}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Brightness</Label>
+                            <span className="text-[10px] text-muted-foreground tabular-nums">{wallpaper.brightness}%</span>
+                          </div>
+                          <Slider
+                            min={20}
+                            max={150}
+                            step={1}
+                            value={[wallpaper.brightness]}
+                            onValueChange={([v]) => updateWallpaperAdjustment({ brightness: v })}
+                            disabled={!wallpaper.fileId}
+                          />
+                        </div>
+
+                        <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                          Applies to every note. Saved in your vault — replacing or removing deletes the old image.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </PopoverContent>
