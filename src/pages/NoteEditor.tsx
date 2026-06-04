@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { 
   ArrowLeft, Save, Loader2, Check, PanelRight, 
   Settings2, ImageIcon, FileText, X, Clock,
@@ -27,6 +28,17 @@ import { useToast } from "@/hooks/use-toast";
 import { TiptapEditor, type TiptapEditorHandle } from "@/components/TiptapEditor";
 import { BacklinksPanel } from "@/components/BacklinksPanel";
 import { countTiptapMentions, extractMentionIds, extractMentionLabels, parseTiptapContent, sanitizeTiptapMentions, tiptapContentToPlainText } from "@/lib/tiptap-content";
+import {
+  DEFAULT_WALLPAPER,
+  isAllowedWallpaperFile,
+  loadWallpaperSettings,
+  removeWallpaper,
+  resolveVaultBlob,
+  saveWallpaperSettings,
+  subscribeWallpaper,
+  uploadWallpaper,
+  type NoteWallpaperSettings,
+} from "@/lib/note-wallpaper";
 
 interface NoteData {
   id: string;
