@@ -629,7 +629,7 @@ export default function NoteEditor() {
           
           {/* Footer Metadata */}
           {note?.updatedAt && (
-            <div className="absolute bottom-4 left-4 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-background/80 backdrop-blur px-2 py-1 rounded-md border border-white/5">
+            <div className="fixed z-30 bottom-2 left-2 md:bottom-4 md:left-4 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-background/80 backdrop-blur px-2 py-1 rounded-md border border-white/5">
               <Clock className="w-3 h-3" />
               Edited {new Date(note.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
             </div>
@@ -637,7 +637,7 @@ export default function NoteEditor() {
         </div>
 
         {/* Combined Context Sidebar */}
-        <aside className={`shrink-0 border-l border-white/5 bg-black/40 backdrop-blur-xl transition-all duration-300 ease-in-out overflow-hidden flex flex-col
+        <aside className={`shrink-0 border-l border-white/5 bg-background/30 backdrop-blur-md transition-all duration-300 ease-in-out overflow-hidden flex flex-col
           ${showBacklinks ? "w-80 opacity-100" : "w-0 opacity-0 border-none"}`}>
           
           <div className="flex items-center justify-between border-b border-white/5 px-5 py-4 shrink-0">
