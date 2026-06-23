@@ -243,6 +243,8 @@ export default function Profile() {
                   <p className="text-xs text-foreground/30">Active session tokens are isolated and protected.</p>
                 </div>
               </div>
+
+              <OfflineSyncRow />
             </div>
           </div>
 
