@@ -1,5 +1,6 @@
 import axios from "axios";
 import { parseTiptapContent } from "@/lib/tiptap-content";
+import { installOfflineLayer } from "@/lib/offline/axios-offline";
 
 // Lê em tempo de execução, não de build
 const getAPIBaseURL = () => {
@@ -69,6 +70,9 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
+
+// Install offline-first layer: cache GETs, queue mutations when offline.
+installOfflineLayer(api);
 
 type JsonRecord = Record<string, unknown>;
 
