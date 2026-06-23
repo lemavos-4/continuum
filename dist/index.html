@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TODO: Set the document title to the name of your application -->
+    <title>Continuum</title>
+    <meta name="description" content="Continuum is a private, connected workspace for your notes, projects and people. Capture ideas, link them with @mentions, and watch your knowledge graph grow.">
+    <meta name="author" content="Continuum" />
+    <link rel="canonical" href="https://api-continuum.vercel.app/" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- TODO: Update og:title to match your application name -->
+    
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://api-continuum.vercel.app/" />
+    <meta property="og:site_name" content="Continuum" />
+    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/15986441-4817-4040-8f1c-f93e69606703">
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/15986441-4817-4040-8f1c-f93e69606703">
+  <link rel="apple-touch-icon" href="/favicon.ico">
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Continuum",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Web",
+      "description": "A private, connected workspace for notes, projects and people. Build your personal knowledge graph.",
+      "url": "https://api-continuum.vercel.app/",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+  </script>
+  
+  
+  
+  
+  <meta property="og:title" content="Continuum">
+  <meta name="twitter:title" content="Continuum">
+  <meta property="og:description" content="Continuum is a private, connected workspace for your notes, projects and people. Capture ideas, link them with @mentions, and watch your knowledge graph grow.">
+  <meta name="twitter:description" content="Continuum is a private, connected workspace for your notes, projects and people. Capture ideas, link them with @mentions, and watch your knowledge graph grow.">
+  <script type="module" crossorigin src="/assets/main-8dMhgt9S.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-DoCLZDVS.css">
+<link rel="manifest" href="/manifest.webmanifest"></head>
+
+  <body>
+    <div id="root"></div>
+    <script>
+      // SPA + HashRouter normalization for OAuth redirects.
+      // Backend / Google may redirect to:
+      //   /google-callback?code=...&state=...
+      //   /?access_token=...&refresh_token=...&vault_id=...
+      //   /login-successful?...   /login-token?...
+      // HashRouter only reads what comes after `#`, so rewrite to hash form
+      // BEFORE React boots.
+      (function () {
+        try {
+          var path = window.location.pathname;
+          var search = window.location.search;
+          var hash = window.location.hash;
+
+          // If we already have a hash route, do nothing.
+          if (hash && hash.indexOf("#/") === 0) return;
+
+          var hashRoutes = ["/google-callback", "/login-successful", "/login-token"];
+          var isHashRoute = hashRoutes.indexOf(path) !== -1;
+          var hasAuthQuery = search && /(?:^|[?&])(code|access_token|login_token|token|jwt)=/.test(search);
+
+          if (isHashRoute) {
+            window.history.replaceState({}, "", "/#" + path + search);
+          } else if (path === "/" && hasAuthQuery) {
+            window.history.replaceState({}, "", "/#/" + search);
+          }
+        } catch (e) {
+          // no-op
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -149,6 +149,7 @@ export function installOfflineLayer(api: AxiosInstance) {
           method: method as "POST" | "PUT" | "PATCH" | "DELETE",
           url: cfg.url ?? "",
           data: safeParse(cfg.data),
+          headers: cfg.headers as Record<string, string> | undefined,
         });
       } catch (e) {
         console.warn("[offline] enqueue failed", e);

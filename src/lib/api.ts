@@ -30,13 +30,15 @@ const getStoredToken = (key: string) => {
 
 export const setAuthTokens = (accessToken: string, _refreshToken?: string) => {
   if (typeof window === "undefined") return;
+  // Store access token in sessionStorage (for this session only)
   sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  // Also store in localStorage for persistence across reloads/tabs
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   // Persist refresh token across reloads so the client can renew sessions
   // even when the backend doesn't issue an HttpOnly cookie.
   if (_refreshToken) {
     localStorage.setItem(REFRESH_TOKEN_KEY, _refreshToken);
   }
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
 };
 
 export const clearAuthTokens = () => {
@@ -70,9 +72,6 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
-
-// Install offline-first layer: cache GETs, queue mutations when offline.
-installOfflineLayer(api);
 
 type JsonRecord = Record<string, unknown>;
 
@@ -124,6 +123,9 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Install offline-first layer AFTER auth interceptor so auth headers are attached
+installOfflineLayer(api);
 
 /**
  * Gerenciador de Refresh Token com fila de requisições

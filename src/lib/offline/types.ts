@@ -5,6 +5,8 @@ export interface QueuedRequest {
   method: SyncOp;
   url: string;
   data?: unknown;
+  /** Authentication and other essential headers */
+  headers?: Record<string, string>;
   /** Optional URL pattern hint for cache invalidation, e.g. "/api/notes". */
   resourceKey?: string;
   /** Best-effort entity id (if known). */

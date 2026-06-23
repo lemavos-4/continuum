@@ -107,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setTokens = (accessToken: string, _refreshToken: string) => {
     sessionStorage.setItem("access_token", accessToken);
+    localStorage.setItem("access_token", accessToken);
 
     // Persist refresh token across reloads so the client can renew sessions
     // mesmo quando o backend não usa cookie HttpOnly.
@@ -115,8 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       localStorage.removeItem("refresh_token");
     }
-
-    localStorage.removeItem("access_token");
   };
 
   const login = async (email: string, password: string) => {

@@ -122,10 +122,13 @@ export async function flushQueue(): Promise<{ sent: number; failed: number }> {
     for (const item of items) {
       try {
         const token = getAuthToken();
+        // Merge stored headers (which may include old auth token) with current auth
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           "X-Client-Updated-At": String(item.clientUpdatedAt),
+          ...(item.headers ?? {}), // Preserve any stored headers (e.g., from when request was queued)
         };
+        // Use current token if available, overriding any old one
         if (token) headers.Authorization = `Bearer ${token}`;
         await client.request({
           method: item.method,
