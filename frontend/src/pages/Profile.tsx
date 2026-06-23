@@ -25,8 +25,64 @@ import {
 } from "@heroicons/react/24/outline";
 import { useTheme } from "@/contexts/ThemeContext";
 import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
+import { useOfflineStatus } from "@/hooks/use-offline-status";
+import { flushQueue, getLastSyncAt } from "@/lib/offline/sync";
+import { toast as sonnerToast } from "sonner";
 
 const formatLimitValue = (value: number, suffix = "") => (value === -1 ? "Unlimited" : `${value}${suffix}`);
+
+function OfflineSyncRow() {
+  const { status, pending, syncing } = useOfflineStatus();
+  const [busy, setBusy] = useState(false);
+  const [lastSync, setLastSync] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    void getLastSyncAt().then((v) => alive && setLastSync(v));
+    return () => { alive = false; };
+  }, [pending, syncing]);
+
+  const onSync = async () => {
+    if (!navigator.onLine) {
+      sonnerToast.error("You're offline. Changes will sync when you're back online.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await flushQueue();
+      if (r.sent === 0 && r.failed === 0) sonnerToast.success("Everything is up to date.");
+      else if (r.failed === 0) sonnerToast.success(`${r.sent} change${r.sent === 1 ? "" : "s"} synced.`);
+      else sonnerToast.warning(`${r.sent} synced, ${r.failed} failed — will retry.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const subtitle = status === "offline"
+    ? `Working offline${pending > 0 ? ` · ${pending} pending` : ""}`
+    : pending > 0
+      ? `${pending} pending change${pending === 1 ? "" : "s"}`
+      : lastSync
+        ? `Last sync: ${new Date(lastSync).toLocaleString()}`
+        : "Up to date";
+
+  return (
+    <div className="flex items-center gap-4 py-4">
+      <ArrowPathIcon className={`h-4 w-4 text-foreground/30 shrink-0 ${syncing || busy ? "animate-spin" : ""}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-foreground/70">Offline & Sync</p>
+        <p className="text-xs text-foreground/30 truncate">{subtitle}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onSync}
+        disabled={busy || syncing}
+        className="text-xs text-white/70 hover:text-white underline underline-offset-4 disabled:opacity-40"
+      >
+        {busy || syncing ? "Syncing…" : "Sync now"}
+      </button>
+    </div>
+  );
+}
 
 export default function Profile() {
   const navigate = useNavigate();
