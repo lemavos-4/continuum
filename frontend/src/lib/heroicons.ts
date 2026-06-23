@@ -187,4 +187,7 @@ export {
   EyeIcon as Eye,
   EyeSlashIcon as EyeOff,
   ShareIcon as Share2,
+  CloudIcon as Cloud,
+  SignalSlashIcon as CloudOff,
+  ExclamationCircleIcon as AlertCircle,
 };
