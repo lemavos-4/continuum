@@ -133,6 +133,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="h-[calc(5.5rem+env(safe-area-inset-bottom))] lg:hidden" />
       </main>
 
+      {/* Desktop offline / sync indicator — floating top-right pill */}
+      <div className="pointer-events-none fixed right-4 top-4 z-40 hidden lg:block">
+        <div className="pointer-events-auto rounded-full border border-border bg-background/80 px-1 py-0.5 shadow-sm backdrop-blur">
+          <OfflineStatus compact />
+        </div>
+      </div>
+
       {/* Mobile bottom tab bar — floating, rounded */}
       {!isGraphPage && (
         <nav
