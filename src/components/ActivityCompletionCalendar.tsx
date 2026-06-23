@@ -44,28 +44,28 @@ export function ActivityCompletionCalendar({
   const now = today(getLocalTimeZone());
 
   return (
-    <div className="w-full max-w-sm border border-white/5 bg-white/[0.01] rounded-sm p-4">
+    <div className="w-full border border-white/5 bg-white/[0.01] rounded-sm p-4">
       <Cal aria-label="Activity calendar" className="w-full">
         <header className="flex items-center gap-1 pb-3">
           <RACButton
             slot="previous"
-            className="flex size-7 items-center justify-center rounded-sm text-white/40 outline-none transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-8 items-center justify-center rounded-sm text-white/40 outline-none transition-colors hover:bg-white/5 hover:text-white"
           >
-            <ChevronLeftIcon className="h-3.5 w-3.5" />
+            <ChevronLeftIcon className="h-4 w-4" />
           </RACButton>
-          <Heading className="grow text-center font-mono text-[10px] uppercase tracking-[0.28em] text-white/70" />
+          <Heading className="grow text-center font-mono text-[11px] uppercase tracking-[0.28em] text-white/70" />
           <RACButton
             slot="next"
-            className="flex size-7 items-center justify-center rounded-sm text-white/40 outline-none transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-8 items-center justify-center rounded-sm text-white/40 outline-none transition-colors hover:bg-white/5 hover:text-white"
           >
-            <ChevronRightIcon className="h-3.5 w-3.5" />
+            <ChevronRightIcon className="h-4 w-4" />
           </RACButton>
         </header>
 
         <CalendarGrid className="w-full">
           <CalendarGridHeader>
             {(day) => (
-              <CalendarHeaderCell className="pb-1.5 font-mono text-[9px] uppercase tracking-widest text-white/30">
+              <CalendarHeaderCell className="pb-1.5 font-mono text-[10px] uppercase tracking-widest text-white/30">
                 {day}
               </CalendarHeaderCell>
             )}
@@ -79,7 +79,7 @@ export function ActivityCompletionCalendar({
                 <CalendarCell
                   date={date}
                   className={cn(
-                    "relative mx-auto flex aspect-square size-7 items-center justify-center rounded-sm border text-[10px] outline-none transition-colors",
+                    "relative mx-auto flex aspect-square size-9 items-center justify-center rounded-sm border text-[11px] outline-none transition-colors",
                     "data-[outside-month]:opacity-30 data-[focus-visible]:ring-1 data-[focus-visible]:ring-white/40",
                     isCompleted
                       ? "border-white/30 bg-white/15 text-white"
@@ -94,7 +94,7 @@ export function ActivityCompletionCalendar({
       </Cal>
 
       <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
-        <div className="font-mono text-[10px] uppercase tracking-widest text-white/40">
+        <div className="font-mono text-[11px] uppercase tracking-widest text-white/40">
           <span className="text-white/70">{trackingDates.length}</span> tracked
         </div>
         <Button

@@ -264,12 +264,12 @@ export function TimerWidget({
   }
 
   return (
-    <div className="border border-white/5 bg-white/[0.01] rounded-sm p-5 text-white max-w-sm">
+    <div className="border border-white/5 bg-white/[0.01] rounded-sm p-5 text-white">
       {/* Header — Activity aesthetic */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Timer</p>
-          <h3 className="mt-1 font-serif text-xl text-white truncate max-w-[14rem]">{entityName}</h3>
+          <h3 className="mt-1 font-serif text-xl text-white truncate">{entityName}</h3>
         </div>
         <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
           {isRunning ? (isPaused ? "Paused" : "Running") : "Idle"}
