@@ -39,6 +39,7 @@ import {
 
 import { SessionNavBar } from "@/components/ui/session-nav-bar";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { OfflineStatus } from "@/components/offline/OfflineStatus";
 
 const mobileItems = [
   { to: "/", icon: Squares2x2, key: "nav_dashboard", end: true },
@@ -94,6 +95,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex-1" />
+
+        <OfflineStatus compact />
 
         {isGraphPage && (
           <button
