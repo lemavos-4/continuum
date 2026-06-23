@@ -50,9 +50,21 @@ public class InsightsService {
 
     // Thresholds
     private static final double HIGH_RELEVANCE_THRESHOLD = 40.0;
-    private static final long FORGOTTEN_DAYS_THRESHOLD = 20;
-    private static final double FORGOTTEN_MIN_SCORE = 6.0;
+    private static final long FORGOTTEN_DAYS_THRESHOLD = 6;
+    private static final double FORGOTTEN_MIN_SCORE = 3.0;
     private static final int DEFAULT_LIMIT = 10;
+
+    // Forgotten Gems tuning ------------------------------------------------
+    // Boost applied to entity connections — well-connected notes are the most
+    // valuable to resurface even when their raw mention count is low.
+    private static final double FORGOTTEN_NOTE_CONN_WEIGHT = 4.5;
+    private static final double FORGOTTEN_ENT_REL_WEIGHT = 4.5;
+    // Minimum viability: an old note/entity with enough structural value should
+    // qualify even if it falls just under FORGOTTEN_MIN_SCORE.
+    private static final double FORGOTTEN_VIABILITY_SCORE = 2.0;
+    // Guaranteed-inclusion rule: clearly-connected but stale items.
+    private static final long FORGOTTEN_STRONG_DAYS = 7;
+    private static final int FORGOTTEN_STRONG_CONNECTIONS = 4;
 
     // Note weights (v2 — boosted for sparse early data)
     private static final double W_NOTE_MENTIONS = 2.5;
@@ -101,9 +113,10 @@ public class InsightsService {
 
     public List<NoteInsightDTO> forgottenNotes(int limit) {
         return computeAllNoteInsights().stream()
+                // Only consider stale notes (no recent real interaction).
                 .filter(n -> n.daysSinceLastInteraction() >= FORGOTTEN_DAYS_THRESHOLD)
-                .filter(n -> baseScoreOf(n) >= FORGOTTEN_MIN_SCORE)
-                .sorted(Comparator.comparingDouble((NoteInsightDTO n) -> baseScoreOf(n)).reversed())
+                .filter(InsightsService::qualifiesAsForgotten)
+                .sorted(Comparator.comparingDouble((NoteInsightDTO n) -> baseScoreForForgotten(n)).reversed())
                 .limit(limit > 0 ? limit : DEFAULT_LIMIT)
                 .map(n -> new NoteInsightDTO(
                         n.note(), n.score(), "Forgotten Gem",
@@ -122,14 +135,40 @@ public class InsightsService {
     public List<EntityInsightDTO> forgottenEntities(int limit) {
         return computeAllEntityInsights().stream()
                 .filter(e -> e.daysSinceLastMention() >= FORGOTTEN_DAYS_THRESHOLD)
-                .filter(e -> baseScoreOf(e) >= FORGOTTEN_MIN_SCORE)
-                .sorted(Comparator.comparingDouble((EntityInsightDTO e) -> baseScoreOf(e)).reversed())
+                .filter(InsightsService::qualifiesAsForgotten)
+                .sorted(Comparator.comparingDouble((EntityInsightDTO e) -> baseScoreForForgotten(e)).reversed())
                 .limit(limit > 0 ? limit : DEFAULT_LIMIT)
                 .map(e -> new EntityInsightDTO(
                         e.entity(), e.score(), "Forgotten Gem",
                         e.mentionCount(), e.recentMentions(), e.hoursTracked(),
                         e.relationsCount(), e.uniqueDaysMentioned(), e.daysSinceLastMention()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * A stale note qualifies as a Forgotten Gem if EITHER:
+     *  • it clears the normal forgotten score, OR
+     *  • it is strongly connected (>= FORGOTTEN_STRONG_CONNECTIONS) and very old
+     *    (>= FORGOTTEN_STRONG_DAYS) — guaranteed inclusion, OR
+     *  • it has minimum structural viability (some connections/mentions) and clears
+     *    the lower viability score — so small/medium vaults surface gems early.
+     */
+    private static boolean qualifiesAsForgotten(NoteInsightDTO n) {
+        double score = baseScoreForForgotten(n);
+        if (score >= FORGOTTEN_MIN_SCORE) return true;
+        if (n.daysSinceLastInteraction() >= FORGOTTEN_STRONG_DAYS
+                && n.entityConnections() >= FORGOTTEN_STRONG_CONNECTIONS) return true;
+        boolean hasStructure = n.entityConnections() >= 2 || n.mentionCount() >= 2;
+        return hasStructure && score >= FORGOTTEN_VIABILITY_SCORE;
+    }
+
+    private static boolean qualifiesAsForgotten(EntityInsightDTO e) {
+        double score = baseScoreForForgotten(e);
+        if (score >= FORGOTTEN_MIN_SCORE) return true;
+        if (e.daysSinceLastMention() >= FORGOTTEN_STRONG_DAYS
+                && e.relationsCount() >= FORGOTTEN_STRONG_CONNECTIONS) return true;
+        boolean hasStructure = e.relationsCount() >= 2 || e.mentionCount() >= 2;
+        return hasStructure && score >= FORGOTTEN_VIABILITY_SCORE;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -247,7 +286,26 @@ public class InsightsService {
                 .distinct()
                 .count();
 
-        Instant lastInteraction = note.getUpdatedAt() != null ? note.getUpdatedAt() : note.getCreatedAt();
+        // Prefer the most recent *real* interaction signal. We combine the latest backlink
+        // with the note's own creation date and take the most recent of the two — this avoids
+        // relying on updatedAt (bumped by trivial autosaves, which would hide "forgotten" notes)
+        // while still not flagging a freshly-created note as forgotten.
+        Instant latestBacklinkAt = backlinks.stream()
+                .map(NoteLink::getCreatedAt)
+                .filter(Objects::nonNull)
+                .max(Instant::compareTo)
+                .orElse(null);
+        Instant createdAt = note.getCreatedAt();
+        Instant lastInteraction = null;
+        if (latestBacklinkAt != null && createdAt != null) {
+            lastInteraction = latestBacklinkAt.isAfter(createdAt) ? latestBacklinkAt : createdAt;
+        } else if (latestBacklinkAt != null) {
+            lastInteraction = latestBacklinkAt;
+        } else if (createdAt != null) {
+            lastInteraction = createdAt;
+        } else {
+            lastInteraction = note.getUpdatedAt();
+        }
         if (lastInteraction == null) lastInteraction = Instant.now();
         long daysSinceLastInteraction = ChronoUnit.DAYS.between(
                 lastInteraction.atZone(ZoneId.systemDefault()).toLocalDate(), today);
@@ -279,7 +337,9 @@ public class InsightsService {
                 .filter(n -> n.getUpdatedAt() != null && n.getUpdatedAt().isAfter(cutoff30))
                 .count();
 
-        int relationsCount = (int) relationLinks + (int) mentionCount;
+        // Only true entity↔entity links. mentionCount is already weighted via W_ENT_MENTIONS;
+        // adding it here used to double-count and inflate noisy entities.
+        int relationsCount = (int) relationLinks;
 
         int uniqueDaysMentioned = (int) mentioningNotes.stream()
                 .map(n -> n.getUpdatedAt() != null
@@ -337,21 +397,26 @@ public class InsightsService {
         return Math.round(v * 100.0) / 100.0;
     }
 
-    /** Recompute the raw base (without decay) — used to rank forgotten items by their true past importance. */
-    private static double baseScoreOf(NoteInsightDTO n) {
-        return (n.mentionCount() * W_NOTE_MENTIONS)
-                + (n.recentMentions() * W_NOTE_RECENT)
-                + (n.hoursTracked() * W_NOTE_HOURS)
-                + (n.entityConnections() * W_NOTE_ENTITIES)
-                + (n.uniqueDaysReferenced() * W_NOTE_DAYS);
+    /**
+     * Base score dedicated to Forgotten Gems — rewards *historical* value (old mentions,
+     * tracked hours, connections, continuity) and intentionally ignores recent activity.
+     * Weights are tuned higher than the generic Hot weights so genuinely valuable but
+     * stale notes clear the (low) FORGOTTEN_MIN_SCORE threshold.
+     */
+    private static double baseScoreForForgotten(NoteInsightDTO n) {
+        double historicalMentions = Math.max(0, n.mentionCount() - n.recentMentions());
+        return (historicalMentions * 2.5)
+                + (n.hoursTracked() * 1.8)
+                + (n.entityConnections() * FORGOTTEN_NOTE_CONN_WEIGHT)
+                + (n.uniqueDaysReferenced() * 1.4);
     }
 
-    private static double baseScoreOf(EntityInsightDTO e) {
-        return (e.mentionCount() * W_ENT_MENTIONS)
-                + (e.recentMentions() * W_ENT_RECENT)
-                + (e.hoursTracked() * W_ENT_HOURS)
-                + (e.relationsCount() * W_ENT_RELATIONS)
-                + (e.uniqueDaysMentioned() * W_ENT_DAYS);
+    private static double baseScoreForForgotten(EntityInsightDTO e) {
+        double historicalMentions = Math.max(0, e.mentionCount() - e.recentMentions());
+        return (historicalMentions * 2.5)
+                + (e.hoursTracked() * 1.8)
+                + (e.relationsCount() * FORGOTTEN_ENT_REL_WEIGHT)
+                + (e.uniqueDaysMentioned() * 1.4);
     }
 
     public String cacheKey() {

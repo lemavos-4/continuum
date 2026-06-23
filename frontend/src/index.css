@@ -1,0 +1,349 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   PURE MONOCHROME — black & white only.
+   No gradients, no glows, no colored accents.
+   Hairline borders @ 8% white. Surfaces by elevation only.
+   ============================================================ */
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 0% 100%;
+    --destructive-foreground: 0 0% 0%;
+
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 0 0% 100% / 0.20;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 3%;
+    --sidebar-foreground: 0 0% 70%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.06;
+    --sidebar-ring: 0 0% 100% / 0.18;
+
+    --success: 0 0% 100%;
+    --success-foreground: 0 0% 0%;
+    --warning: 0 0% 100%;
+    --warning-foreground: 0 0% 0%;
+    --info: 0 0% 100%;
+    --info-foreground: 0 0% 0%;
+
+    --bento-dot: 0 0% 100% / 0.015;
+    --bento-border: 0 0% 100% / 0.06;
+    --bento-hover-shadow: 0 0% 100% / 0.04;
+    --bento-gradient-via: 0 0% 100% / 0.02;
+
+    --popup-background: 0 0% 1%;
+    --popup-foreground: 0 0% 98%;
+    --popup-muted: 0 0% 64%;
+    --popup-border: 0 0% 100% / 0.10;
+  }
+
+  /* Light theme — soft paper aesthetic, hairline borders @ 8% black. */
+  .light {
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
+
+    --card: 0 0% 99%;
+    --card-foreground: 0 0% 7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --primary: 0 0% 7%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 0% 7%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 0% / 0.08;
+    --input: 0 0% 0% / 0.08;
+    --ring: 0 0% 0% / 0.20;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 30%;
+    --sidebar-primary: 0 0% 7%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 94%;
+    --sidebar-accent-foreground: 0 0% 7%;
+    --sidebar-border: 0 0% 0% / 0.06;
+    --sidebar-ring: 0 0% 0% / 0.18;
+
+    --bento-dot: 0 0% 0% / 0.025;
+    --bento-border: 0 0% 0% / 0.08;
+    --bento-hover-shadow: 0 0% 0% / 0.05;
+    --bento-gradient-via: 0 0% 0% / 0.03;
+
+    --popup-background: 0 0% 1%;
+    --popup-foreground: 0 0% 98%;
+    --popup-muted: 0 0% 64%;
+    --popup-border: 0 0% 100% / 0.10;
+  }
+
+  .dark { color-scheme: dark; }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html, body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+  body {
+    @apply antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+  }
+}
+
+@layer components {
+  .font-display,
+  .font-serif {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  /* Hairline divider */
+  .hairline { border-color: hsl(var(--border)); }
+
+  .bento-card {
+    @apply relative p-5 rounded-lg overflow-hidden transition-all duration-200 backdrop-blur-xl;
+    background: hsl(0 0% 100% / 0.025);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+  }
+  .bento-card:hover { border-color: hsl(0 0% 100% / 0.18); background: hsl(0 0% 100% / 0.04); }
+
+  .glass-panel {
+    @apply backdrop-blur-xl rounded-lg;
+    background: hsl(0 0% 100% / 0.025);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+  }
+
+  .bento-tag {
+    @apply px-2.5 py-1 rounded-md text-xs transition-colors duration-150;
+    background: hsl(0 0% 8%);
+    color: hsl(var(--muted-foreground));
+    border: 1px solid hsl(var(--border));
+  }
+  .bento-tag:hover { background: hsl(0 0% 12%); color: #fff; }
+
+  .bento-icon-box {
+    @apply w-9 h-9 rounded-md flex items-center justify-center transition-colors duration-200;
+    background: hsl(0 0% 8%);
+    color: #fff;
+    border: 1px solid hsl(var(--border));
+  }
+
+  .bento-status {
+    @apply text-xs font-medium px-2 py-1 rounded-md;
+    background: hsl(0 0% 8%);
+    color: hsl(var(--muted-foreground));
+  }
+
+  .label-caps {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-sm font-medium text-[11px] uppercase tracking-[0.22em] transition-colors duration-150;
+    background-color: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .btn-primary:hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-sm font-medium text-[11px] uppercase tracking-[0.22em] transition-colors duration-150;
+    background-color: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.16);
+  }
+  .btn-secondary:hover { background: hsl(0 0% 100% / 0.06); border-color: hsl(0 0% 100% / 0.32); }
+
+  .container {
+    width: 100%; margin-left: auto; margin-right: auto;
+    padding-left: 1.5rem; padding-right: 1.5rem;
+  }
+  @media (min-width: 640px) { .container { padding-left: 2rem; padding-right: 2rem; } }
+  @media (min-width: 1024px) { .container { padding-left: 3rem; padding-right: 3rem; max-width: 1280px; } }
+
+  .markdown-content { @apply min-h-[60vh] max-w-none space-y-4 text-sm leading-7 text-foreground; }
+  .markdown-content h1, .markdown-content h2, .markdown-content h3 { @apply font-serif tracking-tight text-foreground; }
+  .markdown-content h1 { @apply text-3xl; }
+  .markdown-content h2 { @apply text-2xl; }
+  .markdown-content h3 { @apply text-xl; }
+  .markdown-content p, .markdown-content li, .markdown-content blockquote { @apply text-foreground/90; }
+  .markdown-content ul { @apply list-disc pl-5 space-y-1; }
+  .markdown-content ol { @apply list-decimal pl-5 space-y-1; }
+  .markdown-content blockquote { @apply border-l-2 border-white/30 pl-4 italic text-muted-foreground; }
+  .markdown-content a { @apply text-foreground underline underline-offset-4; }
+  .markdown-content hr { @apply border-border; }
+  .markdown-content pre { @apply overflow-x-auto rounded-md border border-border bg-accent p-4 font-mono; }
+  .markdown-content code { @apply rounded bg-accent px-1.5 py-0.5 text-xs text-foreground font-mono; }
+  .markdown-content pre code { @apply bg-transparent p-0 text-xs; }
+
+  .ProseMirror { outline: none; }
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder); float: left;
+    color: hsl(var(--muted-foreground)); pointer-events: none; height: 0;
+  }
+  .ProseMirror .mention { @apply bg-white/10 text-white rounded px-1 py-0.5 font-medium text-sm; }
+  .ProseMirror ul[data-type="taskList"] { list-style: none; padding: 0; }
+  .ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; }
+  .ProseMirror ul[data-type="taskList"] li label input[type="checkbox"] { margin-top: 0.25rem; accent-color: #fff; }
+  .ProseMirror h1 { @apply text-3xl font-serif tracking-tight mb-4; }
+  .ProseMirror h2 { @apply text-2xl font-serif tracking-tight mb-3; }
+  .ProseMirror h3 { @apply text-xl font-serif tracking-tight mb-2; }
+  .ProseMirror p { @apply mb-3 leading-relaxed; }
+  .ProseMirror ul { @apply list-disc pl-5 mb-3 space-y-1; }
+  .ProseMirror ol { @apply list-decimal pl-5 mb-3 space-y-1; }
+  .ProseMirror blockquote { @apply border-l-2 border-white/30 pl-4 italic text-muted-foreground my-4; }
+  .ProseMirror pre { @apply overflow-x-auto rounded-md border border-border bg-accent p-4 mb-4 font-mono; }
+  .ProseMirror code { @apply rounded bg-accent px-1.5 py-0.5 text-xs font-mono; }
+  .ProseMirror hr { @apply border-border my-6; }
+  .ProseMirror a { @apply text-white underline underline-offset-4 cursor-pointer; }
+
+  .continuum-popup-black {
+    background: hsl(var(--popup-background));
+    color: hsl(var(--popup-foreground));
+    border-color: hsl(var(--popup-border));
+  }
+}
+
+@layer utilities {
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(0 0% 100% / 0.10); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(0 0% 100% / 0.22); }
+
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class*="bg-black"],
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class*="bg-neutral-900"],
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class*="bg-zinc-900"],
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class*="bg-slate-900"] {
+    background-color: hsl(var(--background) / 0.92) !important;
+  }
+
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class*="bg-white/"] {
+    background-color: hsl(var(--foreground) / 0.05) !important;
+  }
+
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class*="text-white/"] {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class~="text-white"] {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .light :where(:not(.continuum-popup-black):not(.continuum-popup-black *))[class*="border-white/"] {
+    border-color: hsl(var(--border)) !important;
+  }
+}
+
+/* Continuum editor */
+@layer components {
+  .continuum-editor { @apply text-foreground leading-relaxed; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; }
+  .continuum-editor p { @apply my-2; }
+  .continuum-editor h1 { @apply text-3xl font-serif mt-8 mb-3 tracking-tight; }
+  .continuum-editor h2 { @apply text-2xl font-serif mt-7 mb-2 tracking-tight; }
+  .continuum-editor h3 { @apply text-xl font-serif mt-5 mb-2; }
+  .continuum-editor blockquote { @apply border-l-2 border-white/40 pl-4 italic text-muted-foreground my-3; }
+  .continuum-editor ul { @apply list-disc pl-6 my-2; list-style-position: outside; }
+  .continuum-editor ol { @apply list-decimal pl-6 my-2; list-style-position: outside; }
+  .continuum-editor li::marker { color: rgba(255, 255, 255, 0.85); }
+  .continuum-editor li > p { @apply my-0.5; }
+  .continuum-editor ul[data-type="taskList"] { @apply list-none pl-1; }
+  .continuum-editor ul[data-type="taskList"] li { @apply flex items-start gap-2 my-1; }
+  .continuum-editor ul[data-type="taskList"] li > label { @apply mt-1 select-none; }
+  .continuum-editor ul[data-type="taskList"] input[type="checkbox"] { @apply w-3.5 h-3.5 rounded border-border accent-white cursor-pointer; }
+  .continuum-editor code:not(pre code) { @apply bg-muted text-foreground rounded px-1.5 py-0.5 text-[0.85em] font-mono border border-border/50; }
+  .continuum-editor pre { @apply bg-card border border-border rounded-md p-4 my-4 overflow-x-auto font-mono text-sm; }
+  .continuum-editor pre code { @apply bg-transparent p-0 border-0; }
+  .continuum-editor hr { @apply my-6 border-t border-border; }
+  .continuum-editor img { @apply rounded-md my-3; }
+  .continuum-editor a { @apply text-white underline underline-offset-4; }
+  .continuum-editor table { @apply w-full border-collapse my-4 text-sm; }
+  .continuum-editor th, .continuum-editor td { @apply border border-border px-3 py-2 align-top; }
+  .continuum-editor th { @apply bg-muted/50 font-medium text-left; }
+  .continuum-editor .ProseMirror-selectednode { @apply ring-1 ring-white/40 rounded; }
+  .continuum-editor mark { background: hsl(50 95% 60% / 0.35); color: inherit; padding: 0 2px; border-radius: 2px; }
+  .continuum-editor sub, .continuum-editor sup { font-size: 0.75em; line-height: 0; }
+  .continuum-editor .search-hit { background: hsl(45 95% 55% / 0.35); border-radius: 2px; }
+  .continuum-editor .search-hit-current { background: hsl(25 95% 60% / 0.6); outline: 1px solid hsl(25 95% 60%); }
+
+  .continuum-editor p.is-editor-empty:first-child::before,
+  .continuum-editor h1.is-empty::before,
+  .continuum-editor h2.is-empty::before,
+  .continuum-editor h3.is-empty::before {
+    content: attr(data-placeholder);
+    @apply text-muted-foreground/60 float-left h-0 pointer-events-none;
+  }
+
+  .continuum-entity-mention {
+    @apply inline-flex items-center px-1.5 py-0.5 mx-[1px] rounded-md font-medium text-[0.9em] cursor-pointer transition-colors no-underline;
+    background: hsl(190 80% 55% / 0.12); color: hsl(190 90% 75%); border: 1px solid hsl(190 80% 55% / 0.25);
+  }
+  .continuum-entity-mention:hover { background: hsl(190 80% 55% / 0.22); border-color: hsl(190 80% 55% / 0.45); }
+
+  .continuum-note-mention {
+    @apply inline-flex items-center px-1.5 py-0.5 mx-[1px] rounded-md text-[0.9em] font-medium cursor-pointer transition-colors no-underline;
+    background: hsl(280 70% 65% / 0.12); color: hsl(280 80% 80%); border: 1px solid hsl(280 70% 65% / 0.25);
+  }
+  .continuum-note-mention:hover { background: hsl(280 70% 65% / 0.22); border-color: hsl(280 70% 65% / 0.45); }
+
+  .hljs-comment, .hljs-quote { @apply text-muted-foreground italic; }
+  .hljs-keyword, .hljs-selector-tag { color: hsl(0 0% 90%); font-weight: 600; }
+  .hljs-string, .hljs-doctag { color: hsl(0 0% 75%); }
+  .hljs-number, .hljs-literal { color: hsl(0 0% 80%); }
+  .hljs-title, .hljs-section, .hljs-name { color: hsl(0 0% 100%); }
+  .hljs-variable, .hljs-template-variable { color: hsl(0 0% 80%); }
+  .hljs-attr, .hljs-attribute { color: hsl(0 0% 70%); }
+}

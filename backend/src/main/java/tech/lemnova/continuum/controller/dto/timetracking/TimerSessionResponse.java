@@ -9,9 +9,6 @@ import tech.lemnova.continuum.domain.timetracking.TimerStatus;
 
 import java.time.Instant;
 
-/**
- * Response containing timer session information
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,9 +19,12 @@ public class TimerSessionResponse {
     private String entityId;
     private Instant startedAt;
     private Instant stoppedAt;
+    private Instant pausedAt;
+    private Long accumulatedPausedSeconds;
     private TimerStatus status;
     private Long elapsedSeconds;
     private String formattedElapsed;
+    private Boolean paused;
     private Instant createdAt;
 
     public static TimerSessionResponse fromEntity(TimerSession session) {
@@ -33,9 +33,12 @@ public class TimerSessionResponse {
                 .entityId(session.getEntityId())
                 .startedAt(session.getStartedAt())
                 .stoppedAt(session.getStoppedAt())
+                .pausedAt(session.getPausedAt())
+                .accumulatedPausedSeconds(session.getAccumulatedPausedSeconds())
                 .status(session.getStatus())
                 .elapsedSeconds(session.getElapsedSeconds())
                 .formattedElapsed(session.getFormattedElapsed())
+                .paused(session.isPaused())
                 .createdAt(session.getCreatedAt())
                 .build();
     }

@@ -59,6 +59,22 @@ public interface EntityRepository extends MongoRepository<Entity, String> {
     List<Entity> findByTextSearch(String userId, String query);
 
     /**
+     * Fallback: Search entities by title using case-insensitive regex.
+     * Used when text search indexes are not available.
+     * 
+     * @param userId ID do usuário
+     * @param query Texto para procurar
+     * @return Lista de entidades com título contendo a query
+     */
+    @Query(value = """
+        {
+            userId: ?0,
+            title: { $regex: ?1, $options: 'i' }
+        }
+        """)
+    List<Entity> findByTitleContainingIgnoreCase(String userId, String query);
+
+    /**
      * Find active (non-archived) entities by userId
      */
     List<Entity> findByUserIdAndArchivedAtIsNull(String userId);

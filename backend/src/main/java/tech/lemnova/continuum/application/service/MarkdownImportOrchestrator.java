@@ -77,7 +77,6 @@ public class MarkdownImportOrchestrator {
             if (e.getTitle() != null) existingByKey.put(normalizeEntityKey(e.getTitle()), e);
         }
 
-        // Existing note titles for dedup against the DB.
         Set<String> existingNoteTitles = new HashSet<>();
         for (Note n : noteRepo.findByUserId(userId)) {
             if (n.getTitle() != null) existingNoteTitles.add(n.getTitle().toLowerCase(Locale.ROOT).trim());
@@ -91,7 +90,6 @@ public class MarkdownImportOrchestrator {
         Set<String> seenTitlesInBatch = new HashSet<>();
         Set<String> seenFilenames = new HashSet<>();
 
-        // Parse in parallel (each call may hit Gemini Flash ~1s).
         record Parsed(ParsedUpload upload, MarkdownImportService.ParsedFile pf, Exception error) {}
         ForkJoinPool pool = new ForkJoinPool(Math.min(8, Math.max(2, files.size())));
         List<Parsed> parsed;
@@ -190,14 +188,12 @@ public class MarkdownImportOrchestrator {
 
         List<String> errors = new ArrayList<>();
 
-        // Build dedup set from existing notes (defense-in-depth — preview already filtered).
         Set<String> existingNoteTitles = new HashSet<>();
         for (Note n : noteRepo.findByUserId(userId)) {
             if (n.getTitle() != null) existingNoteTitles.add(n.getTitle().toLowerCase(Locale.ROOT).trim());
         }
         Set<String> committedTitles = new HashSet<>();
 
-        // 1) Resolve / create entities the user accepted.
         List<Entity> existing = entityRepo.findByUserIdAndArchivedAtIsNull(userId);
         Map<String, Entity> entityByKey = new HashMap<>();
         for (Entity e : existing) {
@@ -237,8 +233,6 @@ public class MarkdownImportOrchestrator {
             }
         }
 
-        // 1b) User-supplied custom entities. First scan the imported notes; only
-        //     create/reuse manual entities that actually appear in the batch.
         Map<String, Entity> customByKey = new LinkedHashMap<>();
         record CustomSpec(String key, String name, EntityType type) {}
         Map<String, CustomSpec> customSpecs = new LinkedHashMap<>();
@@ -293,7 +287,6 @@ public class MarkdownImportOrchestrator {
             }
         }
 
-        // 2) Create notes + links.
         int notesCreated = 0;
         int linksCreated = 0;
         long currentNoteCount = noteRepo.countByUserId(userId);
@@ -319,9 +312,8 @@ public class MarkdownImportOrchestrator {
                     errors.add(f.filename() + ": skipped duplicate (" + safeTitle + ")");
                     continue;
                 }
-                // Resolve entity IDs for this file from accepted candidates.
                 List<String> entityIds = new ArrayList<>();
-                Map<String, tech.lemnova.continuum.domain.entity.Entity> mentionByName = new LinkedHashMap<>();
+                Map<String, Entity> mentionByName = new LinkedHashMap<>();
                 if (f.candidateKeys() != null) {
                     for (String k : f.candidateKeys()) {
                         if (k == null) continue;
@@ -333,8 +325,6 @@ public class MarkdownImportOrchestrator {
                     }
                 }
 
-                // Scan the note for any user-supplied custom entities and link them
-                // whenever their name appears (case-insensitive, word boundary).
                 if (!customByKey.isEmpty()) {
                     String plain = normalizeSearchText(extractPlainFromTiptap(content));
                     for (Map.Entry<String, Entity> ce : customByKey.entrySet()) {
@@ -346,8 +336,6 @@ public class MarkdownImportOrchestrator {
                     }
                 }
 
-                // Rewrite Tiptap content: replace plain-text occurrences of accepted
-                // entity names with proper @mention nodes so they show as links.
                 JsonNode rewritten = mentionByName.isEmpty()
                         ? content
                         : applyMentions(content, mentionByName);
@@ -463,16 +451,6 @@ public class MarkdownImportOrchestrator {
 
     public record ParsedUpload(String filename, String content) {}
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Tiptap mention rewriting
-    // ─────────────────────────────────────────────────────────────────────
-
-    /**
-     * Walks the Tiptap doc and replaces literal text matches of entity names
-     * inside text nodes with mention nodes ({type:"mention", attrs:{id,label}}).
-     * Case-insensitive, word-boundary aware. User-approved/manual entities are
-     * linked on every exact occurrence so the imported note is immediately usable.
-     */
     private JsonNode applyMentions(JsonNode doc, Map<String, Entity> mentionByName) {
         if (doc == null || !(doc instanceof ObjectNode)) return doc;
         Set<String> alreadyLinked = new HashSet<>();
@@ -484,7 +462,6 @@ public class MarkdownImportOrchestrator {
     private void walkAndLink(JsonNode node, Map<String, Entity> mentionByName, Set<String> alreadyLinked) {
         if (node == null) return;
         if (node.isObject() && "text".equals(node.path("type").asText())) {
-            // Handled by parent (we need to splice siblings).
             return;
         }
         JsonNode contentNode = node.path("content");
@@ -508,20 +485,19 @@ public class MarkdownImportOrchestrator {
         String text = textNode.path("text").asText("");
         if (text.isEmpty()) { out.add(textNode); return; }
         JsonNode marks = textNode.get("marks");
-        // If text has marks, skip rewriting — keep formatting intact.
         if (marks != null && marks.isArray() && marks.size() > 0) { out.add(textNode); return; }
 
-        String lower = text.toLowerCase(Locale.ROOT);
-        // Find earliest match among remaining entities.
+        String lower = normalizeSearchText(text);
         int bestStart = -1, bestLen = 0;
         Entity bestEntity = null;
         for (Map.Entry<String, Entity> e : mentionByName.entrySet()) {
             String name = e.getValue().getTitle();
             if (name == null || name.length() < 2) continue;
-            int idx = findWordBoundary(lower, name.toLowerCase(Locale.ROOT));
-            if (idx >= 0 && (bestStart < 0 || idx < bestStart || (idx == bestStart && name.length() > bestLen))) {
+            String normalizedName = normalizeSearchText(name);
+            int idx = findWordBoundary(lower, normalizedName);
+            if (idx >= 0 && (bestStart < 0 || idx < bestStart || (idx == bestStart && normalizedName.length() > bestLen))) {
                 bestStart = idx;
-                bestLen = name.length();
+                bestLen = normalizedName.length();
                 bestEntity = e.getValue();
             }
         }
@@ -529,14 +505,12 @@ public class MarkdownImportOrchestrator {
             out.add(textNode);
             return;
         }
-        // Pre-text
         if (bestStart > 0) {
             ObjectNode before = jsonMapper.createObjectNode();
             before.put("type", "text");
             before.put("text", text.substring(0, bestStart));
             out.add(before);
         }
-        // Mention
         ObjectNode mention = jsonMapper.createObjectNode();
         mention.put("type", "mention");
         ObjectNode attrs = jsonMapper.createObjectNode();
@@ -545,7 +519,6 @@ public class MarkdownImportOrchestrator {
         mention.set("attrs", attrs);
         out.add(mention);
 
-        // Recurse on tail to catch other entities.
         String tail = text.substring(bestStart + bestLen);
         if (!tail.isEmpty()) {
             ObjectNode tailNode = jsonMapper.createObjectNode();
@@ -569,7 +542,6 @@ public class MarkdownImportOrchestrator {
         return -1;
     }
 
-    /** Concatenates all text node values inside a Tiptap doc. */
     private String extractPlainFromTiptap(JsonNode doc) {
         StringBuilder sb = new StringBuilder();
         collectText(doc, sb);

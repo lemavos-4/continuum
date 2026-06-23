@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -70,6 +71,10 @@ public class NoteService {
         this.objectMapper = objectMapper;
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "insights:notes",    allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
     public NoteResponse create(NoteCreateRequest req) {
         String userId = getCurrentUserId();
         String vaultId = getCurrentVaultId();
@@ -199,10 +204,14 @@ public class NoteService {
      * - Remove entrada do cache quando nota é atualizada
      * - Chave evicted: cache:note:content:{vaultId}:{noteId}
      */
-    @CacheEvict(
-        value = "note-content",
-        key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
-    )
+    @Caching(evict = {
+        @CacheEvict(
+            value = "note-content",
+            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
+        ),
+        @CacheEvict(value = "insights:notes",    allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
     public NoteResponse update(String noteId, NoteUpdateRequest req) {
         String userId = getCurrentUserId();
         String vaultId = getCurrentVaultId();
@@ -364,10 +373,14 @@ public class NoteService {
      * - Remove entrada do cache quando nota é deletada
      * - Chave evicted: cache:note:content:{vaultId}:{noteId}
      */
-    @CacheEvict(
-        value = "note-content",
-        key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
-    )
+    @Caching(evict = {
+        @CacheEvict(
+            value = "note-content",
+            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
+        ),
+        @CacheEvict(value = "insights:notes",    allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
     public void deleteNote(String noteId) {
         String userId = getCurrentUserId();
         String vaultId = getCurrentVaultId();
@@ -397,10 +410,14 @@ public class NoteService {
     /**
      * Alterna o status de favorito de uma nota. Persiste no MongoDB.
      */
-    @CacheEvict(
-        value = "note-content",
-        key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
-    )
+    @Caching(evict = {
+        @CacheEvict(
+            value = "note-content",
+            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
+        ),
+        @CacheEvict(value = "insights:notes",    allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
     public NoteResponse toggleFavorite(String noteId) {
         String userId = getCurrentUserId();
         String vaultId = getCurrentVaultId();

@@ -14,6 +14,9 @@ import tech.lemnova.continuum.controller.dto.entity.EntityResponse;
 import tech.lemnova.continuum.controller.dto.entity.EntityUpdateRequest;
 import tech.lemnova.continuum.controller.dto.note.NoteSummaryDTO;
 import tech.lemnova.continuum.domain.entity.Entity;
+import tech.lemnova.continuum.domain.plan.PlanConfiguration;
+import tech.lemnova.continuum.domain.plan.PlanType;
+import tech.lemnova.continuum.domain.user.UserRepository;
 import tech.lemnova.continuum.infra.security.CustomUserDetails;
 
 import org.springframework.data.domain.Page;
@@ -30,8 +33,22 @@ import java.util.List;
 public class EntityController {
 
     private final EntityService entityService;
+    private final PlanConfiguration planConfig;
+    private final UserRepository userRepo;
 
-    public EntityController(EntityService entityService) { this.entityService = entityService; }
+    public EntityController(EntityService entityService, PlanConfiguration planConfig, UserRepository userRepo) {
+        this.entityService = entityService;
+        this.planConfig = planConfig;
+        this.userRepo = userRepo;
+    }
+
+    /** Resolve the authenticated user's retention window (in days). */
+    private int historyDaysFor(CustomUserDetails user) {
+        PlanType plan = userRepo.findById(user.getUserId())
+                .map(u -> u.getPlan())
+                .orElse(PlanType.FREE);
+        return planConfig.getHistoryDays(plan);
+    }
 
     @PostMapping
     @Operation(summary = "Create a new entity", description = "Creates a new entity (person, place, concept, etc) in the knowledge graph")
@@ -40,7 +57,7 @@ public class EntityController {
             @Valid @RequestBody EntityCreateRequest req) {
         Entity entity = entityService.create(req);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(EntityResponse.from(entity));
+                .body(EntityResponse.from(entity, historyDaysFor(user)));
     }
 
     @GetMapping
@@ -53,7 +70,8 @@ public class EntityController {
             @RequestParam(required = false) LocalDate endDate) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Entity> entities = entityService.listByUser(user.getUserId(), pageable, startDate, endDate);
-        return ResponseEntity.ok(entities.map(EntityResponse::from));
+        final int historyDays = historyDaysFor(user);
+        return ResponseEntity.ok(entities.map(e -> EntityResponse.from(e, historyDays)));
     }
 
     @GetMapping("/{id}")
@@ -62,7 +80,7 @@ public class EntityController {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable String id) {
         Entity entity = entityService.getEntity(user.getUserId(), user.getVaultId(), id);
-        return ResponseEntity.ok(EntityResponse.from(entity));
+        return ResponseEntity.ok(EntityResponse.from(entity, historyDaysFor(user)));
     }
 
     @GetMapping("/{id}/context")
@@ -91,8 +109,9 @@ public class EntityController {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable String id) {
         List<Entity> connections = entityService.getConnections(user.getUserId(), user.getVaultId(), id);
+        final int historyDays = historyDaysFor(user);
         List<EntityResponse> responses = connections != null && !connections.isEmpty()
-            ? connections.stream().map(EntityResponse::from).toList()
+            ? connections.stream().map(e -> EntityResponse.from(e, historyDays)).toList()
             : Collections.emptyList();
         return ResponseEntity.ok(responses);
     }
@@ -104,7 +123,7 @@ public class EntityController {
             @PathVariable String id,
             @Valid @RequestBody EntityUpdateRequest req) {
         Entity entity = entityService.update(user.getUserId(), user.getVaultId(), id, req);
-        return ResponseEntity.ok(EntityResponse.from(entity));
+        return ResponseEntity.ok(EntityResponse.from(entity, historyDaysFor(user)));
     }
 
     @DeleteMapping("/{id}")
@@ -122,6 +141,6 @@ public class EntityController {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable String id) {
         Entity entity = entityService.trackActivity(user.getUserId(), id);
-        return ResponseEntity.ok(EntityResponse.from(entity));
+        return ResponseEntity.ok(EntityResponse.from(entity, historyDaysFor(user)));
     }
 }

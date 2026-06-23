@@ -27,31 +27,21 @@ public class MarkdownImportService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final Parser parser;
 
-    // Wiki-style links: [[Foo]] or [[Foo|alias]]
     private static final Pattern WIKI_LINK = Pattern.compile("\\[\\[([^\\]|]+)(?:\\|[^\\]]+)?\\]\\]");
-    // Hashtag: #word (no spaces, min 2 chars, not part of URL)
     private static final Pattern HASHTAG = Pattern.compile("(?<![\\w/#])#([\\p{L}][\\p{L}0-9_-]{1,40})");
-    // Capitalized 1-3 word sequences (Title Case proper nouns)
     private static final Pattern PROPER_NOUN = Pattern.compile(
             "\\b([A-ZÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ][a-záàâãäéèêëíìîïóòôõöúùûüçñ]{2,})(?:\\s([A-ZÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ][a-záàâãäéèêëíìîïóòôõöúùûüçñ]{1,}))?(?:\\s([A-ZÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ][a-záàâãäéèêëíìîïóòôõöúùûüçñ]{1,}))?\\b"
     );
 
     private static final Set<String> STOPLIST = Set.of(
-            // English days/months
             "monday","tuesday","wednesday","thursday","friday","saturday","sunday",
             "january","february","march","april","may","june","july","august","september","october","november","december",
-            // Portuguese days/months
             "segunda","terça","quarta","quinta","sexta","sábado","domingo",
             "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro",
-            // Common sentence starters
             "the","this","that","these","those","today","tomorrow","yesterday","when","where","what","why","how","but","and","also","then","still","just",
             "ontem","hoje","amanhã","quando","onde","porque","mas","também","então","ainda","apenas"
     );
 
-    /**
-     * Generic nouns / vague concepts we never want as entities, even if the
-     * heuristic or the LLM picks them up. Lowercased, accent-insensitive comparison.
-     */
     private static final Set<String> NOISE = Set.of(
             "supermercado","supermarket","transporte","transport","comida","food",
             "trabalho","work","casa","home","reuniao","reunião","meeting",
@@ -63,11 +53,6 @@ public class MarkdownImportService {
             "nota","note","texto","text","arquivo","file","pasta","folder"
     );
 
-    /**
-     * File extensions we frequently see leaking into entity detection through
-     * Obsidian-style embeds like {@code ![[image.png]]} or {@code [[audio.mp3]]}.
-     * Any candidate whose name ends with one of these is dropped.
-     */
     private static final Pattern FILE_EXT = Pattern.compile(
             "(?i)\\.(png|jpe?g|gif|webp|svg|bmp|tiff?|heic|" +
             "mp3|wav|m4a|ogg|opus|flac|aac|" +
@@ -78,9 +63,6 @@ public class MarkdownImportService {
             "html?|css|js|ts|tsx|jsx|json|xml|yaml|yml)$"
     );
 
-    /**
-     * Anything looking like a path or URL — drop too.
-     */
     private static boolean looksLikePathOrUrl(String s) {
         if (s == null) return false;
         return s.contains("/") || s.contains("\\") || s.startsWith("http")
@@ -111,12 +93,10 @@ public class MarkdownImportService {
     public ParsedFile parse(String filename, String markdown) {
         Node root = parser.parse(markdown == null ? "" : markdown);
 
-        // Extract frontmatter
         YamlFrontMatterVisitor fm = new YamlFrontMatterVisitor();
         root.accept(fm);
         Map<String, List<String>> frontmatter = fm.getData();
 
-        // Convert AST to Tiptap JSON
         ObjectNode doc = mapper.createObjectNode();
         doc.put("type", "doc");
         ArrayNode topContent = mapper.createArrayNode();
@@ -132,19 +112,14 @@ public class MarkdownImportService {
             topContent.add(emptyParagraph());
         }
 
-        // Title: frontmatter > first heading > filename
         String title = pickTitle(frontmatter, root, filename);
 
-        // Heuristic detection
         String plain = extractPlain(root);
         Map<String, Candidate> candidates = new LinkedHashMap<>();
         detectFromFrontmatter(frontmatter, candidates);
         detectFromPlain(plain, candidates);
 
-        // Conservative rule: only keep LOW-confidence candidates that occur 2+ times.
-        // HIGH (wiki-links / hashtags / frontmatter) always pass.
         candidates.values().removeIf(c -> !"HIGH".equals(c.confidence()) && c.occurrences() < 2);
-        // Drop generic concepts / noise words.
         candidates.values().removeIf(c -> isNoise(c.name()));
 
         int wordCount = plain.isBlank() ? 0 : plain.trim().split("\\s+").length;
@@ -186,20 +161,11 @@ public class MarkdownImportService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Title resolution
-    // ─────────────────────────────────────────────────────────────────────
-
     private String pickTitle(Map<String, List<String>> fm, Node root, String filename) {
-        for (String key : List.of("title", "name")) {
-            List<String> v = fm.get(key);
-            if (v != null && !v.isEmpty() && v.get(0) != null && !v.get(0).isBlank()) {
-                return v.get(0).trim();
-            }
-        }
-        // Prefer the actual filename (without extension) as the note title.
-        // Do NOT fall back to the first heading — users want the file name preserved.
-        String name = filename == null ? "Untitled" : filename;
+        // Title is always derived from the file name (without directory and extension).
+        // Frontmatter `title`/`name` and the first heading are intentionally ignored so
+        // imported notes preserve the user's original filenames.
+        String name = filename == null ? "" : filename;
         int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
         if (slash >= 0) name = name.substring(slash + 1);
         int dot = name.lastIndexOf('.');
@@ -207,10 +173,6 @@ public class MarkdownImportService {
         name = name.trim();
         return name.isBlank() ? "Untitled" : name;
     }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Markdown AST → Tiptap JSON
-    // ─────────────────────────────────────────────────────────────────────
 
     private JsonNode convertBlock(Node node) {
         if (node instanceof Heading h) {
@@ -304,7 +266,6 @@ public class MarkdownImportService {
             n.put("type", "horizontalRule");
             return n;
         }
-        // Fallback: render as paragraph of its text
         String text = inlineText(node);
         if (text.isBlank()) return null;
         ObjectNode n = mapper.createObjectNode();
@@ -415,10 +376,6 @@ public class MarkdownImportService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Heuristic entity detection
-    // ─────────────────────────────────────────────────────────────────────
-
     private void detectFromFrontmatter(Map<String, List<String>> fm, Map<String, Candidate> out) {
         addAll(fm.get("tags"), "TOPIC", "HIGH", out);
         addAll(fm.get("topics"), "TOPIC", "HIGH", out);
@@ -432,7 +389,6 @@ public class MarkdownImportService {
         if (values == null) return;
         for (String raw : values) {
             if (raw == null) continue;
-            // Frontmatter values can come as "[a, b, c]" or single strings
             for (String piece : raw.replaceAll("[\\[\\]]", "").split(",")) {
                 String name = piece.trim().replaceAll("^[\"']|[\"']$", "");
                 if (!name.isBlank()) bump(out, name, type, confidence);
@@ -442,22 +398,16 @@ public class MarkdownImportService {
 
     private void detectFromPlain(String text, Map<String, Candidate> out) {
         if (text == null || text.isBlank()) return;
-
-        // Wiki-links → TOPIC (high confidence)
         Matcher m = WIKI_LINK.matcher(text);
         while (m.find()) {
             String name = m.group(1).trim();
             if (!name.isBlank()) bump(out, name, "TOPIC", "HIGH");
         }
-
-        // Hashtags → TOPIC
         m = HASHTAG.matcher(text);
         while (m.find()) {
             String name = m.group(1).trim();
             if (!name.isBlank()) bump(out, capitalize(name), "TOPIC", "HIGH");
         }
-
-        // Proper nouns (capitalized sequences)
         m = PROPER_NOUN.matcher(text);
         while (m.find()) {
             StringBuilder name = new StringBuilder(m.group(1));
@@ -467,20 +417,12 @@ public class MarkdownImportService {
             String full = name.toString();
             String lower = m.group(1).toLowerCase(Locale.ROOT);
             if (words == 1 && STOPLIST.contains(lower)) continue;
-            // Skip matches at the start of a sentence (capitalization is grammatical, not a proper noun).
             if (isSentenceStart(text, m.start())) continue;
-            // Single-word → PERSON candidate; multi-word → PROJECT candidate.
-            // Both are LOW confidence and require 2+ occurrences (filtered later).
             String type = words == 1 ? "PERSON" : "PROJECT";
             bump(out, full, type, "LOW");
         }
     }
 
-    /**
-     * A position is "sentence start" if it's the beginning of the text, or the
-     * previous non-whitespace character is a sentence terminator. This catches
-     * the common false positive of "... ended. Today was good" capturing "Today".
-     */
     private boolean isSentenceStart(String text, int pos) {
         int i = pos - 1;
         while (i >= 0 && Character.isWhitespace(text.charAt(i))) i--;
@@ -497,7 +439,6 @@ public class MarkdownImportService {
         if (existing == null) {
             out.put(key, new Candidate(key, name, type, 1, confidence));
         } else {
-            // Promote to HIGH if any signal was HIGH.
             String conf = ("HIGH".equals(existing.confidence()) || "HIGH".equals(confidence)) ? "HIGH" : "LOW";
             out.put(key, new Candidate(key, existing.name(), existing.suggestedType(), existing.occurrences() + 1, conf));
         }

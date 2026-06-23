@@ -13,7 +13,7 @@ import java.time.Instant;
 
 /**
  * Represents an active or completed timer session.
- * Used to track running timers and recover from interrupted sessions.
+ * Supports pause/resume — accumulatedPausedSeconds tracks total paused time.
  */
 @Data
 @NoArgsConstructor
@@ -25,15 +25,15 @@ public class TimerSession {
     @Id
     private String id;
 
-    @NotBlank(message = "userId is required")
+    @NotBlank
     @Indexed
     private String userId;
 
-    @NotBlank(message = "entityId is required")
+    @NotBlank
     @Indexed
     private String entityId;
 
-    @NotBlank(message = "vaultId is required")
+    @NotBlank
     @Indexed
     private String vaultId;
 
@@ -41,6 +41,13 @@ public class TimerSession {
     private Instant startedAt;
 
     private Instant stoppedAt;
+
+    /** Instant when timer was paused (null when running). */
+    private Instant pausedAt;
+
+    /** Total seconds spent in PAUSED state across this session. */
+    @Builder.Default
+    private Long accumulatedPausedSeconds = 0L;
 
     private String timeEntryId;
 
@@ -53,23 +60,24 @@ public class TimerSession {
     private Instant updatedAt;
 
     /**
-     * Calculate elapsed time in seconds
+     * Elapsed seconds excluding any time spent paused.
      */
     public long getElapsedSeconds() {
-        Instant endTime = stoppedAt != null ? stoppedAt : Instant.now();
-        return endTime.getEpochSecond() - startedAt.getEpochSecond();
+        Instant endTime = stoppedAt != null ? stoppedAt
+                : (pausedAt != null ? pausedAt : Instant.now());
+        long raw = endTime.getEpochSecond() - startedAt.getEpochSecond();
+        long paused = accumulatedPausedSeconds == null ? 0L : accumulatedPausedSeconds;
+        return Math.max(0L, raw - paused);
     }
 
-    /**
-     * Check if this timer is currently running
-     */
     public boolean isRunning() {
         return status == TimerStatus.RUNNING;
     }
 
-    /**
-     * Format elapsed time as HH:MM:SS
-     */
+    public boolean isPaused() {
+        return status == TimerStatus.RUNNING && pausedAt != null;
+    }
+
     public String getFormattedElapsed() {
         long totalSeconds = getElapsedSeconds();
         long hours = totalSeconds / 3600;

@@ -82,16 +82,24 @@ public class TimeTrackingService {
             throw new IllegalArgumentException("Timer is not running");
         }
 
-        // Calculate elapsed time
+        // If stopping while paused, finalize the paused window first
+        if (session.getPausedAt() != null) {
+            long pausedDelta = Instant.now().getEpochSecond() - session.getPausedAt().getEpochSecond();
+            session.setAccumulatedPausedSeconds(
+                    (session.getAccumulatedPausedSeconds() == null ? 0L : session.getAccumulatedPausedSeconds())
+                            + Math.max(0L, pausedDelta));
+            session.setPausedAt(null);
+        }
+
+        session.setStoppedAt(Instant.now());
         long elapsedSeconds = session.getElapsedSeconds();
 
-        // Create time entry
         TimeEntry entry = TimeEntry.builder()
                 .userId(userId)
                 .entityId(session.getEntityId())
                 .vaultId(session.getVaultId())
                 .date(LocalDate.now())
-                .durationSeconds(elapsedSeconds)
+                .durationSeconds(Math.max(1L, elapsedSeconds))
                 .note(request.getNote())
                 .source(TimeEntrySource.TIMER)
                 .createdAt(Instant.now())
@@ -99,8 +107,6 @@ public class TimeTrackingService {
 
         TimeEntry savedEntry = timeEntryRepository.save(entry);
 
-        // Update timer session
-        session.setStoppedAt(Instant.now());
         session.setStatus(TimerStatus.COMPLETED);
         session.setTimeEntryId(savedEntry.getId());
         session.setUpdatedAt(Instant.now());
@@ -110,23 +116,83 @@ public class TimeTrackingService {
     }
 
     /**
-     * Manually add time to an entity
+     * Pause an active timer (persists pause moment so elapsed excludes paused time).
      */
     @Transactional
+    public TimerSessionResponse pauseTimer(String userId, String sessionId) {
+        TimerSession session = timerSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Timer session not found"));
+        if (!session.getUserId().equals(userId)) {
+            throw new SecurityException("Unauthorized access to timer session");
+        }
+        if (!session.isRunning()) {
+            throw new IllegalArgumentException("Timer is not running");
+        }
+        if (session.getPausedAt() == null) {
+            session.setPausedAt(Instant.now());
+            session.setUpdatedAt(Instant.now());
+            timerSessionRepository.save(session);
+        }
+        return TimerSessionResponse.fromEntity(session);
+    }
+
+    /**
+     * Resume a paused timer.
+     */
+    @Transactional
+    public TimerSessionResponse resumeTimer(String userId, String sessionId) {
+        TimerSession session = timerSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Timer session not found"));
+        if (!session.getUserId().equals(userId)) {
+            throw new SecurityException("Unauthorized access to timer session");
+        }
+        if (session.getPausedAt() != null) {
+            long delta = Instant.now().getEpochSecond() - session.getPausedAt().getEpochSecond();
+            session.setAccumulatedPausedSeconds(
+                    (session.getAccumulatedPausedSeconds() == null ? 0L : session.getAccumulatedPausedSeconds())
+                            + Math.max(0L, delta));
+            session.setPausedAt(null);
+            session.setUpdatedAt(Instant.now());
+            timerSessionRepository.save(session);
+        }
+        return TimerSessionResponse.fromEntity(session);
+    }
+
+
+    /**
+     * Manually add time to an entity
+     */
     public TimeEntryResponse addTime(String userId, String vaultId, AddTimeRequest request) {
-        if (request.getDurationSeconds() <= 0) {
-            throw new IllegalArgumentException("Duration must be positive");
+        if (request == null) {
+            throw new tech.lemnova.continuum.application.exception.BadRequestException("Request body is required");
+        }
+        if (request.getEntityId() == null || request.getEntityId().isBlank()) {
+            throw new tech.lemnova.continuum.application.exception.BadRequestException("entityId is required");
+        }
+        if (request.getDurationSeconds() == null || request.getDurationSeconds() <= 0) {
+            throw new tech.lemnova.continuum.application.exception.BadRequestException("durationSeconds must be positive");
+        }
+        LocalDate date = request.getDate() != null ? request.getDate() : LocalDate.now();
+
+        // Fallback vaultId from user record if missing
+        String resolvedVaultId = (vaultId != null && !vaultId.isBlank())
+                ? vaultId
+                : userRepo.findById(userId).map(User::getVaultId).orElse(null);
+        if (resolvedVaultId == null || resolvedVaultId.isBlank()) {
+            resolvedVaultId = userId; // last-resort fallback to keep @NotBlank happy
         }
 
         TimeEntry entry = TimeEntry.builder()
+                .id(java.util.UUID.randomUUID().toString().replace("-", ""))
                 .userId(userId)
                 .entityId(request.getEntityId())
-                .vaultId(vaultId)
-                .date(request.getDate())
+                .vaultId(resolvedVaultId)
+                .date(date)
                 .durationSeconds(request.getDurationSeconds())
                 .note(request.getNote())
                 .source(TimeEntrySource.MANUAL)
                 .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build();
 
         TimeEntry saved = timeEntryRepository.save(entry);
@@ -316,6 +382,34 @@ public class TimeTrackingService {
     }
 
     /**
+     * All entries for the user in a date range (any entity). Used for heatmap/today views.
+     */
+    public List<TimeEntryResponse> getAllInRange(String userId, LocalDate from, LocalDate to) {
+        LocalDate effectiveFrom = from != null ? from : LocalDate.now().minusYears(1);
+        LocalDate effectiveTo = to != null ? to : LocalDate.now();
+        return timeEntryRepository.findByUserIdAndArchivedAtIsNull(userId).stream()
+                .filter(e -> e.getDate() != null
+                        && !e.getDate().isBefore(effectiveFrom)
+                        && !e.getDate().isAfter(effectiveTo))
+                .sorted(Comparator.comparing(TimeEntry::getDate).reversed())
+                .map(TimeEntryResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * All entries today across all entities.
+     */
+    public List<TimeEntryResponse> getToday(String userId) {
+        LocalDate today = LocalDate.now();
+        return timeEntryRepository.findByUserIdAndArchivedAtIsNull(userId).stream()
+                .filter(e -> today.equals(e.getDate()))
+                .sorted(Comparator.comparing(TimeEntry::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(TimeEntryResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Helper: Format seconds to HH:MM:SS
      */
     private String formatSeconds(long seconds) {
@@ -325,3 +419,4 @@ public class TimeTrackingService {
         return String.format("%02d:%02d:%02d", hours, minutes, secs);
     }
 }
+

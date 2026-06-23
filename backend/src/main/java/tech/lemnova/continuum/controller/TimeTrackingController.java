@@ -179,4 +179,49 @@ public class TimeTrackingController {
         TimeEntryResponse response = timeTrackingService.recoverSession(user.getUserId(), entityId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    /**
+     * Pause an active timer
+     * POST /api/time-tracking/:sessionId/pause
+     */
+    @PostMapping("/{sessionId}/pause")
+    public ResponseEntity<TimerSessionResponse> pauseTimer(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable String sessionId) {
+        return ResponseEntity.ok(timeTrackingService.pauseTimer(user.getUserId(), sessionId));
+    }
+
+    /**
+     * Resume a paused timer
+     * POST /api/time-tracking/:sessionId/resume
+     */
+    @PostMapping("/{sessionId}/resume")
+    public ResponseEntity<TimerSessionResponse> resumeTimer(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable String sessionId) {
+        return ResponseEntity.ok(timeTrackingService.resumeTimer(user.getUserId(), sessionId));
+    }
+
+    /**
+     * Today's time entries across all entities
+     * GET /api/time-tracking/today
+     */
+    @GetMapping("/today")
+    public ResponseEntity<List<TimeEntryResponse>> getToday(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(timeTrackingService.getToday(user.getUserId()));
+    }
+
+    /**
+     * All entries in range across all entities (heatmap source)
+     * GET /api/time-tracking/all/range?from=&to=
+     */
+    @GetMapping("/all/range")
+    public ResponseEntity<List<TimeEntryResponse>> getAllInRange(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to) {
+        return ResponseEntity.ok(timeTrackingService.getAllInRange(user.getUserId(), from, to));
+    }
 }
+

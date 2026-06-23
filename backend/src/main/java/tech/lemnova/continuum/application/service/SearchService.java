@@ -103,9 +103,18 @@ public class SearchService {
             String vaultId = getVaultIdFromContext();
             return noteRepo.findByTextSearch(userId, vaultId, query);
         } catch (Exception e) {
-            log.warn("Erro ao buscar notas com text search: {}", e.getMessage());
-            // Fallback: buscar por titre apenas
-            return noteRepo.findNotesByTitleText(userId, query);
+            log.warn("Erro ao buscar notas com text search (vaultId context): {}", e.getMessage());
+            // Fallback 1: buscar por título apenas
+            try {
+                return noteRepo.findNotesByTitleText(userId, query);
+            } catch (Exception fallbackError) {
+                log.warn("Erro ao buscar notas com fallback de titulo: {}", fallbackError.getMessage());
+                // Fallback 2: buscar sem text search (simpler, slower, but doesn't require indexes)
+                return noteRepo.findByUserId(userId).stream()
+                    .filter(note -> note.getTitle().toLowerCase().contains(query.toLowerCase()))
+                    .limit(10)
+                    .collect(Collectors.toList());
+            }
         }
     }
     
@@ -123,7 +132,13 @@ public class SearchService {
             return entityRepo.findByTextSearch(userId, query);
         } catch (Exception e) {
             log.warn("Erro ao buscar entidades com text search: {}", e.getMessage());
-            return List.of();
+            // Fallback: buscar por título usando regex case-insensitive
+            try {
+                return entityRepo.findByTitleContainingIgnoreCase(userId, query);
+            } catch (Exception fallbackError) {
+                log.warn("Erro ao buscar entidades com fallback: {}", fallbackError.getMessage());
+                return List.of();
+            }
         }
     }
     

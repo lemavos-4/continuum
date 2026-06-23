@@ -19,6 +19,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -33,6 +36,9 @@ public class SecurityConfig {
 
     @Value("${cors.allowed.origins:*}")
     private String corsAllowedOrigins;
+
+    @Value("${app.dev-mode:false}")
+    private boolean appDevMode;
 
     @Value("${frontend.url:${app.url:http://localhost:5173}}")
     private String frontendUrl;
@@ -66,6 +72,7 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/", "/health", "/error", "/actuator/**").permitAll()
                 // Public authentication endpoints
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
@@ -91,23 +98,50 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        
-        // Allow multiple origins including Lovable domains
-        config.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:5173",
-            "https://continuumnodes.lovable.app",
-            "https://*.lovable.app",
-            "https://continuum-backend.onrender.com"
-        ));
+
+        List<String> allowedOrigins = parseAllowedOrigins(corsAllowedOrigins);
+        if (allowedOrigins.isEmpty()) {
+            // Safe defaults — production domains + Lovable preview wildcards.
+            // Override via CORS_ALLOWED_ORIGINS env var (comma separated).
+            allowedOrigins = Arrays.asList(
+                "https://appcontinuum.vercel.app",
+                "https://continuumnodes.lovable.app",
+                "https://backend-continuum.onrender.com",
+                "https://*.lovable.app",
+                "https://*.lovableproject.com",
+                "https://*.vercel.app",
+                "http://localhost:5173",
+                "http://localhost:8080"
+            );
+        }
+
+        if (appDevMode) {
+            // Dev: allow any origin pattern (still credential-safe via patterns API).
+            config.setAllowedOriginPatterns(Collections.singletonList("*"));
+        } else {
+            // Use patterns (not origins) so wildcards like *.lovable.app work with credentials.
+            config.setAllowedOriginPatterns(allowedOrigins);
+        }
+
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
-        config.setExposedHeaders(Arrays.asList("*"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    private List<String> parseAllowedOrigins(String origins) {
+        if (origins == null || origins.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(origins.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
     }
 
     @Bean

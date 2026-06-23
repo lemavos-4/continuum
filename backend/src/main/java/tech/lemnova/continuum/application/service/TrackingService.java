@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.time.temporal.ChronoUnit;
 
 @Service
 public class TrackingService {
@@ -39,12 +38,17 @@ public class TrackingService {
         return userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    /** Earliest date this user is allowed to receive historical data for. */
+    private LocalDate retentionCutoff(User user) {
+        int days = planConfig.getHistoryDays(user.getPlan());
+        if (days == Integer.MAX_VALUE || days <= 0) return LocalDate.now().minusYears(100);
+        return LocalDate.now().minusDays(days);
+    }
+
     public TrackingEvent track(String userId, String entityId, TrackEventRequest req) {
         User user = getUser(userId);
         Entity entity = entityService.get(userId, entityId);
         if (!entity.isTrackable()) throw new BadRequestException("Entity not trackable");
-
-        // Removed: history days check, since no data deletion
 
         LocalDate date = req.date() != null ? req.date() : LocalDate.now();
         List<TrackingEvent> events = trackingRepo.findByUserIdAndEntityIdAndDate(userId, entityId, date);
@@ -81,32 +85,44 @@ public class TrackingService {
 
     public Map<LocalDate, Double> getHeatmap(String userId, String entityId) {
         User user = getUser(userId);
-        int days = planConfig.getHistoryDays(user.getPlan());
         LocalDate end = LocalDate.now();
-        LocalDate start = days == Integer.MAX_VALUE ? end.minusYears(10) : end.minusDays(days);
-        return getHeatmap(userId, entityId, start, end);
+        LocalDate start = retentionCutoff(user);
+        return getHeatmapInternal(userId, entityId, start, end);
     }
 
     public Map<LocalDate, Double> getHeatmap(String userId, String entityId,
                                                LocalDate start, LocalDate end) {
+        User user = getUser(userId);
+        LocalDate cutoff = retentionCutoff(user);
+        // Backend is the source of truth: clamp the requested window into the
+        // user's allowed retention range. Data outside this window is never returned.
+        LocalDate effectiveStart = (start == null || start.isBefore(cutoff)) ? cutoff : start;
+        LocalDate effectiveEnd = end == null ? LocalDate.now() : end;
+        return getHeatmapInternal(userId, entityId, effectiveStart, effectiveEnd);
+    }
+
+    private Map<LocalDate, Double> getHeatmapInternal(String userId, String entityId,
+                                                      LocalDate start, LocalDate end) {
         return trackingRepo.findByUserIdAndEntityId(userId, entityId).stream()
                 .filter(e -> !e.getDate().isBefore(start) && !e.getDate().isAfter(end))
                 .collect(Collectors.toMap(TrackingEvent::getDate, e -> e.getNumericValue().doubleValue()));
     }
 
     public TrackingStats getStats(String userId, String entityId) {
+        User user = getUser(userId);
+        LocalDate cutoff = retentionCutoff(user);
+
         List<TrackingEvent> all = trackingRepo.findByUserIdAndEntityId(userId, entityId).stream()
+                .filter(e -> !e.getDate().isBefore(cutoff))
                 .sorted(Comparator.comparing(TrackingEvent::getDate, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
 
-        if (all.isEmpty()) return new TrackingStats(0, 0, 0.0, 0.0);
+        if (all.isEmpty()) return new TrackingStats(0.0, 0.0, 0);
 
-        int streak        = computeStreak(all);
-        int longestStreak = computeLongestStreak(all);
-        double avg        = all.stream()
+        double avg = all.stream()
                 .mapToDouble(e -> e.getNumericValue().doubleValue()).average().orElse(0.0);
 
-        // weeklyCompletionRate: dias de eventos nesta semana / 7
+        // weeklyCompletionRate: dias com eventos nesta semana / 7
         LocalDate today = LocalDate.now();
         LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
         Set<LocalDate> datesThisWeek = all.stream()
@@ -115,7 +131,9 @@ public class TrackingService {
                 .collect(Collectors.toSet());
         double weeklyCompletionRate = datesThisWeek.size() / 7.0;
 
-        return new TrackingStats(streak, longestStreak, avg, weeklyCompletionRate);
+        int totalCompletions = (int) all.stream().map(TrackingEvent::getDate).distinct().count();
+
+        return new TrackingStats(avg, weeklyCompletionRate, totalCompletions);
     }
 
     public List<TrackingEvent> getTodayEvents(String userId) {
@@ -125,54 +143,36 @@ public class TrackingService {
                 .collect(Collectors.toList());
     }
 
-    // ── private ───────────────────────────────────────────────────────────────
-
-    private int computeStreak(List<TrackingEvent> events) {
-        Set<LocalDate> dates = events.stream().map(TrackingEvent::getDate).collect(Collectors.toSet());
-        LocalDate today = LocalDate.now();
-        int streak = 0;
-        LocalDate check = dates.contains(today) ? today : today.minusDays(1);
-        while (dates.contains(check)) { streak++; check = check.minusDays(1); }
-        return streak;
-    }
-
-    private int computeLongestStreak(List<TrackingEvent> events) {
-        if (events.isEmpty()) return 0;
-        List<LocalDate> sorted = events.stream()
-                .map(TrackingEvent::getDate).distinct().sorted().collect(Collectors.toList());
-        int longest = 1, current = 1;
-        for (int i = 1; i < sorted.size(); i++) {
-            if (ChronoUnit.DAYS.between(sorted.get(i - 1), sorted.get(i)) == 1) {
-                current++;
-                longest = Math.max(longest, current);
-            } else {
-                current = 1;
-            }
-        }
-        return longest;
-    }
-
     /**
-     * Conta activities ativas (que tiveram pelo menos um evento de tracking desde a data especificada)
+     * Conta activities ativas (que tiveram pelo menos um evento de tracking desde a data especificada).
+     * Respeita a janela de retenção do plano do usuário.
      */
     public long countActiveActivities(String userId, LocalDate since) {
+        User user = getUser(userId);
+        LocalDate cutoff = retentionCutoff(user);
+        LocalDate effectiveSince = since == null || since.isBefore(cutoff) ? cutoff : since;
         List<TrackingEvent> events = trackingRepo.findByUserId(userId);
         Set<String> activeEntityIds = events.stream()
-                .filter(e -> !e.getDate().isBefore(since))
+                .filter(e -> !e.getDate().isBefore(effectiveSince))
                 .map(TrackingEvent::getEntityId)
                 .collect(Collectors.toSet());
         return activeEntityIds.size();
     }
 
     /**
-     * Retorna dados de atividade para heatmap (últimos 30 dias)
+     * Dados de atividade agregados por dia. O parâmetro `days` é truncado para
+     * respeitar a janela de retenção do plano — o backend é a única autoridade.
      */
     public Map<String, Integer> getActivityData(String userId, int days) {
-        List<TrackingEvent> events = trackingRepo.findByUserId(userId);
-        LocalDate end = LocalDate.now();
-        LocalDate start = end.minusDays(days - 1);
+        User user = getUser(userId);
+        int retention = planConfig.getHistoryDays(user.getPlan());
+        int effectiveDays = (retention == Integer.MAX_VALUE) ? days : Math.min(days, retention);
+        if (effectiveDays <= 0) effectiveDays = 1;
 
-        return events.stream()
+        LocalDate end = LocalDate.now();
+        LocalDate start = end.minusDays(effectiveDays - 1);
+
+        return trackingRepo.findByUserId(userId).stream()
                 .filter(e -> !e.getDate().isBefore(start) && !e.getDate().isAfter(end))
                 .collect(Collectors.groupingBy(
                         e -> e.getDate().toString(),
@@ -181,6 +181,7 @@ public class TrackingService {
     }
 
     public record TrackingStats(
-            int currentStreak, int longestStreak,
-            double averageValue, double weeklyCompletionRate) {}
+            double averageValue,
+            double weeklyCompletionRate,
+            int totalCompletions) {}
 }

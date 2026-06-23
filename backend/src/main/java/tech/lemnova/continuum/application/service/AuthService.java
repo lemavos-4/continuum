@@ -20,6 +20,7 @@ import tech.lemnova.continuum.domain.token.TokenBlacklistRepository;
 import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
 import tech.lemnova.continuum.infra.security.JwtService;
+import tech.lemnova.continuum.infra.security.RefreshTokenService;
 import tech.lemnova.continuum.infra.vault.VaultStorageService;
 
 import java.time.Instant;
@@ -40,6 +41,7 @@ public class AuthService {
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final VaultStorageService vaultStorage;
     private final PlanConfiguration planConfig;
 
@@ -48,6 +50,7 @@ public class AuthService {
                        TokenBlacklistRepository tokenBlacklistRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
+                       RefreshTokenService refreshTokenService,
                        VaultStorageService vaultStorage,
                        PlanConfiguration planConfig) {
         this.users = users;
@@ -55,6 +58,7 @@ public class AuthService {
         this.tokenBlacklistRepository = tokenBlacklistRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
         this.vaultStorage = vaultStorage;
         this.planConfig = planConfig;
     }
@@ -124,15 +128,18 @@ public class AuthService {
 
     @Transactional
     public AuthResponse googleAuth(String googleId, String email, String name, Boolean emailVerified, String avatarUrl) {
+        boolean isNew = users.findByEmail(email).isEmpty();
         User user = upsertGoogleUser(googleId, email, name, emailVerified, avatarUrl);
-        return buildAuthResponseWithTokenPair(user);
+        return buildAuthResponseWithTokenPair(user).withNewUserFlag(isNew);
     }
 
     @Transactional
     public AuthResponse googleAuth(tech.lemnova.continuum.infra.google.GoogleOAuthService.GoogleUserInfo googleUser) {
+        boolean isNew = users.findByEmail(googleUser.email()).isEmpty();
         User user = upsertGoogleUser(googleUser.googleId(), googleUser.email(), googleUser.name(), googleUser.emailVerified(), googleUser.picture());
-        return buildAuthResponseWithTokenPair(user);
+        return buildAuthResponseWithTokenPair(user).withNewUserFlag(isNew);
     }
+
 
     @Transactional
     public AuthResponse register(String username, String email, String password) {
@@ -157,7 +164,7 @@ public class AuthService {
         user = users.save(user);
         createFreeSubscription(user.getId());
         initVaultAsync(vaultId);
-        return buildAuthResponseWithTokenPair(user);
+        return buildAuthResponseWithTokenPair(user).withNewUserFlag(true);
     }
 
     @Transactional
@@ -258,13 +265,18 @@ public class AuthService {
      * Constrói AuthResponse com TokenPair (Access + Refresh).
      */
     private AuthResponse buildAuthResponseWithTokenPair(User user) {
-        JwtService.TokenPair tokens = jwtService.generateTokenPairFromUser(user);
+        // Access token (curta duração) gerado diretamente.
+        String accessToken = jwtService.generateFromUser(user);
+        // Refresh token (longa duração) gerado E persistido no banco para que
+        // o endpoint /api/auth/refresh consiga validá-lo depois. Sem isso o
+        // refresh falha com TOKEN_NOT_FOUND.
+        String refreshToken = refreshTokenService.generateRefreshToken(user.getId(), "login");
         return AuthResponse.withTokenPair(
-            tokens.accessToken(), 
-            tokens.refreshToken(), 
-            user.getId(), 
-            user.getUsername(), 
-            user.getEmail(), 
+            accessToken,
+            refreshToken,
+            user.getId(),
+            user.getUsername(),
+            user.getEmail(),
             user.getPlan()
         );
     }

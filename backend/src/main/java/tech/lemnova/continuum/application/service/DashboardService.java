@@ -13,7 +13,7 @@ import tech.lemnova.continuum.infra.vault.VaultStorageService;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -107,58 +107,9 @@ public class DashboardService {
     }
 
     private ActivityStatsDTO getActivityStats(String userId, String vaultId) {
+        // TrackingService already enforces the plan retention window.
         Map<String, Integer> dailyCompletions = trackingService.getActivityData(userId, 30);
         int totalDays = (int) dailyCompletions.values().stream().filter(v -> v > 0).count();
-        // For simplicity, calculate streaks from the data
-        int maxStreak = calculateMaxStreak(dailyCompletions);
-        int currentStreak = calculateCurrentStreak(dailyCompletions);
-        int longestInactive = calculateLongestInactive(dailyCompletions);
-        return new ActivityStatsDTO(dailyCompletions, totalDays, maxStreak, currentStreak, longestInactive);
-    }
-
-    private int calculateMaxStreak(Map<String, Integer> data) {
-        // Simple implementation: find longest consecutive days with >0
-        List<LocalDate> dates = data.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
-                .map(e -> LocalDate.parse(e.getKey()))
-                .sorted()
-                .collect(Collectors.toList());
-        if (dates.isEmpty()) return 0;
-        int max = 1, current = 1;
-        for (int i = 1; i < dates.size(); i++) {
-            if (ChronoUnit.DAYS.between(dates.get(i-1), dates.get(i)) == 1) {
-                current++;
-                max = Math.max(max, current);
-            } else {
-                current = 1;
-            }
-        }
-        return max;
-    }
-
-    private int calculateCurrentStreak(Map<String, Integer> data) {
-        LocalDate today = LocalDate.now();
-        int streak = 0;
-        LocalDate check = today;
-        while (data.getOrDefault(check.toString(), 0) > 0) {
-            streak++;
-            check = check.minusDays(1);
-        }
-        return streak;
-    }
-
-    private int calculateLongestInactive(Map<String, Integer> data) {
-        List<LocalDate> activeDates = data.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
-                .map(e -> LocalDate.parse(e.getKey()))
-                .sorted()
-                .collect(Collectors.toList());
-        if (activeDates.isEmpty()) return 30; // all inactive
-        int maxGap = 0;
-        for (int i = 1; i < activeDates.size(); i++) {
-            long gap = ChronoUnit.DAYS.between(activeDates.get(i-1), activeDates.get(i)) - 1;
-            maxGap = (int) Math.max(maxGap, gap);
-        }
-        return maxGap;
+        return new ActivityStatsDTO(dailyCompletions, totalDays);
     }
 }

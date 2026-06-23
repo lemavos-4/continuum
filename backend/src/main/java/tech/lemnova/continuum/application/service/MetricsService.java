@@ -225,10 +225,17 @@ public class MetricsService {
         snapshot.setUpdatedAt(Instant.now());
         scoreSnapshotRepo.save(snapshot);
 
+        int historyDays = planConfig.getHistoryDays(user.getPlan());
+        LocalDate cutoff = (historyDays == Integer.MAX_VALUE)
+                ? LocalDate.now().minusYears(100)
+                : LocalDate.now().minusDays(historyDays);
+
         return scoresByDate.entrySet().stream()
                 .map(entry -> new ScoreTimelineResponse.ScorePoint(LocalDate.parse(entry.getKey()), entry.getValue()))
+                .filter(p -> !p.date().isBefore(cutoff))
                 .sorted(Comparator.comparing(ScoreTimelineResponse.ScorePoint::date))
                 .toList();
+
     }
 
     private List<ScoreTimelineResponse.ScorePoint> buildScoreHistory(User user) {

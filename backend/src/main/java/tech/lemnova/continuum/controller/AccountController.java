@@ -134,7 +134,24 @@ public class AccountController {
             return new ResponseEntity<>(jsonData, headers, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"error\":\"Falha ao exportar dados\"}");
+                     .body("{\"error\":\"Falha ao exportar dados\"}");
+        }
+    }
+
+    @GetMapping("/export/zip")
+    @Operation(summary = "Export full vault as ZIP", description = "Exports the entire user vault (notes & entities as Markdown plus a JSON backup) as a .zip archive")
+    public ResponseEntity<byte[]> exportVaultZip(@AuthenticationPrincipal CustomUserDetails user) {
+        try {
+            byte[] zip = exportService.exportVaultAsZip(user.getUserId());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/zip"));
+            headers.setContentDispositionFormData("attachment", "continuum-vault.zip");
+            headers.add("Content-Length", String.valueOf(zip.length));
+
+            return new ResponseEntity<>(zip, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

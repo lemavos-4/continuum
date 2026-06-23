@@ -3,6 +3,8 @@ package tech.lemnova.continuum.application.service;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import tech.lemnova.continuum.application.exception.NotFoundException;
 import tech.lemnova.continuum.application.exception.PlanLimitException;
 import tech.lemnova.continuum.application.exception.BadRequestException;
@@ -119,6 +121,10 @@ public class EntityService {
         return entityRepo.findByVaultIdAndTypeAndArchivedAtIsNull(user.getVaultId(), type);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "insights:notes",    allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
     public Entity create(EntityCreateRequest req) {
         String userId = getCurrentUserId();
         String vaultId = getCurrentVaultId();
@@ -210,6 +216,10 @@ public class EntityService {
         return entityRepo.findByIdInAndArchivedAtIsNull(allIds);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "insights:notes",    allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
     public Entity update(String userId, String vaultId, String entityId, EntityUpdateRequest req) {
         User user = getUser(userId);
         // Validação centralizada de posse
@@ -221,6 +231,10 @@ public class EntityService {
         return entityRepo.save(entity);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "insights:notes",    allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
     public void delete(String entityId) {
         String userId = getCurrentUserId();
         String vaultId = getCurrentVaultId();

@@ -18,6 +18,25 @@ public record EntityResponse(
     List<LocalDate> trackingDates
 ) {
     public static EntityResponse from(Entity entity) {
+        return from(entity, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Plan-aware projection: enforces historical retention on tracking dates.
+     * Dates outside the retention window are NEVER returned to the client.
+     */
+    public static EntityResponse from(Entity entity, int historyDays) {
+        List<LocalDate> dates = entity.getTrackingDates() != null
+            ? entity.getTrackingDates()
+            : Collections.emptyList();
+
+        if (historyDays > 0 && historyDays != Integer.MAX_VALUE && !dates.isEmpty()) {
+            LocalDate cutoff = LocalDate.now().minusDays(historyDays);
+            dates = dates.stream()
+                .filter(d -> d != null && !d.isBefore(cutoff))
+                .toList();
+        }
+
         return new EntityResponse(
             entity.getId(),
             entity.getUserId(),
@@ -26,7 +45,7 @@ public record EntityResponse(
             entity.getType(),
             entity.getDescription(),
             entity.getCreatedAt(),
-            entity.getTrackingDates() != null ? entity.getTrackingDates() : Collections.emptyList()
+            dates
         );
     }
 }

@@ -30,7 +30,7 @@ public class OAuthStateService {
     private final String finalFrontendUrl;
 
     public OAuthStateService(@Value("${jwt.secret}") String jwtSecret,
-                             @Value("${frontend.url:https://continuumnodes.lovable.app}") String frontendUrl) {
+                             @Value("${frontend.url:https://api-continuum.vercel.app}") String frontendUrl) {
         this.stateKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         
         String baseUrl = frontendUrl.endsWith("/") 
