@@ -44,9 +44,9 @@ export function ActivityCompletionCalendar({
   const now = today(getLocalTimeZone());
 
   return (
-    <div className="w-full border border-white/5 bg-white/[0.01] rounded-sm p-4">
+    <div className="w-full border border-white/5 bg-white/[0.01] rounded-sm p-3 sm:p-4 md:p-5">
       <Cal aria-label="Activity calendar" className="w-full">
-        <header className="flex items-center gap-1 pb-3">
+        <header className="flex items-center gap-1 pb-2 sm:pb-3">
           <RACButton
             slot="previous"
             className="flex size-8 items-center justify-center rounded-sm text-white/40 outline-none transition-colors hover:bg-white/5 hover:text-white"
@@ -62,15 +62,15 @@ export function ActivityCompletionCalendar({
           </RACButton>
         </header>
 
-        <CalendarGrid className="w-full">
+        <CalendarGrid className="w-full [&_table]:w-full [&_table]:border-collapse">
           <CalendarGridHeader>
             {(day) => (
-              <CalendarHeaderCell className="pb-1.5 font-mono text-[10px] uppercase tracking-widest text-white/30">
+              <CalendarHeaderCell className="pb-1.5 font-mono text-[9px] sm:text-[9px] md:text-[10px] uppercase tracking-widest text-white/30">
                 {day}
               </CalendarHeaderCell>
             )}
           </CalendarGridHeader>
-          <CalendarGridBody className="[&_td]:p-0.5">
+          <CalendarGridBody className="[&_td]:p-0.5 [&_tr:not(:last-child)]:mb-1">
             {(date) => {
               const dateStr = date.toString();
               const isCompleted = completionSet.has(dateStr);
@@ -79,7 +79,7 @@ export function ActivityCompletionCalendar({
                 <CalendarCell
                   date={date}
                   className={cn(
-                    "relative mx-auto flex aspect-square size-9 items-center justify-center rounded-sm border text-[11px] outline-none transition-colors",
+                    "relative mx-auto flex aspect-square w-full max-w-9 sm:max-w-10 md:max-w-11 items-center justify-center rounded-sm border text-[11px] outline-none transition-colors",
                     "data-[outside-month]:opacity-30 data-[focus-visible]:ring-1 data-[focus-visible]:ring-white/40",
                     isCompleted
                       ? "border-white/30 bg-white/15 text-white"
