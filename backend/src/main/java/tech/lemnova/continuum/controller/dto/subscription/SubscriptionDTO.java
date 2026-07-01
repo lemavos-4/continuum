@@ -10,7 +10,8 @@ import java.time.Instant;
 public record SubscriptionDTO(
     String id, String userId, PlanType effectivePlan, SubscriptionStatus status,
     int maxEntities, int maxNotes, boolean advancedMetrics,
-    boolean dataExport, Instant currentPeriodEnd, Boolean cancelAtPeriodEnd, boolean inGracePeriod
+    boolean dataExport, Instant currentPeriodEnd, Boolean cancelAtPeriodEnd, boolean inGracePeriod,
+    String stripePriceId, String billingInterval, Instant trialEnd
 ) {
     public static SubscriptionDTO from(Subscription sub, PlanConfiguration config) {
         PlanType effective = sub.getEffectivePlan();
@@ -19,7 +20,8 @@ public record SubscriptionDTO(
             sub.getId(), sub.getUserId(), effective, sub.getStatus(),
             limits.maxEntities(), limits.maxNotes(),
             limits.advancedMetrics(), limits.dataExport(),
-            sub.getCurrentPeriodEnd(), sub.getCancelAtPeriodEnd(), sub.isInGracePeriod());
+            sub.getCurrentPeriodEnd(), sub.getCancelAtPeriodEnd(), sub.isInGracePeriod(),
+            sub.getStripePriceId(), sub.getBillingInterval(), sub.getTrialEnd());
     }
 }
 
