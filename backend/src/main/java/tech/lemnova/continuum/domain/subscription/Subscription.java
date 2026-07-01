@@ -26,9 +26,13 @@ public class Subscription {
     private String userId;
 
     @Indexed(unique = true, sparse = true)
-    private String lemonSqueezySubscriptionId;
+    private String stripeSubscriptionId;
 
-    private String lemonSqueezyVariantId;
+    private String stripeCustomerId;
+
+    private String stripePriceId;
+
+    private String billingInterval; // "month" | "year"
 
     @Builder.Default
     private PlanType planType = PlanType.FREE;
@@ -39,10 +43,13 @@ public class Subscription {
     private Instant currentPeriodStart;
     private Instant currentPeriodEnd;
 
+    private Instant trialEnd;
+
     @Builder.Default
     private Boolean cancelAtPeriodEnd = false;
 
     private Instant cancelAt;
+    private Instant canceledAt;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

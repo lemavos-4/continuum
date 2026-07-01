@@ -51,7 +51,7 @@ public class User {
     private Instant tokenExpiry;
 
     @Indexed(unique = true, sparse = true)
-    private String lemonSqueezyCustomerId;
+    private String stripeCustomerId;
 
     @Indexed(unique = true)
     private String vaultId;
@@ -121,8 +121,8 @@ public class User {
         return tokenExpiry;
     }
 
-    public String getLemonSqueezyCustomerId() {
-        return lemonSqueezyCustomerId;
+    public String getStripeCustomerId() {
+        return stripeCustomerId;
     }
 
     public String getVaultId() {
@@ -202,8 +202,8 @@ public class User {
         this.tokenExpiry = tokenExpiry;
     }
 
-    public void setLemonSqueezyCustomerId(String lemonSqueezyCustomerId) {
-        this.lemonSqueezyCustomerId = lemonSqueezyCustomerId;
+    public void setStripeCustomerId(String stripeCustomerId) {
+        this.stripeCustomerId = stripeCustomerId;
     }
 
     public void setVaultId(String vaultId) {
