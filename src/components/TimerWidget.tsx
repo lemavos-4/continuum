@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { useTodayTimeStats } from '@/hooks/useTodayTimeStats';
+import { ensureNotificationPermission, primeEntityName } from '@/lib/timer-notifications';
 
 
 // ============================================================
@@ -179,6 +180,8 @@ export function TimerWidget({
 
   const handleStart = async () => {
     try {
+      primeEntityName(entityId, entityName);
+      void ensureNotificationPermission();
       await startTimer(entityId);
       onTimerStart?.(entityId);
     } catch (error) {
