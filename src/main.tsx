@@ -3,6 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { registerContinuumSW } from "@/lib/pwa-register";
 import { initSyncManager } from "@/lib/offline/sync";
+import { initTimerNotifications } from "@/lib/timer-notifications";
 
 // Apply persisted theme synchronously to avoid flash.
 if (typeof document !== "undefined") {
@@ -33,4 +34,9 @@ if (typeof window !== "undefined") {
     console.warn("[continuum] sync manager init failed", e);
   }
   void registerContinuumSW();
+  try {
+    initTimerNotifications();
+  } catch (e) {
+    console.warn("[continuum] timer notifications init failed", e);
+  }
 }
