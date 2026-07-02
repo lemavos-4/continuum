@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/AppLayout";
-import { plansApi, subscriptionApi, api } from "@/lib/api";
+import api, { plansApi, subscriptionApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { isUnlimited } from "@/lib/plan";
