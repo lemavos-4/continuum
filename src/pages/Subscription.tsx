@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/AppLayout";
-import { plansApi, subscriptionApi } from "@/lib/api";
+import api, { plansApi, subscriptionApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { isUnlimited } from "@/lib/plan";
@@ -12,6 +12,7 @@ import {
   ArrowPathIcon,
   ArrowRightIcon,
   CheckIcon,
+  CreditCardIcon,
 } from "@heroicons/react/24/outline";
 
 // Refined commercial text highlights and descriptions emphasizing value props
@@ -44,6 +45,8 @@ interface SubInfo {
   effectivePlan?: string; 
   status: string; 
   currentPeriodEnd?: string; 
+  cancelAtPeriodEnd?: boolean;
+  billingInterval?: string;
 }
 
 export default function Subscription() {
@@ -54,6 +57,9 @@ export default function Subscription() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [plans, setPlans] = useState<Array<{ plan: Plan; limits: PlanLimits; priceId?: string }>>([]);
   const [planLoading, setPlanLoading] = useState(true);
+  const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
+  const [prices, setPrices] = useState<{ monthly?: string; yearly?: string }>({});
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => { 
     subscriptionApi.me()
@@ -78,6 +84,12 @@ export default function Subscription() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    api.get("/api/plans/prices")
+      .then(({ data }) => setPrices(data?.vision || {}))
+      .catch(() => {});
+  }, []);
+
   const handleCheckout = async (planId: string) => {
     setCheckoutLoading(planId);
     try {
@@ -93,13 +105,25 @@ export default function Subscription() {
   };
 
   const handleCancel = async () => {
-    try { 
-      await subscriptionApi.cancel(); 
-      toast({ title: "Subscription canceled" }); 
-      const { data } = await subscriptionApi.me(); 
-      setSub(data); 
-    } catch { 
-      toast({ title: "Error canceling subscription", variant: "destructive" }); 
+    try {
+      await subscriptionApi.cancel(false);
+      toast({ title: "Subscription will cancel at period end" });
+      const { data } = await subscriptionApi.me();
+      setSub(data);
+    } catch {
+      toast({ title: "Error canceling subscription", variant: "destructive" });
+    }
+  };
+
+  const handlePortal = async () => {
+    setPortalLoading(true);
+    try {
+      const { data } = await subscriptionApi.portal();
+      if (data?.url) window.location.href = data.url;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.response?.data?.message || "Could not open portal", variant: "destructive" });
+    } finally {
+      setPortalLoading(false);
     }
   };
 
@@ -108,7 +132,7 @@ export default function Subscription() {
 
   return (
     <AppLayout>
-      <div className="hidden mx-auto max-w-5xl px-6 py-10 lg:px-12 lg:py-16 space-y-12">
+      <div className="mx-auto max-w-5xl px-6 py-10 lg:px-12 lg:py-16 space-y-12">
         
         {/* HEADER */}
         <header>
@@ -136,13 +160,46 @@ export default function Subscription() {
               </div>
             </div>
             {currentPlan !== "FREE" && (
-              <button 
-                onClick={handleCancel} 
-                className="text-left text-xs text-white/40 hover:text-white underline underline-offset-4 transition-colors"
-              >
-                Cancel active subscription
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <button
+                  onClick={handlePortal}
+                  disabled={portalLoading}
+                  className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white border border-white/10 hover:border-white/30 rounded-sm px-3 py-1.5 transition-colors"
+                >
+                  {portalLoading ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" /> : <CreditCardIcon className="h-3.5 w-3.5" />}
+                  Manage billing
+                </button>
+                {!sub.cancelAtPeriodEnd && (
+                  <button
+                    onClick={handleCancel}
+                    className="text-left text-xs text-white/40 hover:text-white underline underline-offset-4 transition-colors"
+                  >
+                    Cancel at period end
+                  </button>
+                )}
+                {sub.cancelAtPeriodEnd && (
+                  <span className="text-xs text-white/50">Cancels at period end</span>
+                )}
+              </div>
             )}
+          </div>
+        )}
+
+        {/* BILLING INTERVAL TOGGLE */}
+        {prices.yearly && (
+          <div className="flex items-center justify-center gap-1 border border-white/10 rounded-sm p-1 w-fit mx-auto">
+            {(["monthly", "yearly"] as const).map((i) => (
+              <button
+                key={i}
+                onClick={() => setInterval(i)}
+                className={cn(
+                  "px-4 py-1.5 text-xs uppercase tracking-wider rounded-sm transition-colors",
+                  interval === i ? "bg-white text-black" : "text-white/50 hover:text-white"
+                )}
+              >
+                {i}{i === "yearly" && <span className="ml-1 text-[9px] opacity-70">-2mo</span>}
+              </button>
+            ))}
           </div>
         )}
 
@@ -225,7 +282,10 @@ export default function Subscription() {
                   <div className="mt-8 pt-4">
                     {isVision ? (
                       <button
-                        onClick={() => handleCheckout(p.priceId || "VISION")}
+                        onClick={() => handleCheckout(
+                          (interval === "yearly" && prices.yearly) ? prices.yearly :
+                          (prices.monthly || p.priceId || "VISION")
+                        )}
                         disabled={isCurrent || checkoutLoading !== null}
                         className={cn(
                           "flex items-center justify-center gap-2 w-full h-9 rounded-sm text-sm font-medium transition-colors border",

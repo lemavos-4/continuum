@@ -10,6 +10,7 @@ import tech.lemnova.continuum.domain.plan.PlanConfiguration;
 import tech.lemnova.continuum.domain.plan.PlanType;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/plans")
@@ -28,6 +29,16 @@ public class PlansController {
         return ResponseEntity.ok(List.of(
                 new PlanInfo(PlanType.FREE,   planConfig.getLimits(PlanType.FREE),   ""),
                 new PlanInfo(PlanType.VISION, planConfig.getLimits(PlanType.VISION), stripe.getPriceVisionMonthly())
+        ));
+    }
+
+    @GetMapping("/prices")
+    public ResponseEntity<Map<String, Object>> prices() {
+        return ResponseEntity.ok(Map.of(
+                "vision", Map.of(
+                        "monthly", stripe.getPriceVisionMonthly(),
+                        "yearly",  stripe.getPriceVisionYearly()
+                )
         ));
     }
 }
