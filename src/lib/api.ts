@@ -462,10 +462,16 @@ export const trackingApi = {
 
 export const subscriptionApi = {
   me: () => api.get("/api/subscriptions/me"),
-  // Accepts either a Lemon Squeezy variant id (var_xxx) or a plan code ("VISION").
+  // Accepts either a Stripe price id (price_xxx) or a plan code ("VISION").
   checkout: (priceOrPlan: string) =>
     api.post("/api/subscriptions/checkout", { priceId: priceOrPlan, planId: priceOrPlan }),
-  cancel: () => api.post("/api/subscriptions/cancel"),
+  cancel: (immediately = false) =>
+    api.post("/api/subscriptions/cancel", { immediately }),
+  changePlan: (priceOrPlan: string) =>
+    api.post("/api/subscriptions/change-plan", { priceId: priceOrPlan, planId: priceOrPlan }),
+  portal: () => api.post("/api/subscriptions/portal"),
+  refund: (chargeId: string, amountCents?: number) =>
+    api.post("/api/subscriptions/refund", { chargeId, amountCents }),
 };
 
 export const plansApi = {
