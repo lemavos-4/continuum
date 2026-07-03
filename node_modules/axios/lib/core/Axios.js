@@ -46,29 +46,13 @@ class Axios {
         Error.captureStackTrace ? Error.captureStackTrace(dummy) : (dummy = new Error());
 
         // slice off the Error: ... line
-        const stack = (() => {
-          if (!dummy.stack) {
-            return '';
-          }
-
-          const firstNewlineIndex = dummy.stack.indexOf('\n');
-
-          return firstNewlineIndex === -1 ? '' : dummy.stack.slice(firstNewlineIndex + 1);
-        })();
+        const stack = dummy.stack ? dummy.stack.replace(/^.+\n/, '') : '';
         try {
           if (!err.stack) {
             err.stack = stack;
             // match without the 2 top stack lines
-          } else if (stack) {
-            const firstNewlineIndex = stack.indexOf('\n');
-            const secondNewlineIndex =
-              firstNewlineIndex === -1 ? -1 : stack.indexOf('\n', firstNewlineIndex + 1);
-            const stackWithoutTwoTopLines =
-              secondNewlineIndex === -1 ? '' : stack.slice(secondNewlineIndex + 1);
-
-            if (!String(err.stack).endsWith(stackWithoutTwoTopLines)) {
-              err.stack += '\n' + stack;
-            }
+          } else if (stack && !String(err.stack).endsWith(stack.replace(/^.+\n.+\n/, ''))) {
+            err.stack += '\n' + stack;
           }
         } catch (e) {
           // ignore the case where "stack" is an un-writable property
@@ -101,8 +85,6 @@ class Axios {
           forcedJSONParsing: validators.transitional(validators.boolean),
           clarifyTimeoutError: validators.transitional(validators.boolean),
           legacyInterceptorReqResOrdering: validators.transitional(validators.boolean),
-          advertiseZstdAcceptEncoding: validators.transitional(validators.boolean),
-          validateStatusUndefinedResolves: validators.transitional(validators.boolean),
         },
         false
       );
@@ -150,7 +132,7 @@ class Axios {
     let contextHeaders = headers && utils.merge(headers.common, headers[config.method]);
 
     headers &&
-      utils.forEach(['delete', 'get', 'head', 'post', 'put', 'patch', 'query', 'common'], (method) => {
+      utils.forEach(['delete', 'get', 'head', 'post', 'put', 'patch', 'common'], (method) => {
         delete headers[method];
       });
 
@@ -234,7 +216,7 @@ class Axios {
 
   getUri(config) {
     config = mergeConfig(this.defaults, config);
-    const fullPath = buildFullPath(config.baseURL, config.url, config.allowAbsoluteUrls, config);
+    const fullPath = buildFullPath(config.baseURL, config.url, config.allowAbsoluteUrls);
     return buildURL(fullPath, config.params, config.paramsSerializer);
   }
 }
@@ -247,13 +229,13 @@ utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData
       mergeConfig(config || {}, {
         method,
         url,
-        data: config && utils.hasOwnProp(config, 'data') ? config.data : undefined,
+        data: (config || {}).data,
       })
     );
   };
 });
 
-utils.forEach(['post', 'put', 'patch', 'query'], function forEachMethodWithData(method) {
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
   function generateHTTPMethod(isForm) {
     return function httpMethod(url, data, config) {
       return this.request(
@@ -273,11 +255,7 @@ utils.forEach(['post', 'put', 'patch', 'query'], function forEachMethodWithData(
 
   Axios.prototype[method] = generateHTTPMethod();
 
-  // QUERY is a safe/idempotent read method; multipart form bodies don't fit
-  // its semantics, so no queryForm shorthand is generated.
-  if (method !== 'query') {
-    Axios.prototype[method + 'Form'] = generateHTTPMethod(true);
-  }
+  Axios.prototype[method + 'Form'] = generateHTTPMethod(true);
 });
 
 export default Axios;
