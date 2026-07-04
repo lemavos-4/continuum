@@ -258,18 +258,18 @@ export function SessionNavBar() {
                 <div className="flex flex-col gap-0.5 px-2 py-1.5">
                   <span className="truncate text-sm font-medium normal-case tracking-normal text-[hsl(var(--popup-foreground))]">{display}</span>
                   <span className="truncate text-xs text-[hsl(var(--popup-muted))]">{user?.email}</span>
-                  <span className="hidden mt-1 inline-flex w-fit items-center rounded border border-[hsl(var(--popup-border))] px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(var(--popup-muted))]">
-                    {user?.plan || "FREE"}
+                  <span className="mt-1 inline-flex w-fit items-center rounded border border-[hsl(var(--popup-border))] px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(var(--popup-muted))]">
+                    {user?.plan === "VISION" ? "PRO" : (user?.plan || "FREE")}
                   </span>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
                   <UserCircle className="mr-2 h-4 w-4" /> {t("nav_profile")}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="hidden" onClick={() => navigate("/subscription")}>
+                <DropdownMenuItem onClick={() => navigate("/subscription")}>
                   <Settings className="mr-2 h-4 w-4" /> {t("nav_subscription")}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="hidden" />
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogoutRequest}>
                   <LogOut className="mr-2 h-4 w-4" /> {t("nav_logout")}
                 </DropdownMenuItem>
