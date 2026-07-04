@@ -197,6 +197,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuItem onClick={() => navigate("/vault")}>
                   <Lock className="mr-2 h-4 w-4" /> {t("nav_vault")}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/subscription")}>
+                  <Settings className="mr-2 h-4 w-4" /> {t("nav_subscription")}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-zinc-500">{user?.email}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
