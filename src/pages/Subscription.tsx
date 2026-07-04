@@ -40,6 +40,8 @@ const planMeta: Record<Plan, { icon: typeof CommandLineIcon; color: string; desc
   },
 };
 
+const planLabel = (plan: Plan) => (plan === "VISION" ? "PRO" : plan);
+
 interface SubInfo { 
   plan?: string; 
   effectivePlan?: string; 
@@ -152,7 +154,7 @@ export default function Subscription() {
               })()}
               <div>
                 <p className="text-sm font-medium text-white/90">
-                  You are currently on the: <span className="text-xs uppercase bg-white/[0.08] px-1.5 py-0.5 rounded-sm ml-1 text-white font-medium">{currentPlan} plan</span>
+                  You are currently on the: <span className="text-xs uppercase bg-white/[0.08] px-1.5 py-0.5 rounded-sm ml-1 text-white font-medium">{planLabel(currentPlan)} plan</span>
                 </p>
                 <p className="mt-1 text-xs text-white/30">
                   Status: {sub.status} {sub.currentPeriodEnd && `• Renews on ${new Date(sub.currentPeriodEnd).toLocaleDateString("en-US")}`}
@@ -236,7 +238,7 @@ export default function Subscription() {
                     <div className="flex items-center gap-3">
                       <Icon className={cn("h-4 w-4 shrink-0", meta.color)} />
                       <div>
-                        <h3 className="font-serif text-2xl tracking-tight text-white">{p.plan}</h3>
+                        <h3 className="font-serif text-2xl tracking-tight text-white">{planLabel(p.plan)}</h3>
                         <p className="mt-1 text-xs text-white/40 font-medium">
                           {isVision ? "$7.90 / mo" : "Free of charge"}
                         </p>
@@ -275,6 +277,14 @@ export default function Subscription() {
                         <span className="text-white/40 text-xs">Version History</span>
                         <span className="text-white/70 tabular-nums">{formatLimit(p.limits.historyDays, " days")}</span>
                       </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-white/40 text-xs">Sync</span>
+                        <span className="text-white/70 tabular-nums">Unlimited</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-white/40 text-xs">Support</span>
+                        <span className="text-white/70">{isVision ? "Priority (email)" : "Community"}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -300,7 +310,7 @@ export default function Subscription() {
                           "Active Plan"
                         ) : (
                           <>
-                            Upgrade to Vision
+                            Upgrade to PRO
                             <ArrowRightIcon className="h-3.5 w-3.5" />
                           </>
                         )}
