@@ -6,7 +6,6 @@ import com.stripe.model.Customer;
 import com.stripe.model.Refund;
 import com.stripe.model.Subscription;
 import com.stripe.model.billingportal.Session;
-import com.stripe.model.checkout.Session.LineItem;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.SubscriptionCancelParams;
