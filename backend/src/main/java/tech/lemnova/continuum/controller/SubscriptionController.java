@@ -65,7 +65,9 @@ public class SubscriptionController {
     public ResponseEntity<Map<String, String>> refund(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody Map<String, Object> body) {
-        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+        boolean isAdmin = user.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equalsIgnoreCase(a.getAuthority()));
+        if (!isAdmin) {
             throw new BadRequestException("Only admins can issue refunds");
         }
         String chargeId = (String) body.get("chargeId");
