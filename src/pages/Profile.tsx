@@ -142,7 +142,7 @@ export default function Profile() {
     () => [
       { label: "Vault Limit", value: limits.maxVaultSizeMB === -1 ? "Unlimited" : `${limits.maxVaultSizeMB} MB` },
       { label: "Upload Metadata", value: limits.maxMetadataSizeKb === -1 ? "Unlimited" : `${limits.maxMetadataSizeKb} KB` },
-      { label: "Version History", value: limits.historyDays === -1 ? "Unlimited" : `${limits.historyDays} days` },
+      { label: "History", value: limits.historyDays === -1 ? "Unlimited" : `${limits.historyDays} days` },
     ],
     [limits],
   );
