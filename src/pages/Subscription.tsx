@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import AppLayout from "@/components/AppLayout";
 import api, { plansApi, subscriptionApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,102 +8,74 @@ import { isUnlimited } from "@/lib/plan";
 import { type Plan, type PlanLimits } from "@/types";
 import { cn } from "@/lib/utils";
 import {
-  CommandLineIcon,
-  SparklesIcon,
   ArrowPathIcon,
   ArrowRightIcon,
-  CheckIcon,
   CreditCardIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 
-// Refined commercial text highlights and descriptions emphasizing value props
-const planMeta: Record<Plan, { icon: typeof CommandLineIcon; color: string; desc: string; benefits: string[] }> = {
-  FREE: {
-    icon: CommandLineIcon,
-    color: "text-white/40",
-    desc: "Build the foundation of your second brain with automated tools and essential knowledge graph mapping.",
-    benefits: [
-      "Auto-sync across Desktop & Mobile",
-      "Advanced note & entity insights",
-      "Essential local backup limits",
-    ]
-  },
-  VISION: {
-    icon: SparklesIcon,
-    color: "text-white",
-    desc: "Unlock boundless intelligence. Dedicated AI models to connect your complex ideas without restrictions.",
-    benefits: [
-      "Everything in Free, completely unmetered",
-      "Unlimited Notes & Entities mapping",
-      "Infinite Version History retention",
-      "Priority infrastructure & larger vault size",
-    ]
-  },
-};
-
-const planLabel = (plan: Plan) => (plan === "VISION" ? "PRO" : plan);
-
-interface SubInfo { 
-  plan?: string; 
-  effectivePlan?: string; 
-  status: string; 
-  currentPeriodEnd?: string; 
+interface SubInfo {
+  plan?: string;
+  effectivePlan?: string;
+  status: string;
+  currentPeriodEnd?: string;
   cancelAtPeriodEnd?: boolean;
-  billingInterval?: string;
 }
+
+// Only PRO benefits — no AI, no yearly mentions
+const VISION_BENEFITS = [
+  "Unlimited notes & entities",
+  "Infinite version history",
+  "Expanded vault storage",
+  "Advanced metrics & insights",
+  "Data export & calendar sync",
+  "Priority email support",
+];
 
 export default function Subscription() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [plans, setPlans] = useState<Array<{ plan: Plan; limits: PlanLimits; priceId?: string }>>([]);
-  const [planLoading, setPlanLoading] = useState(true);
-  const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
-  const [prices, setPrices] = useState<{ monthly?: string; yearly?: string }>({});
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [plans, setPlans] = useState<Array<{ plan: Plan; limits: PlanLimits; priceId?: string }>>([]);
+  const [prices, setPrices] = useState<{ monthly?: string }>({});
 
-  useEffect(() => { 
+  useEffect(() => {
     subscriptionApi.me()
       .then(({ data }) => setSub(data))
       .catch(() => {})
-      .finally(() => setLoading(false)); 
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    let active = true;
-    plansApi.list()
-      .then(({ data }) => { 
-        if (active) {
-          const filtered = (data || []).filter(
-            (p: any) => p.plan === "FREE" || p.plan === "VISION"
-          );
-          setPlans(filtered); 
-        } 
-      })
-      .catch(() => {})
-      .finally(() => { if (active) setPlanLoading(false); });
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
+    plansApi.list().then(({ data }) => setPlans(data || [])).catch(() => {});
     api.get("/api/plans/prices")
-      .then(({ data }) => setPrices(data?.vision || {}))
+      .then(({ data }) => setPrices({ monthly: data?.vision?.monthly }))
       .catch(() => {});
   }, []);
 
-  const handleCheckout = async (planId: string) => {
-    setCheckoutLoading(planId);
+  const currentPlan = ((sub?.effectivePlan || user?.plan) as Plan) || "FREE";
+  const isPro = currentPlan === "VISION";
+
+  const visionLimits = useMemo(
+    () => plans.find((p) => p.plan === "VISION")?.limits,
+    [plans],
+  );
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
     try {
-      const { data } = await subscriptionApi.checkout(planId);
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      const { data } = await subscriptionApi.checkout(prices.monthly || "VISION");
+      if (data?.url) window.location.href = data.url;
     } catch (err: any) {
-      toast({ title: "Error", description: err.response?.data?.message || "Please try again", variant: "destructive" });
-    } finally {
-      setCheckoutLoading(null);
+      toast({
+        title: "Error",
+        description: err.response?.data?.message || "Please try again",
+        variant: "destructive",
+      });
+      setCheckoutLoading(false);
     }
   };
 
@@ -123,211 +96,182 @@ export default function Subscription() {
       const { data } = await subscriptionApi.portal();
       if (data?.url) window.location.href = data.url;
     } catch (err: any) {
-      toast({ title: "Error", description: err.response?.data?.message || "Could not open portal", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.response?.data?.message || "Could not open portal",
+        variant: "destructive",
+      });
     } finally {
       setPortalLoading(false);
     }
   };
 
-  const currentPlan = ((sub?.effectivePlan || user?.plan) as Plan) || "FREE";
-  const formatLimit = (val: number, suffix = "") => isUnlimited(val) ? "∞" : `${val}${suffix}`;
+  const formatLimit = (val?: number, suffix = "") =>
+    val === undefined ? "—" : isUnlimited(val) ? "∞" : `${val}${suffix}`;
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-5xl px-6 py-10 lg:px-12 lg:py-16 space-y-12">
-        
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-2xl flex-col px-5 py-8 sm:px-8 sm:py-14">
         {/* HEADER */}
-        <header>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">Plans & Billing</p>
-          <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">Subscription</h1>
-          <p className="mt-2 text-sm text-white/50">Manage your subscription and choose the ideal plan for your notes.</p>
+        <header className="mb-8 sm:mb-12">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
+            Plans & Billing
+          </p>
+          <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight text-white sm:text-5xl">
+            Subscription
+          </h1>
+          <p className="mt-3 text-sm text-white/50">
+            One tier. Everything unlocked.
+          </p>
         </header>
 
-        {/* CURRENT STATUS CARD */}
+        {/* CURRENT STATUS */}
         {!loading && sub && (
-          <div className="border border-white/10 bg-white/[0.01] p-5 rounded-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              {(() => { 
-                const Meta = planMeta[currentPlan] || planMeta.FREE; 
-                const Icon = Meta.icon; 
-                return <Icon className={cn("h-4 w-4 mt-0.5 shrink-0", Meta.color)} />; 
-              })()}
-              <div>
-                <p className="text-sm font-medium text-white/90">
-                  You are currently on the: <span className="text-xs uppercase bg-white/[0.08] px-1.5 py-0.5 rounded-sm ml-1 text-white font-medium">{planLabel(currentPlan)} plan</span>
-                </p>
-                <p className="mt-1 text-xs text-white/30">
-                  Status: {sub.status} {sub.currentPeriodEnd && `• Renews on ${new Date(sub.currentPeriodEnd).toLocaleDateString("en-US")}`}
-                </p>
-              </div>
+          <div className="mb-8 flex flex-col gap-3 border-t border-white/10 pt-5 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[10px] uppercase tracking-[0.28em] text-white/30">
+                Current
+              </span>
+              <span className="text-sm text-white/90">
+                {isPro ? "PRO" : "FREE"}
+              </span>
+              <span className="text-xs text-white/30">· {sub.status.toLowerCase()}</span>
             </div>
-            {currentPlan !== "FREE" && (
-              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            {isPro && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <button
                   onClick={handlePortal}
                   disabled={portalLoading}
-                  className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white border border-white/10 hover:border-white/30 rounded-sm px-3 py-1.5 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-white/60 transition-colors hover:text-white"
                 >
-                  {portalLoading ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" /> : <CreditCardIcon className="h-3.5 w-3.5" />}
+                  {portalLoading ? (
+                    <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <CreditCardIcon className="h-3 w-3" />
+                  )}
                   Manage billing
                 </button>
-                {!sub.cancelAtPeriodEnd && (
+                {!sub.cancelAtPeriodEnd ? (
                   <button
                     onClick={handleCancel}
-                    className="text-left text-xs text-white/40 hover:text-white underline underline-offset-4 transition-colors"
+                    className="text-[11px] uppercase tracking-[0.22em] text-white/40 underline underline-offset-4 hover:text-white/70"
                   >
-                    Cancel at period end
+                    Cancel
                   </button>
-                )}
-                {sub.cancelAtPeriodEnd && (
-                  <span className="text-xs text-white/50">Cancels at period end</span>
+                ) : (
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-white/40">
+                    Cancels at period end
+                  </span>
                 )}
               </div>
             )}
           </div>
         )}
 
-        {/* BILLING INTERVAL TOGGLE */}
-        {prices.yearly && (
-          <div className="flex items-center justify-center gap-1 border border-white/10 rounded-sm p-1 w-fit mx-auto">
-            {(["monthly", "yearly"] as const).map((i) => (
-              <button
-                key={i}
-                onClick={() => setInterval(i)}
-                className={cn(
-                  "px-4 py-1.5 text-xs uppercase tracking-wider rounded-sm transition-colors",
-                  interval === i ? "bg-white text-black" : "text-white/50 hover:text-white"
-                )}
-              >
-                {i}{i === "yearly" && <span className="ml-1 text-[9px] opacity-70">-2mo</span>}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* PRO CARD */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+          className="relative flex-1 overflow-hidden rounded-sm border border-white/15 bg-white/[0.02]"
+        >
+          {/* subtle top gradient */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+          />
 
-        {/* PLANS GRID */}
-        {planLoading ? (
-          <div className="flex justify-center py-24">
-            <ArrowPathIcon className="h-5 w-5 animate-spin text-white/20" />
-          </div>
-        ) : (
-          <div className="grid gap-8 md:grid-cols-2">
-            {plans.map((p) => {
-              const isVision = p.plan === "VISION";
-              const isCurrent = currentPlan === p.plan;
-              const meta = planMeta[p.plan] || planMeta.FREE;
-              const Icon = meta.icon;
+          <div className="px-6 pt-8 pb-6 sm:px-10 sm:pt-12 sm:pb-10">
+            {/* Plan header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">
+                  Continuum
+                </p>
+                <h2 className="mt-2 font-serif text-4xl tracking-tight text-white sm:text-5xl">
+                  PRO
+                </h2>
+              </div>
+              <div className="text-right">
+                <p className="font-serif text-3xl text-white sm:text-4xl">$7.90</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/40">
+                  per month
+                </p>
+              </div>
+            </div>
 
-              return (
-                <div 
-                  key={p.plan}
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-white/55">
+              Remove every limit. Build your second brain without ceilings.
+            </p>
+
+            {/* Benefits */}
+            <ul className="mt-8 space-y-3 border-t border-white/10 pt-6">
+              {VISION_BENEFITS.map((b, i) => (
+                <motion.li
+                  key={b}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.15 + i * 0.05, ease: "easeOut" }}
+                  className="flex items-start gap-3 text-sm text-white/75"
+                >
+                  <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/40" />
+                  <span>{b}</span>
+                </motion.li>
+              ))}
+            </ul>
+
+            {/* Limits matrix */}
+            {visionLimits && (
+              <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/10 pt-6 text-xs sm:grid-cols-4">
+                {[
+                  { k: "Notes", v: formatLimit(visionLimits.maxNotes) },
+                  { k: "Entities", v: formatLimit(visionLimits.maxEntities) },
+                  { k: "Vault", v: formatLimit(visionLimits.maxVaultSizeMB, " MB") },
+                  { k: "History", v: formatLimit(visionLimits.historyDays, "d") },
+                ].map((row) => (
+                  <div key={row.k}>
+                    <dt className="text-[10px] uppercase tracking-[0.22em] text-white/30">
+                      {row.k}
+                    </dt>
+                    <dd className="mt-1 font-serif text-lg tabular-nums text-white/85">
+                      {row.v}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+
+            {/* CTA */}
+            <div className="mt-10">
+              {isPro ? (
+                <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-white/10 text-[11px] uppercase tracking-[0.28em] text-white/40">
+                  Active
+                </div>
+              ) : (
+                <button
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading}
                   className={cn(
-                    "flex flex-col justify-between border p-6 rounded-sm transition-colors relative",
-                    isVision 
-                      ? "border-white/15 bg-white/[0.02]" 
-                      : "border-white/5 bg-transparent"
+                    "group flex h-11 w-full items-center justify-center gap-2 rounded-sm border border-white bg-white text-[11px] uppercase tracking-[0.28em] text-black transition-all",
+                    "hover:bg-transparent hover:text-white disabled:cursor-not-allowed disabled:opacity-50",
                   )}
                 >
-                  {isCurrent && (
-                    <span className="absolute top-0 right-0 -translate-y-1/2 text-[9px] uppercase tracking-wider bg-white text-black px-1.5 py-0.5 rounded-sm font-medium">
-                      Current Tier
-                    </span>
+                  {checkoutLoading ? (
+                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Upgrade to PRO
+                      <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </>
                   )}
-
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <Icon className={cn("h-4 w-4 shrink-0", meta.color)} />
-                      <div>
-                        <h3 className="font-serif text-2xl tracking-tight text-white">{planLabel(p.plan)}</h3>
-                        <p className="mt-1 text-xs text-white/40 font-medium">
-                          {isVision ? "$7.90 / mo" : "Free of charge"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-white/50 leading-relaxed min-h-[48px]">
-                      {meta.desc}
-                    </p>
-
-                    {/* Feature Benefits List */}
-                    <ul className="space-y-2 pt-1">
-                      {meta.benefits.map((benefit, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs text-white/70">
-                          <CheckIcon className="h-3.5 w-3.5 text-white/40 mt-0.5 shrink-0" />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* Feature Details Matrix */}
-                    <div className="pt-4 border-t border-white/[0.04] space-y-2.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-white/40 text-xs">Notes Quota</span>
-                        <span className="text-white/70 tabular-nums">{formatLimit(p.limits.maxNotes)}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-white/40 text-xs">Entities Limit</span>
-                        <span className="text-white/70 tabular-nums">{formatLimit(p.limits.maxEntities)}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-white/40 text-xs">Vault Storage</span>
-                        <span className="text-white/70 tabular-nums">{formatLimit(p.limits.maxVaultSizeMB, " MB")}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-white/40 text-xs">Version History</span>
-                        <span className="text-white/70 tabular-nums">{formatLimit(p.limits.historyDays, " days")}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-white/40 text-xs">Sync</span>
-                        <span className="text-white/70 tabular-nums">Unlimited</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-white/40 text-xs">Support</span>
-                        <span className="text-white/70">{isVision ? "Priority (email)" : "Community"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="mt-8 pt-4">
-                    {isVision ? (
-                      <button
-                        onClick={() => handleCheckout(
-                          (interval === "yearly" && prices.yearly) ? prices.yearly :
-                          (prices.monthly || p.priceId || "VISION")
-                        )}
-                        disabled={isCurrent || checkoutLoading !== null}
-                        className={cn(
-                          "flex items-center justify-center gap-2 w-full h-9 rounded-sm text-sm font-medium transition-colors border",
-                          isCurrent 
-                            ? "border-white/5 bg-transparent text-white/30 cursor-not-allowed" 
-                            : "border-white bg-white text-black hover:bg-transparent hover:text-white"
-                        )}
-                      >
-                        {checkoutLoading === p.priceId ? (
-                          <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                        ) : isCurrent ? (
-                          "Active Plan"
-                        ) : (
-                          <>
-                            Upgrade to PRO
-                            <ArrowRightIcon className="h-3.5 w-3.5" />
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <div className="h-9 flex items-center justify-center text-xs text-white/20 border border-dashed border-white/5 rounded-sm">
-                        {isCurrent ? "Base Plan Active" : "Default fallback tier"}
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              );
-            })}
+                </button>
+              )}
+              <p className="mt-4 text-center text-[10px] uppercase tracking-[0.22em] text-white/30">
+                Cancel anytime · Secure checkout
+              </p>
+            </div>
           </div>
-        )}
-
+        </motion.section>
       </div>
     </AppLayout>
   );
