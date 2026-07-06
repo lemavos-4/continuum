@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import {
   ArrowPathIcon,
   ArrowRightIcon,
-  CreditCardIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
 
@@ -79,17 +78,6 @@ export default function Subscription() {
     }
   };
 
-  const handleCancel = async () => {
-    try {
-      await subscriptionApi.cancel(false);
-      toast({ title: "Subscription will cancel at period end" });
-      const { data } = await subscriptionApi.me();
-      setSub(data);
-    } catch {
-      toast({ title: "Error canceling subscription", variant: "destructive" });
-    }
-  };
-
   const handlePortal = async () => {
     setPortalLoading(true);
     try {
@@ -127,7 +115,7 @@ export default function Subscription() {
 
         {/* CURRENT STATUS */}
         {!loading && sub && (
-          <div className="mb-8 flex flex-col gap-3 border-t border-white/10 pt-5 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-8 flex items-baseline gap-6 border-t border-white/10 pt-5 sm:mb-10">
             <div className="flex items-baseline gap-2">
               <span className="text-[10px] uppercase tracking-[0.28em] text-white/30">
                 Current
@@ -137,33 +125,15 @@ export default function Subscription() {
               </span>
               <span className="text-xs text-white/30">· {sub.status.toLowerCase()}</span>
             </div>
+            
             {isPro && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <button
-                  onClick={handlePortal}
-                  disabled={portalLoading}
-                  className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-white/60 transition-colors hover:text-white"
-                >
-                  {portalLoading ? (
-                    <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <CreditCardIcon className="h-3 w-3" />
-                  )}
-                  Manage billing
-                </button>
-                {!sub.cancelAtPeriodEnd ? (
-                  <button
-                    onClick={handleCancel}
-                    className="text-[11px] uppercase tracking-[0.22em] text-white/40 underline underline-offset-4 hover:text-white/70"
-                  >
-                    Cancel
-                  </button>
-                ) : (
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-white/40">
-                    Cancels at period end
-                  </span>
-                )}
-              </div>
+              <button
+                onClick={handlePortal}
+                disabled={portalLoading}
+                className="text-[11px] uppercase tracking-[0.22em] text-white/40 underline underline-offset-4 transition-colors hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {portalLoading ? "Opening..." : "Manage billing"}
+              </button>
             )}
           </div>
         )}
@@ -227,7 +197,7 @@ export default function Subscription() {
                   { k: "Notes", v: formatLimit(visionLimits.maxNotes) },
                   { k: "Entities", v: formatLimit(visionLimits.maxEntities) },
                   { k: "Vault", v: formatLimit(visionLimits.maxVaultSizeMB, " MB") },
-                  { k: "History", v: formatLimit(visionLimits.maxHistoryDays, "d") },
+                  { k: "History", v: formatLimit(visionLimits.maxHistoryDays, "d") }, // <-- Modificado aqui
                 ].map((row) => (
                   <div key={row.k}>
                     <dt className="text-[10px] uppercase tracking-[0.22em] text-white/30">
