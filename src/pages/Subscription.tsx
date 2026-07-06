@@ -24,8 +24,8 @@ interface SubInfo {
 // Only PRO benefits — no AI, no yearly mentions
 const VISION_BENEFITS = [
   "Unlimited notes & entities",
-  "Expanded vault storage",
   "Unlimited history",
+  "4096MB Storage",
   "Data export",
   "Priority email support",
 ];
