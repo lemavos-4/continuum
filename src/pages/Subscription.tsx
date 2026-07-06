@@ -189,7 +189,7 @@ export default function Subscription() {
                   Continuum
                 </p>
                 <h2 className="mt-2 font-serif text-4xl tracking-tight text-white sm:text-5xl">
-                  PRO
+                  VISION
                 </h2>
               </div>
               <div className="text-right">
