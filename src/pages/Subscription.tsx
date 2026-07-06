@@ -24,10 +24,9 @@ interface SubInfo {
 // Only PRO benefits — no AI, no yearly mentions
 const VISION_BENEFITS = [
   "Unlimited notes & entities",
-  "Infinite version history",
   "Expanded vault storage",
-  "Advanced metrics & insights",
-  "Data export & calendar sync",
+  "Unlimited history",
+  "Data export",
   "Priority email support",
 ];
 
@@ -230,7 +229,7 @@ export default function Subscription() {
                     <ArrowPathIcon className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      Upgrade to PRO
+                      Upgrade to VISION
                       <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}
