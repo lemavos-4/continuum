@@ -227,7 +227,7 @@ export default function Subscription() {
                   { k: "Notes", v: formatLimit(visionLimits.maxNotes) },
                   { k: "Entities", v: formatLimit(visionLimits.maxEntities) },
                   { k: "Vault", v: formatLimit(visionLimits.maxVaultSizeMB, " MB") },
-                  { k: "History", v: formatLimit(visionLimits.historyDays, "d") },
+                  { k: "History", v: formatLimit(visionLimits.maxHistoryDays, "d") },
                 ].map((row) => (
                   <div key={row.k}>
                     <dt className="text-[10px] uppercase tracking-[0.22em] text-white/30">
