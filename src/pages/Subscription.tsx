@@ -154,6 +154,14 @@ export default function Subscription() {
           </p>
         </header>
 
+        {/* POST-CHECKOUT SYNC */}
+        {syncing && (
+          <div className="mb-6 border-t border-white/10 pt-5 text-[11px] uppercase tracking-[0.24em] text-white/40">
+            <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white/60 align-middle" />
+            Confirming your payment with Stripe…
+          </div>
+        )}
+
         {/* CURRENT STATUS */}
         {!loading && sub && (
           <div className="mb-8 flex items-baseline gap-6 border-t border-white/10 pt-5 sm:mb-10">
