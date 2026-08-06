@@ -3,8 +3,13 @@ import AppLayout from "@/components/AppLayout";
 import { vaultApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { FilterChips } from "@/components/ui/filter-chips";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -57,10 +62,11 @@ function useBlobUrl(fileId: string | null) {
 
 function ImageThumb({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
   const { url, error } = useBlobUrl(file.id);
+  const { t } = useLanguage();
   return (
-    <div className="group relative rounded-sm overflow-hidden border border-white/5 bg-black/10 aspect-square transition-colors hover:border-white/20">
+    <Card variant="subtle" className="group relative overflow-hidden border-white/5 bg-black/10 aspect-square p-0 transition-colors hover:border-white/20">
       {error ? (
-        <div className="flex items-center justify-center h-full text-[11px] text-red-400/70 font-mono">ERROR</div>
+        <div className="flex items-center justify-center h-full text-[11px] text-red-400/70 font-mono">{t("gr_vault_error_generic")}</div>
       ) : url ? (
         <img src={url} alt={file.fileName} className="w-full h-full object-cover transition-opacity duration-300 opacity-80 group-hover:opacity-100" />
       ) : (
@@ -81,14 +87,15 @@ function ImageThumb({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFi
       >
         <Trash2 className="h-3.5 w-3.5" />
       </Button>
-    </div>
+    </Card>
   );
 }
 
 function AudioPlayer({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
   const { url, error } = useBlobUrl(file.id);
+  const { t } = useLanguage();
   return (
-    <div className="group relative flex flex-col justify-between rounded-sm border border-white/5 bg-black/10 p-4 transition-colors hover:border-white/10">
+    <Card variant="subtle" className="group relative flex flex-col justify-between border-white/5 bg-black/10 p-4 transition-colors hover:border-white/10">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{file.fileName}</p>
@@ -106,33 +113,34 @@ function AudioPlayer({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultF
       </div>
       <div className="mt-4">
         {error ? (
-          <p className="text-[11px] font-mono text-red-400/60">Failed to load audio source</p>
+          <p className="text-[11px] font-mono text-red-400/60">{t("gr_vault_audio_error")}</p>
         ) : url ? (
           <audio src={url} controls className="w-full h-8 accent-white filter invert opacity-40 hover:opacity-70 transition-opacity" />
         ) : (
           <div className="flex items-center gap-2 text-[11px] font-mono text-white/30">
-            <Loader2 className="h-3 w-3 animate-spin" /> Fetching payload...
+            <Loader2 className="h-3 w-3 animate-spin" /> {t("gr_vault_audio_fetching")}
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
 function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: VaultFile) => void; onOpen: (f: VaultFile) => void }) {
   const { url, error } = useBlobUrl(file.id);
+  const { t } = useLanguage();
   return (
-    <div className="rounded-sm border border-white/5 bg-black/10 overflow-hidden flex flex-col transition-colors hover:border-white/10 group">
+    <Card variant="subtle" className="border-white/5 bg-black/10 overflow-hidden flex flex-col p-0 transition-colors hover:border-white/10 group">
       <button type="button" onClick={() => onOpen(file)} className="aspect-[4/3] bg-black/40 relative overflow-hidden border-b border-white/5 flex items-center justify-center">
         {error ? (
-          <div className="text-[11px] font-mono text-red-400/60">ERROR</div>
+          <div className="text-[11px] font-mono text-red-400/60">{t("gr_vault_error_generic")}</div>
         ) : url ? (
           <iframe src={`${url}#toolbar=0&navpanes=0`} title={file.fileName} className="w-full h-full pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity" />
         ) : (
           <Loader2 className="h-3 w-3 animate-spin text-white/20" />
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-[11px] bg-black border border-white/10 px-2.5 py-1 text-white/80 rounded-sm">View Document</span>
+          <span className="text-[11px] bg-black border border-white/10 px-2.5 py-1 text-white/80 rounded-sm">{t("gr_vault_view_document")}</span>
         </div>
       </button>
       <div className="p-3 flex items-center justify-between gap-2">
@@ -149,7 +157,7 @@ function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: Va
           </Button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -186,6 +194,9 @@ export default function Vault() {
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<VaultFile | null>(null);
   const [pdfPreview, setPdfPreview] = useState<VaultFile | null>(null);
+  const [category, setCategory] = useState<Category>("images");
+  const [search, setSearch] = useState("");
+
   const { toast } = useToast();
   const { user } = useAuth();
   const { loading: authLoading } = useRequireAuth();
@@ -198,7 +209,7 @@ export default function Vault() {
       const { data } = await vaultApi.list();
       setFiles(Array.isArray(data) ? data : []);
     } catch {
-      toast({ title: "Error loading files", variant: "destructive" });
+      toast({ title: t("gr_vault_error_loading"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -207,10 +218,15 @@ export default function Vault() {
   useEffect(() => { fetchFiles(); }, []);
 
   const grouped = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const visible = q
+      ? files.filter((f) => (f.fileName || "").toLowerCase().includes(q))
+      : files;
     const g: Record<Category, VaultFile[]> = { images: [], audio: [], pdf: [], other: [] };
-    for (const f of files) g[categoryOf(f)].push(f);
+    for (const f of visible) g[categoryOf(f)].push(f);
     return g;
-  }, [files]);
+  }, [files, search]);
+
 
   const confirmDelete = async () => {
     const file = pendingDelete;
@@ -221,9 +237,9 @@ export default function Vault() {
       invalidateVaultBlob(file.id);
       setFiles((cur) => cur.filter((f) => f.id !== file.id));
       applyUsageDelta({ vaultSizeMB: -Number((file.size / (1024 * 1024)).toFixed(2)) });
-      toast({ title: "File removed from vault" });
+      toast({ title: t("gr_vault_delete_success") });
     } catch {
-      toast({ title: "Delete failed", variant: "destructive" });
+      toast({ title: t("gr_vault_delete_failed"), variant: "destructive" });
     }
   };
 
@@ -248,27 +264,28 @@ export default function Vault() {
       <div className="mx-auto max-w-4xl px-6 py-10 lg:px-12 lg:py-16">
         <main className="min-w-0 flex-1">
           
-          {/* Cabeçalho idêntico ao do Notes e do TimeTracking */}
-          <header className="mb-8">
+          {/* Cabeçalho (desktop) — no mobile o título vem do AppLayout */}
+          <header className="mb-8 hidden lg:block">
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
-                Storage
+              <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">
+                {t("gr_vault_title")}
               </p>
-              <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">
+              <h1 className="mt-2 font-serif text-5xl tracking-tight text-foreground">
                 {t("vault_title")}
               </h1>
             </div>
-            <p className="mt-3 text-sm text-white/40">
-              Browse and manage your stored assets. Uploads happen natively by dragging items into your notes.
+            <p className="mt-3 text-sm text-muted-foreground">
+              {t("gr_vault_subtitle")}
             </p>
           </header>
+
 
           {/* Indicador de Espaço Sutil (Removido o bloco chamativo) */}
           <div className="mb-6 border-b border-white/5 pb-5 pt-2">
             <div className="flex items-center justify-between text-[11px] font-mono text-white/40 mb-2">
               <div className="flex items-center gap-1.5">
                 <HardDrive className="w-3 h-3 text-white/30" />
-                <span>VOLUME CAPACITY</span>
+                <span>{t("gr_vault_volume_capacity")}</span>
               </div>
               <span>
                 {isUnlimited(vaultMaxMB) ? `${vaultUsedMB.toFixed(1)} MB` : `${vaultUsedMB.toFixed(1)} / ${vaultMaxMB} MB`}
@@ -291,70 +308,79 @@ export default function Vault() {
           ) : (
             
             /* Tabs minimalistas estilo Notion/Axiom UI */
-            <Tabs defaultValue="images" className="w-full">
-              <TabsList className="flex items-center gap-4 bg-transparent border-b border-white/5 p-0 rounded-none h-10 w-full justify-start">
-                <TabsTrigger value="images" className="bg-transparent border-b-2 border-transparent px-1 py-2 text-xs text-white/45 data-[state=active]:border-white data-[state=active]:text-white rounded-none shadow-none transition-all">
-                  Photos <span className="font-mono text-[10px] text-white/30 ml-1">({grouped.images.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="audio" className="bg-transparent border-b-2 border-transparent px-1 py-2 text-xs text-white/45 data-[state=active]:border-white data-[state=active]:text-white rounded-none shadow-none transition-all">
-                  Audio <span className="font-mono text-[10px] text-white/30 ml-1">({grouped.audio.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="pdf" className="bg-transparent border-b-2 border-transparent px-1 py-2 text-xs text-white/45 data-[state=active]:border-white data-[state=active]:text-white rounded-none shadow-none transition-all">
-                  PDFs <span className="font-mono text-[10px] text-white/30 ml-1">({grouped.pdf.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="other" className="bg-transparent border-b-2 border-transparent px-1 py-2 text-xs text-white/45 data-[state=active]:border-white data-[state=active]:text-white rounded-none shadow-none transition-all">
-                  Other <span className="font-mono text-[10px] text-white/30 ml-1">({grouped.other.length})</span>
-                </TabsTrigger>
-              </TabsList>
+            <div className="w-full">
+              {/* Busca + filtros, mesmo padrão de Notes/Entities */}
+              <div className="mb-5 space-y-3">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={t("vault_searchAmong", { n: files.length })}
+                    className="h-12 w-full rounded-2xl bg-accent pl-11 text-[15px] placeholder:italic placeholder:text-muted-foreground"
+                  />
+                </div>
+                <FilterChips
+                  value={category}
+                  onChange={(v) => setCategory(v as Category)}
+                  options={[
+                    { value: "images", label: `${t("gr_vault_tab_photos")} · ${grouped.images.length}` },
+                    { value: "audio", label: `${t("gr_vault_tab_audio")} · ${grouped.audio.length}` },
+                    { value: "pdf", label: `${t("gr_vault_tab_pdf")} · ${grouped.pdf.length}` },
+                    { value: "other", label: `${t("gr_vault_tab_other")} · ${grouped.other.length}` },
+                  ]}
+                />
+              </div>
 
-              <TabsContent value="images" className="mt-8 outline-none">
-                {grouped.images.length === 0 ? (
-                  <p className="text-sm font-serif italic text-white/30 py-12">No images preserved.</p>
+              {category === "images" && (
+                grouped.images.length === 0 ? (
+                  <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_images")}</p>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {grouped.images.map((f) => (
                       <ImageThumb key={f.id} file={f} onDelete={setPendingDelete} />
                     ))}
                   </div>
-                )}
-              </TabsContent>
+                )
+              )}
 
-              <TabsContent value="audio" className="mt-8 outline-none">
-                {grouped.audio.length === 0 ? (
-                  <p className="text-sm font-serif italic text-white/30 py-12">No audio tracks recorded.</p>
+              {category === "audio" && (
+                grouped.audio.length === 0 ? (
+                  <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_audio")}</p>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
                     {grouped.audio.map((f) => (
                       <AudioPlayer key={f.id} file={f} onDelete={setPendingDelete} />
                     ))}
                   </div>
-                )}
-              </TabsContent>
+                )
+              )}
 
-              <TabsContent value="pdf" className="mt-8 outline-none">
-                {grouped.pdf.length === 0 ? (
-                  <p className="text-sm font-serif italic text-white/30 py-12">No document sheets mapped.</p>
+              {category === "pdf" && (
+                grouped.pdf.length === 0 ? (
+                  <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_pdf")}</p>
                 ) : (
-                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {grouped.pdf.map((f) => (
                       <PdfCard key={f.id} file={f} onDelete={setPendingDelete} onOpen={setPdfPreview} />
                     ))}
                   </div>
-                )}
-              </TabsContent>
+                )
+              )}
 
-              <TabsContent value="other" className="mt-8 outline-none">
-                {grouped.other.length === 0 ? (
-                  <p className="text-sm font-serif italic text-white/30 py-12">No additional files categorized.</p>
+              {category === "other" && (
+                grouped.other.length === 0 ? (
+                  <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_other")}</p>
                 ) : (
-                  <div className="divide-y divide-white/[0.06]">
+                  <div className="divide-y divide-border">
                     {grouped.other.map((f) => (
                       <OtherFileRow key={f.id} file={f} onDelete={setPendingDelete} />
                     ))}
                   </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                )
+              )}
+            </div>
+
           )}
         </main>
       </div>
@@ -363,36 +389,40 @@ export default function Vault() {
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent className="bg-black border border-white/10 rounded-sm max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-serif text-xl font-normal text-white">Remove file?</AlertDialogTitle>
+            <AlertDialogTitle className="font-serif text-xl font-normal text-white">{t("gr_vault_remove_title")}</AlertDialogTitle>
             <AlertDialogDescription className="text-white/40 text-xs mt-2">
-              "${pendingDelete?.fileName || "This asset"}" will be permanently expunged from storage.
+              {t("gr_vault_remove_desc", { fileName: pendingDelete?.fileName || t("gr_vault_this_asset") })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2">
-            <AlertDialogCancel className="bg-transparent hover:bg-white/5 text-white/60 border-white/10 rounded-sm text-xs">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-white text-black hover:bg-white/90 rounded-sm text-xs font-medium">Remove</AlertDialogAction>
+            <AlertDialogCancel className="bg-transparent hover:bg-white/5 text-white/60 border-white/10 rounded-sm text-xs">{t("gr_vault_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-white text-black hover:bg-white/90 rounded-sm text-xs font-medium">{t("gr_vault_remove")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* MODAL EXPANDIDO DE PREVIEW PDF */}
-      {pdfPreview && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col transition-all" onClick={() => setPdfPreview(null)}>
+      <Dialog open={!!pdfPreview} onOpenChange={(open) => !open && setPdfPreview(null)}>
+        <DialogContent
+          hideClose
+          overlayClassName="bg-black/80 backdrop-blur-md"
+          className="fixed inset-0 left-0 top-0 z-50 grid h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 grid-rows-[auto_1fr] gap-0 rounded-none border-0 bg-transparent p-0 shadow-none flex flex-col"
+        >
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/40 backdrop-blur-xl text-white">
-            <p className="font-serif text-sm truncate max-w-xl">{pdfPreview.fileName}</p>
-            <Button size="sm" variant="ghost" onClick={() => setPdfPreview(null)} className="text-white/40 hover:text-white rounded-sm hover:bg-white/5 text-xs">Close</Button>
+            <p className="font-serif text-sm truncate max-w-xl">{pdfPreview?.fileName}</p>
+            <Button size="sm" variant="ghost" onClick={() => setPdfPreview(null)} className="text-white/40 hover:text-white rounded-sm hover:bg-white/5 text-xs">{t("gr_vault_close")}</Button>
           </div>
-          <div className="flex-1 p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="flex-1 p-6">
             {pdfPreviewBlob.url ? (
-              <iframe src={pdfPreviewBlob.url} title={pdfPreview.fileName} className="w-full h-full bg-transparent border border-white/10 rounded-sm shadow-2xl" />
+              <iframe src={pdfPreviewBlob.url} title={pdfPreview?.fileName} className="w-full h-full bg-transparent border border-white/10 rounded-sm shadow-2xl" />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="h-5 w-5 animate-spin text-white/30" />
               </div>
             )}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

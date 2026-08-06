@@ -2,6 +2,8 @@ package tech.lemnova.continuum.application.service;
 
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
@@ -71,7 +73,17 @@ public class SubscriptionService {
     public CheckoutResponse createCheckout(String userId, String email, String priceOrPlan) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-        return stripe.createCheckout(user.getStripeCustomerId(), userId, email, priceOrPlan);
+        try {
+            String customerId = stripe.ensureCustomer(user.getStripeCustomerId(), userId, email);
+            if (user.getStripeCustomerId() == null || user.getStripeCustomerId().isBlank()) {
+                user.setStripeCustomerId(customerId);
+                userRepo.save(user);
+            }
+            return stripe.createCheckout(customerId, userId, email, priceOrPlan);
+        } catch (StripeException e) {
+            log.error("[Stripe] Failed to prepare checkout customer: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create Stripe checkout: " + e.getMessage(), e);
+        }
     }
 
     public String createPortalSession(String userId) {
@@ -284,7 +296,11 @@ public class SubscriptionService {
         if (priceId == null) return PlanType.FREE;
         String monthly = stripe.getPriceVisionMonthly();
         String yearly = stripe.getPriceVisionYearly();
-        if (priceId.equals(monthly) || priceId.equals(yearly)) return PlanType.VISION;
+        if ((!monthly.isBlank() && priceId.equals(monthly)) || (!yearly.isBlank() && priceId.equals(yearly))) return PlanType.VISION;
+        if (priceId.startsWith("price_")) {
+            log.warn("[Stripe] Unknown configured price {} mapped to VISION because VISION is the only paid plan", priceId);
+            return PlanType.VISION;
+        }
         return PlanType.FREE;
     }
 
@@ -308,7 +324,39 @@ public class SubscriptionService {
 
     private String resolveUserIdFromCustomer(String customerId) {
         if (customerId == null) return null;
-        return userRepo.findByStripeCustomerId(customerId).map(User::getId).orElse(null);
+        return userRepo.findByStripeCustomerId(customerId)
+                .map(User::getId)
+                .orElseGet(() -> resolveUserIdFromStripeCustomer(customerId));
+    }
+
+    private String resolveUserIdFromStripeCustomer(String customerId) {
+        try {
+            Customer customer = Customer.retrieve(customerId);
+            if (customer == null) return null;
+            String metadataUserId = customer.getMetadata() == null ? null : customer.getMetadata().get("user_id");
+            if (metadataUserId != null && !metadataUserId.isBlank()) {
+                userRepo.findById(metadataUserId).ifPresent(user -> {
+                    if (user.getStripeCustomerId() == null || user.getStripeCustomerId().isBlank()) {
+                        user.setStripeCustomerId(customerId);
+                        userRepo.save(user);
+                    }
+                });
+                return metadataUserId;
+            }
+            String email = customer.getEmail();
+            if (email != null && !email.isBlank()) {
+                return userRepo.findByEmail(email).map(user -> {
+                    if (user.getStripeCustomerId() == null || user.getStripeCustomerId().isBlank()) {
+                        user.setStripeCustomerId(customerId);
+                        userRepo.save(user);
+                    }
+                    return user.getId();
+                }).orElse(null);
+            }
+        } catch (Exception e) {
+            log.warn("[Stripe] Failed to resolve customer {} from Stripe: {}", customerId, e.getMessage());
+        }
+        return null;
     }
 
     private static Instant toInstant(Long epochSeconds) {

@@ -11,6 +11,7 @@ import {
 import { StickyNote, Network, Plus, Search } from "@/lib/heroicons";
 import { searchApi, notesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchResult {
   id: string;
@@ -26,6 +27,7 @@ export function CommandPalette() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Cmd/Ctrl + K listener
   useEffect(() => {
@@ -52,7 +54,7 @@ export function CommandPalette() {
         setResults(Array.isArray(data) ? data.slice(0, 10) : []);
       } catch (err) {
         console.error("Search error:", err);
-        toast({ title: "Search failed", description: "Unable to perform search. Check your connection or API.", variant: "destructive" });
+        toast({ title: t("ed_search_failed"), description: t("ed_search_failed_desc"), variant: "destructive" });
         setResults([]);
       } finally {
         setLoading(false);
@@ -78,33 +80,33 @@ export function CommandPalette() {
       setQuery("");
       navigate(`/notes/${data.id}`);
     } catch {
-      toast({ title: "Failed to create note", variant: "destructive" });
+      toast({ title: t("ed_create_note_failed"), variant: "destructive" });
     }
   }, [query, navigate, toast]);
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder="Search notes, entities, or create..."
+        placeholder={t("ed_search_placeholder")}
         value={query}
         onValueChange={setQuery}
       />
       <CommandList>
         <CommandEmpty>
-          {loading ? "Searching..." : "No results found."}
+          {loading ? t("ed_searching") : t("ed_no_results_found")}
         </CommandEmpty>
 
         {/* Quick actions */}
-        <CommandGroup heading="Actions">
+        <CommandGroup heading={t("ed_actions")}>
           <CommandItem onSelect={handleCreateNote}>
             <Plus className="mr-2 h-4 w-4" />
-            <span>Create new note{query ? `: "${query}"` : ""}</span>
+            <span>{t("ed_create_new_note")}{query ? `: "${query}"` : ""}</span>
           </CommandItem>
         </CommandGroup>
 
         {/* Results */}
         {results.length > 0 && (
-          <CommandGroup heading="Results">
+          <CommandGroup heading={t("ed_results")}>
             {results.map((r) => (
               <CommandItem
                 key={`${r.type}-${r.id}`}

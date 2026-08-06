@@ -4,14 +4,18 @@ import AppLayout from "@/components/AppLayout";
 import api, { plansApi, subscriptionApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { isUnlimited } from "@/lib/plan";
 import { type Plan, type PlanLimits } from "@/types";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   ArrowPathIcon,
   ArrowRightIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
+
+const MotionCard = motion(Card);
 
 interface SubInfo {
   plan?: string;
@@ -21,24 +25,25 @@ interface SubInfo {
   cancelAtPeriodEnd?: boolean;
 }
 
-// Only PRO benefits — no AI, no yearly mentions
-const VISION_BENEFITS = [
-  "Unlimited notes & entities",
-  "Unlimited history",
-  "4096MB Storage",
-  "Data export",
-  "Priority email support",
-];
-
 export default function Subscription() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [sub, setSub] = useState<SubInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [plans, setPlans] = useState<Array<{ plan: Plan; limits: PlanLimits; priceId?: string }>>([]);
   const [prices, setPrices] = useState<{ monthly?: string }>({});
+
+  // Only VISION benefits — no AI, no yearly mentions
+  const VISION_BENEFITS = [
+    t("bill_benefit_unlimited_notes_entities"),
+    t("bill_benefit_unlimited_history"),
+    t("bill_benefit_storage"),
+    t("bill_benefit_data_export"),
+    t("bill_benefit_priority_support"),
+  ];
 
   useEffect(() => {
     subscriptionApi.me()
@@ -54,8 +59,9 @@ export default function Subscription() {
       .catch(() => {});
   }, []);
 
-  const currentPlan = ((sub?.effectivePlan || user?.plan) as Plan) || "FREE";
-  const isPro = currentPlan === "VISION";
+  const currentPlan = ((sub?.effectivePlan || user?.plan) as Plan | string) || "FREE";
+  const normalizedPlan = currentPlan === "PRO" ? ("VISION" as Plan) : (currentPlan as Plan);
+  const isPro = normalizedPlan === "VISION";
 
   const visionLimits = useMemo(
     () => plans.find((p) => p.plan === "VISION")?.limits,
@@ -69,8 +75,8 @@ export default function Subscription() {
       if (data?.url) window.location.href = data.url;
     } catch (err: any) {
       toast({
-        title: "Error",
-        description: err.response?.data?.message || "Please try again",
+        title: t("bill_error"),
+        description: err.response?.data?.message || t("bill_try_again"),
         variant: "destructive",
       });
       setCheckoutLoading(false);
@@ -84,8 +90,8 @@ export default function Subscription() {
       if (data?.url) window.location.href = data.url;
     } catch (err: any) {
       toast({
-        title: "Error",
-        description: err.response?.data?.message || "Could not open portal",
+        title: t("bill_error"),
+        description: err.response?.data?.message || t("bill_portal_error"),
         variant: "destructive",
       });
     } finally {
@@ -102,13 +108,13 @@ export default function Subscription() {
         {/* HEADER */}
         <header className="mb-8 sm:mb-12">
           <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
-            Plans & Billing
+            {t("bill_plans_billing")}
           </p>
           <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight text-white sm:text-5xl">
-            Subscription
+            {t("bill_subscription")}
           </h1>
           <p className="mt-3 text-sm text-white/50">
-            One tier. Everything unlocked.
+            {t("bill_one_tier")}
           </p>
         </header>
 
@@ -117,32 +123,35 @@ export default function Subscription() {
           <div className="mb-8 flex items-baseline gap-6 border-t border-white/10 pt-5 sm:mb-10">
             <div className="flex items-baseline gap-2">
               <span className="text-[10px] uppercase tracking-[0.28em] text-white/30">
-                Current
+                {t("bill_current")}
               </span>
               <span className="text-sm text-white/90">
-                {isPro ? "PRO" : "FREE"}
+                {isPro ? "VISION" : "FREE"}
               </span>
               <span className="text-xs text-white/30">· {sub.status.toLowerCase()}</span>
             </div>
             
             {isPro && (
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={handlePortal}
                 disabled={portalLoading}
-                className="text-[11px] uppercase tracking-[0.22em] text-white/40 underline underline-offset-4 transition-colors hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-white/40 hover:text-white/70"
               >
-                {portalLoading ? "Opening..." : "Manage billing"}
-              </button>
+                {portalLoading ? t("bill_opening") : t("bill_manage_billing")}
+              </Button>
             )}
           </div>
         )}
 
-        {/* PRO CARD */}
-        <motion.section
+        {/* VISION CARD */}
+        <MotionCard
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-          className="relative flex-1 overflow-hidden rounded-sm border border-white/15 bg-white/[0.02]"
+          variant="subtle"
+          className="relative flex-1 overflow-hidden"
         >
           {/* subtle top gradient */}
           <div
@@ -150,8 +159,7 @@ export default function Subscription() {
             className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
           />
 
-          <div className="px-6 pt-8 pb-6 sm:px-10 sm:pt-12 sm:pb-10">
-            {/* Plan header */}
+          <CardHeader className="pt-8 sm:pt-12">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">
@@ -164,17 +172,18 @@ export default function Subscription() {
               <div className="text-right">
                 <p className="font-serif text-3xl text-white sm:text-4xl">$7.90</p>
                 <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/40">
-                  per month
+                  {t("bill_per_month")}
                 </p>
               </div>
             </div>
 
             <p className="mt-6 max-w-md text-sm leading-relaxed text-white/55">
-              Remove every limit. Build your second brain without ceilings.
+              {t("bill_vision_tagline")}
             </p>
+          </CardHeader>
 
-            {/* Benefits */}
-            <ul className="mt-8 space-y-3 border-t border-white/10 pt-6">
+          <CardContent className="space-y-8">
+            <ul className="space-y-3 border-t border-white/10 pt-6">
               {VISION_BENEFITS.map((b, i) => (
                 <motion.li
                   key={b}
@@ -189,14 +198,13 @@ export default function Subscription() {
               ))}
             </ul>
 
-            {/* Limits matrix */}
             {visionLimits && (
-              <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/10 pt-6 text-xs sm:grid-cols-4">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/10 pt-6 text-xs sm:grid-cols-4">
                 {[
-                  { k: "Notes", v: formatLimit(visionLimits.maxNotes) },
-                  { k: "Entities", v: formatLimit(visionLimits.maxEntities) },
-                  { k: "Vault", v: formatLimit(visionLimits.maxVaultSizeMB, " MB") },
-                  { k: "History", v: formatLimit(visionLimits.maxHistoryDays, "d") }, // <-- Modificado aqui
+                  { k: t("bill_notes"), v: formatLimit(visionLimits.maxNotes ?? -1) },
+                  { k: t("bill_entities"), v: formatLimit(visionLimits.maxEntities ?? -1) },
+                  { k: t("bill_vault"), v: formatLimit(visionLimits.maxVaultSizeMB ?? -1, " MB") },
+                  { k: t("bill_history"), v: formatLimit(((visionLimits as any)?.maxHistoryDays ?? visionLimits?.historyDays) ?? -1, "d") },
                 ].map((row) => (
                   <div key={row.k}>
                     <dt className="text-[10px] uppercase tracking-[0.22em] text-white/30">
@@ -209,38 +217,38 @@ export default function Subscription() {
                 ))}
               </dl>
             )}
+          </CardContent>
 
-            {/* CTA */}
-            <div className="mt-10">
-              {isPro ? (
-                <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-white/10 text-[11px] uppercase tracking-[0.28em] text-white/40">
-                  Active
-                </div>
-              ) : (
-                <button
-                  onClick={handleCheckout}
-                  disabled={checkoutLoading}
-                  className={cn(
-                    "group flex h-11 w-full items-center justify-center gap-2 rounded-sm border border-white bg-white text-[11px] uppercase tracking-[0.28em] text-black transition-all",
-                    "hover:bg-transparent hover:text-white disabled:cursor-not-allowed disabled:opacity-50",
-                  )}
-                >
-                  {checkoutLoading ? (
-                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      Upgrade to VISION
-                      <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </>
-                  )}
-                </button>
-              )}
-              <p className="mt-4 text-center text-[10px] uppercase tracking-[0.22em] text-white/30">
-                Cancel anytime · Secure checkout
-              </p>
-            </div>
-          </div>
-        </motion.section>
+          <CardFooter className="flex-col items-stretch gap-3 pt-0">
+            {isPro ? (
+              <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-white/10 text-[11px] uppercase tracking-[0.28em] text-white/40">
+                {t("bill_active")}
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="white"
+                size="lg"
+                onClick={handleCheckout}
+                disabled={checkoutLoading}
+                className="group w-full justify-center gap-2"
+              >
+                {checkoutLoading ? (
+                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    {t("bill_upgrade_to_vision")}
+                    <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </>
+                )}
+              </Button>
+            )}
+
+            <p className="text-center text-[10px] uppercase tracking-[0.22em] text-white/30">
+              {t("bill_cancel_secure")}
+            </p>
+          </CardFooter>
+        </MotionCard>
       </div>
     </AppLayout>
   );

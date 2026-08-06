@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AuthShellProps {
   eyebrow?: string;
@@ -14,6 +15,7 @@ interface AuthShellProps {
  * serif headline, no glows, no gradients.
  */
 export default function AuthShell({ eyebrow = "Continuum", title, subtitle, children, footer }: AuthShellProps) {
+  const { t } = useLanguage();
   return (
     <div className="min-h-screen bg-black text-white grid lg:grid-cols-2">
       {/* Left — form */}
@@ -23,7 +25,7 @@ export default function AuthShell({ eyebrow = "Continuum", title, subtitle, chil
             {eyebrow}
           </Link>
           <Link to="/" className="text-xs text-white/50 hover:text-white transition-colors">
-            ← Back
+            ← {t("au_back")}
           </Link>
         </header>
 
@@ -50,9 +52,9 @@ export default function AuthShell({ eyebrow = "Continuum", title, subtitle, chil
           }}
         />
         <div className="relative max-w-md px-12">
-          <p className="label-caps mb-6">Knowledge, structured</p>
+          <p className="label-caps mb-6">{t("au_knowledge_structured")}</p>
           <p className="font-serif text-3xl leading-tight tracking-tight">
-            “The mind is not a vessel to be filled, but a fire to be kindled.”
+            {t("au_plutarch_quote")}
           </p>
           <p className="mt-4 text-xs text-white/40">— Plutarch</p>
         </div>

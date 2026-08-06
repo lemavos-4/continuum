@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "@/lib/heroicons";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Register() {
   const { loginWithGoogle } = useAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     loginWithGoogle();
@@ -13,7 +15,7 @@ export default function Register() {
     <div className="min-h-screen bg-black text-white flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-sm text-white/70">Redirecting to Google login...</p>
+        <p className="text-sm text-white/70">{t("au_redirecting_google")}</p>
       </div>
     </div>
   );
@@ -55,4 +57,3 @@ export default function RegisterOld() {
     }
   };
 */
-

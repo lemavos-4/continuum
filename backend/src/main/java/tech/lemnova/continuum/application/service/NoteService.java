@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import tech.lemnova.continuum.application.exception.BadRequestException;
 import tech.lemnova.continuum.application.exception.NotFoundException;
 import tech.lemnova.continuum.application.exception.PlanLimitException;
 import tech.lemnova.continuum.controller.dto.note.BacklinkMentionDTO;
@@ -314,6 +315,38 @@ public class NoteService {
         note = noteRepo.save(note);
 
         return NoteResponse.from(note, newContent);
+    }
+
+    @Caching(evict = {
+        @CacheEvict(value = "note-content", allEntries = true),
+        @CacheEvict(value = "insights:notes", allEntries = true),
+        @CacheEvict(value = "insights:entities", allEntries = true)
+    })
+    public List<Note> updateTypes(List<String> noteIds, String type) {
+        String userId = getCurrentUserId();
+        if (noteIds == null || noteIds.isEmpty()) {
+            throw new BadRequestException("noteIds cannot be empty");
+        }
+        String cleanType = type == null ? "" : type.trim();
+        if (cleanType.isEmpty()) {
+            throw new BadRequestException("type cannot be empty");
+        }
+
+        Set<String> requestedIds = new LinkedHashSet<>(noteIds);
+        List<Note> notes = noteRepo.findAllById(requestedIds).stream()
+                .filter(note -> userId.equals(note.getUserId()))
+                .toList();
+
+        if (notes.size() != requestedIds.size()) {
+            throw new NotFoundException("One or more notes were not found");
+        }
+
+        Instant now = Instant.now();
+        notes.forEach(note -> {
+            note.setType(cleanType);
+            note.setUpdatedAt(now);
+        });
+        return noteRepo.saveAll(notes);
     }
 
     /**

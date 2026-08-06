@@ -4,8 +4,10 @@ import { authApi } from "@/lib/api";
 import { Loader2 } from "@/lib/heroicons";
 import { useToast } from "@/hooks/use-toast";
 import AuthShell from "@/components/auth/AuthShell";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ForgotPassword() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -19,8 +21,8 @@ export default function ForgotPassword() {
       setSent(true);
     } catch (err: any) {
       toast({
-        title: "Could not send email",
-        description: err?.response?.data?.message || "Please try again.",
+        title: t("au_could_not_send_email"),
+        description: err?.response?.data?.message || t("au_please_try_again"),
         variant: "destructive",
       });
     } finally {
@@ -30,26 +32,25 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell
-      title={sent ? "Check your inbox." : "Reset password."}
-      subtitle={sent ? "We sent a recovery link to your email." : "Enter your email and we'll send instructions."}
+      title={sent ? t("au_check_inbox") : t("au_reset_password_dot")}
+      subtitle={sent ? t("au_recovery_link_email_sent") : t("au_enter_email_instructions")}
       footer={
         <>
-          Remember it?{" "}
+          {t("au_remember_it")}{" "}
           <Link to="/login" className="text-white underline underline-offset-4 hover:opacity-80">
-            Sign in
+            {t("au_sign_in")}
           </Link>
         </>
       }
     >
       {sent ? (
         <div className="border border-white/10 rounded-md p-6 text-sm text-white/70 leading-relaxed">
-          A recovery link is on its way to <span className="text-white">{email}</span>. If it doesn't arrive in a few
-          minutes, check your spam folder.
+          {t("au_recovery_link_on_way")} <span className="text-white">{email}</span>. {t("au_if_not_arrive_check_spam")}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <label htmlFor="email" className="label-caps">Email</label>
+            <label htmlFor="email" className="label-caps">{t("au_email")}</label>
             <input
               id="email"
               type="email"
@@ -63,7 +64,7 @@ export default function ForgotPassword() {
 
           <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loading ? "Sending…" : "Send recovery link"}
+            {loading ? t("au_sending") : t("au_send_recovery_link")}
           </button>
         </form>
       )}

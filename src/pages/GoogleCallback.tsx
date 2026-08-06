@@ -5,8 +5,10 @@ import { authApi } from "@/lib/api";
 import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 import { Loader2 } from "@/lib/heroicons";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function GoogleCallback() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { setTokens, refreshUser } = useAuth();
   const { toast } = useToast();
@@ -44,8 +46,8 @@ export default function GoogleCallback() {
       if (!state) {
         console.error("Google Auth callback missing state parameter", { code, state });
         toast({
-          title: "Authentication error",
-          description: "Google login redirect is missing state data. Please try again.",
+          title: t("au_authentication_error"),
+          description: t("au_missing_state_data"),
           variant: "destructive",
         });
         navigate("/");
@@ -73,8 +75,8 @@ export default function GoogleCallback() {
         .catch((err) => {
           console.error("Google Auth Error:", err);
           toast({
-            title: "Authentication error",
-            description: err.response?.data?.message || "Something went wrong with Google sign-in.",
+            title: t("au_authentication_error"),
+            description: err.response?.data?.message || t("au_google_signin_error"),
             variant: "destructive",
           });
           navigate("/");
@@ -88,7 +90,7 @@ export default function GoogleCallback() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center space-y-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-        <p className="text-sm text-muted-foreground">Finishing Google sign-in...</p>
+        <p className="text-sm text-muted-foreground">{t("au_finishing_google_signin")}</p>
       </div>
     </div>
   );

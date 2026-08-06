@@ -7,6 +7,7 @@ import com.stripe.model.Refund;
 import com.stripe.model.Subscription;
 import com.stripe.model.billingportal.Session;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.SubscriptionCancelParams;
 import com.stripe.param.SubscriptionUpdateParams;
@@ -67,7 +68,14 @@ public class StripeService {
     /* ─────────────────── Customers ─────────────────── */
 
     public String ensureCustomer(String existingCustomerId, String userId, String email) throws StripeException {
-        if (existingCustomerId != null && !existingCustomerId.isBlank()) return existingCustomerId;
+        if (existingCustomerId != null && !existingCustomerId.isBlank()) {
+            Customer customer = Customer.retrieve(existingCustomerId);
+            CustomerUpdateParams.Builder update = CustomerUpdateParams.builder()
+                    .putMetadata("user_id", userId);
+            if (email != null && !email.isBlank()) update.setEmail(email);
+            customer.update(update.build());
+            return existingCustomerId;
+        }
         CustomerCreateParams params = CustomerCreateParams.builder()
                 .setEmail(email)
                 .putMetadata("user_id", userId)
@@ -93,6 +101,7 @@ public class StripeService {
                     .setCancelUrl(cancelUrl)
                     .setAllowPromotionCodes(true)
                     .setClientReferenceId(userId)
+                    .putMetadata("user_id", userId)
                     .addLineItem(
                             SessionCreateParams.LineItem.builder()
                                     .setPrice(priceId)

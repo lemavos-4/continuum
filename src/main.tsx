@@ -1,9 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { registerContinuumSW } from "@/lib/pwa-register";
-import { initSyncManager } from "@/lib/offline/sync";
-import { initTimerNotifications } from "@/lib/timer-notifications";
 
 // Apply persisted theme synchronously to avoid flash.
 if (typeof document !== "undefined") {
@@ -20,23 +17,3 @@ if (typeof document !== "undefined") {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
-
-// Boot offline-first: register service worker and start sync manager.
-if (typeof window !== "undefined") {
-  const apiBase =
-    (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-    (import.meta.env.DEV
-      ? "http://localhost:8080"
-      : `${window.location.protocol}//${window.location.host}`);
-  try {
-    initSyncManager(apiBase);
-  } catch (e) {
-    console.warn("[continuum] sync manager init failed", e);
-  }
-  void registerContinuumSW();
-  try {
-    initTimerNotifications();
-  } catch (e) {
-    console.warn("[continuum] timer notifications init failed", e);
-  }
-}

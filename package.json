@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node ./scripts/generate-build-version.js && npm exec vite build",
     "build-all": "npm install && npm run build",
-    "build:dev": "vite build --mode development",
+    "build:dev": "node ./scripts/generate-build-version.js && npm exec vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "vite preview",

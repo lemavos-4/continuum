@@ -1,18 +1,15 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   LayoutDashboard,
   StickyNote,
   Tag,
-  LogOut,
   User as UserIcon,
   Menu,
   GlobeAlt,
-  Settings,
   Timer,
   Clock,
   Lock,
@@ -60,25 +57,27 @@ const mobileTabs = [
   { to: "/insights", icon: BarChart3, iconSolid: BarChart3Solid, key: "nav_insights" },
 ];
 
+// Mobile top bar shows the page title instead of the app logo on list screens.
+const MOBILE_TITLES: [string, string][] = [
+  ["/notes", "notes_title"],
+  ["/entities", "entities_title"],
+  ["/insights", "ins_title"],
+  ["/projects", "projects_title"],
+  ["/activities", "activities_title"],
+  ["/vault", "vault_title"],
+];
+
+
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
   const isGraphPage = location.pathname.startsWith("/graph");
-  
-  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
-
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
-
-  const handleLogoutRequest = () => {
-    setConfirmLogoutOpen(true);
-  };
+  // The note editor owns the top area on mobile — it renders its own header.
+  const hideMobileTopBar = /^\/notes\/[^/]+$/.test(location.pathname);
+  const mobileTitleKey = MOBILE_TITLES.find(([p]) => location.pathname === p)?.[1];
 
   const initial = (user?.username || user?.email || "U").trim().charAt(0).toUpperCase();
   const display = user?.username || user?.email?.split("@")[0] || "Guest";
@@ -88,11 +87,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <CommandPalette />
 
       {/* Mobile top bar */}
-      <div className="fixed left-0 right-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
-        <div className="flex items-center gap-2">
-          <img src="/favicon.ico" alt="Continuum" className="h-7 w-7 rounded-lg object-contain" />
-          <span className="text-base font-serif tracking-tight">Continuum</span>
-        </div>
+      {!hideMobileTopBar && (
+      <div className="fixed left-0 right-0 top-0 z-40 flex items-center gap-3 border-b border-white/5 bg-background/80 px-4 py-3 backdrop-blur-md lg:hidden">
+        {mobileTitleKey ? (
+          <h1 className="min-w-0 truncate font-serif text-xl tracking-tight text-foreground">
+            {t(mobileTitleKey)}
+          </h1>
+        ) : (
+          <div className="flex items-center gap-2">
+            <img src="/favicon.ico" alt="Continuum" className="h-7 w-7 rounded-lg object-contain" />
+            <span className="text-base font-serif tracking-tight">Continuum</span>
+          </div>
+        )}
+
 
         <div className="flex-1" />
 
@@ -102,36 +109,26 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
             {t("common_back") || "Back"}
           </button>
         )}
       </div>
+      )}
 
-      <ConfirmDialog
-        open={confirmLogoutOpen}
-        onOpenChange={setConfirmLogoutOpen}
-        title={t("auth_signOut")}
-        description={t("auth_signOutDesc")}
-        confirmText={t("nav_logout")}
-        destructive
-        onConfirm={async () => {
-          setConfirmLogoutOpen(false);
-          await handleLogout();
-        }}
-      />
 
       {/* Desktop hover-expand sidebar */}
       <SessionNavBar />
 
       <main className="min-w-0 flex-1 overflow-auto bg-background lg:ml-[3.25rem]">
-        <div className="h-14 lg:hidden" />
+        {!hideMobileTopBar && <div className="h-14 lg:hidden" />}
         {children}
         {/* Spacer so content isn't hidden behind the floating mobile bottom nav */}
-        <div className="h-[calc(5.5rem+env(safe-area-inset-bottom))] lg:hidden" />
+        {!hideMobileTopBar && <div className="h-[calc(5.5rem+env(safe-area-inset-bottom))] lg:hidden" />}
       </main>
+
 
       {/* Desktop offline / sync indicator — floating top-right pill */}
       <div className="pointer-events-none fixed right-4 top-4 z-40 hidden lg:block">
@@ -146,7 +143,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           className="fixed inset-x-3 z-40 lg:hidden"
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
         >
-          <div className="flex items-stretch justify-around gap-1 rounded-2xl border border-white/15 bg-background/75 px-2 py-1.5 shadow-[0_8px_28px_rgba(0,0,0,0.45)] backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
+          <div className="flex items-stretch justify-around gap-1 rounded-xl border border-white/5 bg-background/75 px-2 py-1.5 shadow-[0_8px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm supports-[backdrop-filter]:bg-background/65">
             {mobileTabs.map((it) => (
               <NavLink
                 key={it.to}
@@ -197,16 +194,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuItem onClick={() => navigate("/vault")}>
                   <Lock className="mr-2 h-4 w-4" /> {t("nav_vault")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/subscription")}>
-                  <Settings className="mr-2 h-4 w-4" /> {t("nav_subscription")}
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-zinc-500">{user?.email}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
                   <UserIcon className="mr-2 h-4 w-4" /> {t("nav_profile")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogoutRequest}>
-                  <LogOut className="mr-2 h-4 w-4" /> {t("nav_logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

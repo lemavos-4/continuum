@@ -54,7 +54,10 @@ const Privacy = () => {
         </section>
 
         <p className="mt-16 text-sm text-zinc-500">
-          Any questions about your privacy? Reach out to continuumnodes@gmail.com
+          Any questions about your privacy? Reach out to{" "}
+          <a href="mailto:contact@continuum.onl" className="underline underline-offset-4 transition hover:text-white">
+            contact@continuum.onl
+          </a>
         </p>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Calendar as Cal, CalendarCell, CalendarGrid, CalendarGridBody, Calendar
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ActivityAnalyticsCalendarProps {
   trackingDates?: string[];
@@ -10,6 +11,7 @@ interface ActivityAnalyticsCalendarProps {
 }
 
 export function ActivityAnalyticsCalendar({ trackingDates = [] }: ActivityAnalyticsCalendarProps) {
+  const { t } = useLanguage();
   const completionSet = useMemo(() => {
     const s = new Set<string>();
     trackingDates.forEach((d) => s.add(d.split("T")[0]));
@@ -38,8 +40,8 @@ export function ActivityAnalyticsCalendar({ trackingDates = [] }: ActivityAnalyt
       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-5">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Completion</p>
-            <h3 className="mt-1 font-serif text-xl text-white">Summary</h3>
+            <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("tm_completion")}</p>
+            <h3 className="mt-1 font-serif text-xl text-white">{t("tm_summary")}</h3>
           </div>
           <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
             {now.toDate(getLocalTimeZone()).toLocaleString(undefined, { month: "short", year: "numeric" })}
@@ -47,16 +49,16 @@ export function ActivityAnalyticsCalendar({ trackingDates = [] }: ActivityAnalyt
         </div>
 
         <div className="grid grid-cols-3 gap-px bg-white/5">
-          <SummaryStat label="Total" value={stats.total} />
-          <SummaryStat label="This month" value={stats.monthActive} />
-          <SummaryStat label="Month rate" value={`${stats.monthPct}%`} />
+          <SummaryStat label={t("tm_total")} value={stats.total} />
+          <SummaryStat label={t("tm_this_month")} value={stats.monthActive} />
+          <SummaryStat label={t("tm_month_rate")} value={`${stats.monthPct}%`} />
         </div>
       </div>
 
 
       {/* Calendar */}
       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-3 sm:p-4 md:p-5">
-        <Cal aria-label="Activity calendar" className="w-full">
+        <Cal aria-label={t("tm_activity_calendar_label")} className="w-full">
           <header className="flex items-center gap-1 pb-3 sm:pb-4">
             <RACButton
               slot="previous"
@@ -108,15 +110,15 @@ export function ActivityAnalyticsCalendar({ trackingDates = [] }: ActivityAnalyt
         <div className="flex items-center justify-end gap-4 mt-5 pt-4 border-t border-white/5 font-mono text-[10px] uppercase tracking-widest text-white/40">
           <div className="flex items-center gap-2">
             <span className="block size-3 rounded-sm border border-white/5 bg-transparent" />
-            <span>Empty</span>
+            <span>{t("tm_empty")}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="block size-3 rounded-sm border border-white/40" />
-            <span>Today</span>
+            <span>{t("tm_today_cap")}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="block size-3 rounded-sm border border-white/30 bg-white/20" />
-            <span>Done</span>
+            <span>{t("tm_done")}</span>
           </div>
         </div>
       </div>

@@ -128,6 +128,17 @@ class TimerManager {
   // ─── service worker ────────────────────────────────────────────────────────
   private async initServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
+
+    const currentController = navigator.serviceWorker.controller;
+    if (
+      currentController &&
+      !currentController.scriptURL.endsWith('/timer-service-worker.js')
+    ) {
+      // A different SW already controls the page (likely the PWA main worker).
+      // Don't try to register the timer SW on the same root scope again.
+      return;
+    }
+
     try {
       await navigator.serviceWorker.register('/timer-service-worker.js');
       this.swReady = true;

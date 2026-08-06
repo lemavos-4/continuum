@@ -51,7 +51,10 @@ const Terms = () => {
         </section>
 
         <p className="mt-16 text-sm text-zinc-500">
-          If you have any questions about these Terms, feel free to contact us at continuumnodes@gmail.com
+          If you have any questions about these Terms, feel free to contact us at{" "}
+          <a href="mailto:contact@continuum.onl" className="underline underline-offset-4 transition hover:text-white">
+            contact@continuum.onl
+          </a>
         </p>
       </div>
     </div>

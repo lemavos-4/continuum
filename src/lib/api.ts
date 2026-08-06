@@ -1,6 +1,5 @@
 import axios from "axios";
 import { parseTiptapContent } from "@/lib/tiptap-content";
-import { installOfflineLayer } from "@/lib/offline/axios-offline";
 
 // Lê em tempo de execução, não de build
 const getAPIBaseURL = () => {
@@ -123,9 +122,6 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
-
-// Install offline-first layer AFTER auth interceptor so auth headers are attached
-installOfflineLayer(api);
 
 /**
  * Gerenciador de Refresh Token com fila de requisições
@@ -389,6 +385,8 @@ export const notesApi = {
     }
     return api.put(`/api/notes/${id}`, payload);
   },
+  bulkUpdateType: (ids: string[], type: string) =>
+    api.patch("/api/notes/bulk-type", { ids, type }),
   delete: (id: string) => api.delete(`/api/notes/${id}`),
   toggleFavorite: (id: string) => api.patch(`/api/notes/${id}/favorite`),
   getBacklinks: (id: string) => api.get(`/api/notes/${id}/backlinks`),

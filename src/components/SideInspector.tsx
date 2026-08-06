@@ -10,15 +10,13 @@ import { useEntityStore, type InspectableEntity, type InspectableNote } from "@/
 import { entitiesApi, notesApi } from "@/lib/api";
 import { tiptapContentToPlainText } from "@/lib/tiptap-content";
 import type { Entity, EntityStats, Note } from "@/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-const ENTITY_TYPE_CONFIG: Record<string, { label: string }> = {
-  NOTE: { label: "Note" },
-  ACTIVITY: { label: "Activity" },
-  PROJECT: { label: "Project" },
-  PERSON: { label: "Person" },
-  TOPIC: { label: "Topic" },
-  ORGANIZATION: { label: "Organization" },
-};
+function getEntityTypeConfig(t: (key: string) => string, type: string): { label: string } {
+  const key = `ent_type_${type.toLowerCase()}`;
+  const translated = t(key);
+  return { label: translated === key ? type : translated };
+}
 
 interface RelatedNote {
   id: string;
@@ -42,6 +40,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
   const navigate = useNavigate();
   const { openInspector, setLoadingEntityId } = useEntityStore();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [resolvedFromApi, setResolvedFromApi] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +126,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
         setResolvedFromApi(true);
       } catch {
         if (!cancelled) {
-          setError("Could not load this entity's data right now.");
+          setError(t("ent_could_not_load"));
         }
       } finally {
         if (!cancelled) {
@@ -150,7 +149,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
   }
 
   const displayEntity = resolvedEntity || entity;
-  const config = ENTITY_TYPE_CONFIG[displayEntity.type] || ENTITY_TYPE_CONFIG.TOPIC;
+  const config = getEntityTypeConfig(t, displayEntity.type);
   const isNote = displayEntity.type === "NOTE";
   const activityTotalCompletions = Array.isArray((displayEntity as Entity).trackingDates)
     ? (displayEntity as Entity).trackingDates?.length ?? 0
@@ -196,7 +195,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   whileTap={{ scale: 0.96 }}
                   onClick={onClose}
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-sm border border-white/10 text-white/60 transition-colors hover:border-white/30 hover:text-white"
-                  aria-label="Close"
+                  aria-label={t("ent_close")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </motion.button>
@@ -210,11 +209,11 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
                       <div className="font-mono text-xl font-semibold text-white">{(displayEntity as any).graphScore}</div>
-                      <p className="mt-1.5 text-[9px] font-mono uppercase tracking-widest text-white/40">Graph Score</p>
+                      <p className="mt-1.5 text-[9px] font-mono uppercase tracking-widest text-white/40">{t("ent_graph_score")}</p>
                     </div>
                     <div>
                       <div className="font-mono text-xl font-semibold text-white">{(displayEntity as any).graphDegree ?? 0}</div>
-                      <p className="mt-1.5 text-[9px] font-mono uppercase tracking-widest text-white/40">Connections</p>
+                      <p className="mt-1.5 text-[9px] font-mono uppercase tracking-widest text-white/40">{t("ent_connections")}</p>
                     </div>
                   </div>
                 </div>
@@ -242,21 +241,21 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                   {isNote ? (
                     <>
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Summary</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">{t("ent_summary")}</h3>
                         <div className="space-y-3">
                           <p className="text-xs leading-relaxed text-white/70">{notePreview}</p>
                           <div className="space-y-2 border-t border-white/5 pt-3">
                             <div className="flex items-center justify-between text-[10px] font-mono text-white/40">
                               <span className="inline-flex items-center gap-1.5">
                                 <Link2 className="h-3 w-3" />
-                                Mentioned Entities
+                                {t("ent_mentioned_entities")}
                               </span>
                               <span className="font-semibold text-white/60">{(displayEntity as InspectableNote).entityIds?.length ?? 0}</span>
                             </div>
                             <div className="flex items-center justify-between text-[10px] font-mono text-white/40">
                               <span className="inline-flex items-center gap-1.5">
                                 <Calendar className="h-3 w-3" />
-                                Last Update
+                                {t("ent_last_update")}
                               </span>
                               <span className="font-semibold text-white/60">{formatDate((displayEntity as InspectableNote).updatedAt)}</span>
                             </div>
@@ -265,7 +264,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                                 <div className="flex items-center justify-between text-[10px] font-mono text-white/40">
                                   <span className="inline-flex items-center gap-1.5">
                                     <Tag className="h-3 w-3" />
-                                    Note Type
+                                    {t("ent_note_type")}
                                   </span>
                                   <div className="flex items-center gap-2">
                                     <span className="font-semibold text-white/60">{(displayEntity as any).noteType}</span>
@@ -278,9 +277,9 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                                           await notesApi.update(displayEntity.id, { type: "" });
                                           // update local state
                                           setResolvedEntity((prev) => prev ? ({ ...prev, noteType: "" } as any) : prev);
-                                          toast({ title: "Type removed" });
+                                          toast({ title: t("ent_type_removed") });
                                         } catch {
-                                          toast({ title: "Failed to remove type", variant: "destructive" });
+                                          toast({ title: t("ent_failed_remove_type"), variant: "destructive" });
                                         } finally {
                                           setLoading(false);
                                         }
@@ -305,32 +304,32 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                         }}
                       >
                         <ArrowUpRight className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium">Open Note</span>
+                        <span className="text-xs font-medium">{t("ent_open_note")}</span>
                       </Button>
                     </>
                   ) : (
                     <>
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Metadata</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">{t("ent_metadata")}</h3>
                         <div className="space-y-2 text-[10px] font-mono text-white/40">
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-1.5">
                               <Calendar className="h-3 w-3" />
-                              Created
+                              {t("ent_created")}
                             </span>
                             <span className="font-semibold text-white/60">{formatDate(displayEntity.createdAt)}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-1.5">
                               <Network className="h-3 w-3" />
-                              Connections
+                              {t("ent_connections")}
                             </span>
                             <span className="font-semibold text-white/60">{relatedEntities.length}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-1.5">
                               <Tag className="h-3 w-3" />
-                              Type
+                              {t("ent_type")}
                             </span>
                             <span className="font-semibold text-white/60">{config.label}</span>
                           </div>
@@ -338,21 +337,21 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                       </div>
 
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Details</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">{t("ent_details")}</h3>
                         <div className="space-y-3">
                           {displayEntity.description ? (
                             <p className="text-xs leading-relaxed text-white/70">{displayEntity.description}</p>
                           ) : (
-                            <p className="text-xs text-white/40">No description added.</p>
+                            <p className="text-xs text-white/40">{t("ent_no_description_added")}</p>
                           )}
                           <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
                             <div className="text-center text-[10px] font-mono">
                               <div className="font-semibold text-white">{relatedNotes.length}</div>
-                              <div className="mt-1 text-white/40">Notes</div>
+                              <div className="mt-1 text-white/40">{t("ent_notes")}</div>
                             </div>
                             <div className="text-center text-[10px] font-mono">
                               <div className="font-semibold text-white">{relatedEntities.length}</div>
-                              <div className="mt-1 text-white/40">Connections</div>
+                              <div className="mt-1 text-white/40">{t("ent_connections")}</div>
                             </div>
                           </div>
                         </div>
@@ -360,15 +359,15 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
 
                       {displayEntity.type === "ACTIVITY" && (
                         <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                          <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Activity Metrics</h3>
+                          <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">{t("ent_activity_metrics")}</h3>
                           <div className="grid grid-cols-2 gap-3 text-center text-[10px] font-mono">
                             <div>
                               <div className="font-semibold text-white">{activityTotalCompletions}</div>
-                              <p className="mt-1 text-white/40">Total tracked</p>
+                              <p className="mt-1 text-white/40">{t("ent_total_tracked")}</p>
                             </div>
                             <div>
                               <div className="font-semibold text-white">{Math.round(weeklyCompletionRate)}%</div>
-                              <p className="mt-1 text-white/40">Weekly</p>
+                              <p className="mt-1 text-white/40">{t("ent_weekly")}</p>
                             </div>
                           </div>
                         </div>
@@ -376,7 +375,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
 
 
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Connected Notes</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">{t("ent_connected_notes")}</h3>
                         <div className="space-y-2">
                           {relatedNotes.length > 0 ? (
                             relatedNotes.slice(0, 5).map((note) => (
@@ -396,13 +395,13 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                               </button>
                             ))
                           ) : (
-                            <p className="text-xs text-white/40">No connected notes yet.</p>
+                            <p className="text-xs text-white/40">{t("ent_no_connected_notes")}</p>
                           )}
                         </div>
                       </div>
 
                       <div className="border border-white/5 bg-white/[0.01] rounded-sm p-4">
-                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">Related Entities</h3>
+                        <h3 className="mb-3 text-[10px] uppercase tracking-[0.28em] text-white/40 font-mono">{t("ent_related_entities")}</h3>
                         <div className="space-y-2">
                           {relatedEntities.length > 0 ? (
                             relatedEntities.slice(0, 5).map((relatedEntity) => (
@@ -414,14 +413,14 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                                 <div className="min-w-0">
                                   <p className="truncate text-xs text-white/80">{relatedEntity.title}</p>
                                   <p className="text-[9px] text-white/40">
-                                    {(ENTITY_TYPE_CONFIG[relatedEntity.type] || ENTITY_TYPE_CONFIG.TOPIC).label}
+                                    {getEntityTypeConfig(t, relatedEntity.type).label}
                                   </p>
                                 </div>
                                 <ArrowUpRight className="h-3 w-3 shrink-0 text-white/40" />
                               </button>
                             ))
                           ) : (
-                            <p className="text-xs text-white/40">No related entities found.</p>
+                            <p className="text-xs text-white/40">{t("ent_no_related_entities")}</p>
                           )}
                         </div>
                       </div>
@@ -435,7 +434,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                         }}
                       >
                         <ArrowUpRight className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium">Open Entity</span>
+                        <span className="text-xs font-medium">{t("ent_open_entity")}</span>
                       </Button>
                     </>
                   )}

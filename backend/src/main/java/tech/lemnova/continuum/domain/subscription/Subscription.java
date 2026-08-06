@@ -59,9 +59,8 @@ public class Subscription {
 
     @JsonIgnore
     public PlanType getEffectivePlan() {
-        if (currentPeriodEnd == null) return PlanType.FREE;
-        if ((status == SubscriptionStatus.ACTIVE || status == SubscriptionStatus.PAST_DUE)
-                && currentPeriodEnd.isAfter(Instant.now())) {
+        if ((status == SubscriptionStatus.ACTIVE || status == SubscriptionStatus.TRIALING || status == SubscriptionStatus.PAST_DUE)
+                && (currentPeriodEnd == null || currentPeriodEnd.isAfter(Instant.now()))) {
             return planType;
         }
         return PlanType.FREE;

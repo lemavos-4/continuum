@@ -1,14 +1,15 @@
 import { FormEvent, useEffect, useState } from "react";
+import { EMAIL_AUTH_ENABLED as DEV_MODE } from "@/lib/dev-mode";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "@/lib/heroicons";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type AuthTab = "login" | "register" | "forgot";
 
-const DEV_MODE = String(import.meta.env.VITE_DEV_MODE ?? "false").toLowerCase() === "true";
 
 interface AuthDialogProps {
   open: boolean;
@@ -17,7 +18,9 @@ interface AuthDialogProps {
 }
 
 export default function AuthDialog({ open, onOpenChange, initialTab = "login" }: AuthDialogProps) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
+  const showGoogleAuthOption = (!DEV_MODE || activeTab === "register") && activeTab !== "forgot";
 
   useEffect(() => {
     if (open) {
@@ -36,12 +39,12 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
             {/* Header */}
             <DialogHeader className="space-y-2 text-left">
               <DialogTitle className="text-2xl sm:text-3xl font-serif tracking-tight">
-                {activeTab === "register" ? "Create your account" : activeTab === "forgot" ? "Reset your password" : "Welcome back"}
+                {activeTab === "register" ? t("au_create_account") : activeTab === "forgot" ? t("au_reset_password") : t("au_welcome_back")}
               </DialogTitle>
               <DialogDescription className="text-sm text-[hsl(var(--popup-muted))]">
                 {DEV_MODE
-                  ? "Dev mode — sign in with email or Google."
-                  : "Sign in with your Google account to continue."}
+                  ? t("au_dev_mode_desc")
+                  : t("au_google_only_desc")}
               </DialogDescription>
             </DialogHeader>
 
@@ -60,7 +63,7 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
                         : "text-[hsl(var(--popup-muted))] hover:text-white")
                     }
                   >
-                    {tab === "login" ? "Sign in" : "Register"}
+                    {tab === "login" ? t("au_sign_in") : t("au_register")}
                   </button>
                 ))}
               </div>
@@ -71,23 +74,23 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
             {DEV_MODE && activeTab === "register" && <RegisterForm onSwitchToLogin={() => setActiveTab("login")} />}
             {DEV_MODE && activeTab === "forgot" && <ForgotForm onSwitchToLogin={() => setActiveTab("login")} />}
 
-            {DEV_MODE && activeTab !== "forgot" && (
+            {DEV_MODE && activeTab !== "forgot" && activeTab === "login" && (
               <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-[hsl(var(--popup-muted))]">
                 <span className="flex-1 h-px bg-white/10" />
-                or
+                {t("au_or")}
                 <span className="flex-1 h-px bg-white/10" />
               </div>
             )}
 
-            {/* Google Login - Always visible */}
-            {(!DEV_MODE || activeTab !== "forgot") && <GoogleOnlyForm onSuccess={() => onOpenChange(false)} />}
+            {/* Google Login - visible only when it is the single auth option */}
+            {showGoogleAuthOption && <GoogleOnlyForm onSuccess={() => onOpenChange(false)} />}
 
             {/* Footer */}
             <p className="text-[10px] text-center text-[hsl(var(--popup-muted))] opacity-70 pt-1">
-              By continuing you agree to our{" "}
-              <a href="#/terms" className="underline underline-offset-2 hover:text-white">Terms</a>
-              {" "}and{" "}
-              <a href="#/privacy" className="underline underline-offset-2 hover:text-white">Privacy</a>.
+              {t("au_terms_agree_prefix")}{" "}
+              <a href="#/terms" className="underline underline-offset-2 hover:text-white">{t("au_terms")}</a>
+              {" "}{t("au_and")}{" "}
+              <a href="#/privacy" className="underline underline-offset-2 hover:text-white">{t("au_privacy")}</a>.
             </p>
           </div>
         </div>
@@ -97,6 +100,7 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
 }
 
 function GoogleOnlyForm({ onSuccess }: { onSuccess: () => void }) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const { loginWithGoogle } = useAuth();
   const { toast } = useToast();
@@ -107,8 +111,8 @@ function GoogleOnlyForm({ onSuccess }: { onSuccess: () => void }) {
       await loginWithGoogle();
     } catch {
       toast({
-        title: "Could not start Google login",
-        description: "Please try again later.",
+        title: t("au_could_not_start_google"),
+        description: t("au_try_again_later"),
         variant: "destructive",
       });
       setLoading(false);
@@ -125,7 +129,7 @@ function GoogleOnlyForm({ onSuccess }: { onSuccess: () => void }) {
       {loading ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          Signing in…
+          {t("au_signing_in")}
         </>
       ) : (
         <>
@@ -135,7 +139,7 @@ function GoogleOnlyForm({ onSuccess }: { onSuccess: () => void }) {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
           </svg>
-          Sign in with Google
+          {t("au_sign_in_with_google")}
         </>
       )}
     </button>
@@ -144,6 +148,7 @@ function GoogleOnlyForm({ onSuccess }: { onSuccess: () => void }) {
 
 // Hidden: Email/Password Login - kept for future use
 function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: () => void }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -161,8 +166,8 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
       navigate("/");
     } catch (err: any) {
       toast({
-        title: "Login failed",
-        description: err?.response?.data?.message || "Check your email and password.",
+        title: t("au_login_failed"),
+        description: err?.response?.data?.message || t("au_check_email_password"),
         variant: "destructive",
       });
     } finally {
@@ -176,8 +181,8 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
       await loginWithGoogle();
     } catch {
       toast({
-        title: "Could not start Google login",
-        description: "Please try again later.",
+        title: t("au_could_not_start_google"),
+        description: t("au_try_again_later"),
         variant: "destructive",
       });
       setLoading(false);
@@ -187,7 +192,7 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">Email</label>
+        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">{t("au_email")}</label>
         <input
           type="email"
           required
@@ -200,13 +205,13 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-4">
-          <label className="text-sm font-medium text-[hsl(var(--popup-muted))]">Password</label>
+          <label className="text-sm font-medium text-[hsl(var(--popup-muted))]">{t("au_password")}</label>
           <button
             type="button"
             onClick={onForgot}
             className="text-xs font-medium text-[hsl(var(--popup-muted))] hover:text-white hover:underline"
           >
-            Forgot?
+            {t("au_forgot")}
           </button>
         </div>
         <input
@@ -224,10 +229,10 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
         disabled={loading}
         className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold transition hover:bg-white/90 disabled:opacity-60"
       >
-        {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Signing in…</span> : "Sign in"}
+        {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{t("au_signing_in")}</span> : t("au_sign_in")}
       </button>
 
-      <div className="text-center text-xs text-[hsl(var(--popup-muted))]">or</div>
+      <div className="text-center text-xs text-[hsl(var(--popup-muted))]">{t("au_or")}</div>
 
       <button
         type="button"
@@ -235,13 +240,14 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
         disabled={loading}
         className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-transparent text-sm font-semibold text-white transition hover:bg-white/[0.06] disabled:opacity-60"
       >
-        Continue with Google
+        {t("au_continue_with_google")}
       </button>
     </form>
   );
 }
 
 function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -256,14 +262,14 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
     try {
       await register(username, email, password);
       toast({
-        title: "Account created",
-        description: "Please sign in to continue.",
+        title: t("au_account_created"),
+        description: t("au_please_sign_in_to_continue"),
       });
       onSwitchToLogin();
     } catch (err: any) {
       toast({
-        title: "Registration failed",
-        description: err?.response?.data?.message || "Please try again.",
+        title: t("au_registration_failed"),
+        description: err?.response?.data?.message || t("au_please_try_again"),
         variant: "destructive",
       });
     } finally {
@@ -274,7 +280,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">Username</label>
+        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">{t("au_username")}</label>
         <input
           value={username}
           onChange={(event) => setUsername(event.target.value)}
@@ -285,7 +291,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
       </div>
 
       <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">Email</label>
+        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">{t("au_email")}</label>
         <input
           type="email"
           value={email}
@@ -297,12 +303,12 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
       </div>
 
       <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">Password</label>
+        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">{t("au_password")}</label>
         <input
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder="At least 8 characters"
+          placeholder={t("au_at_least_8_chars")}
           required
           minLength={8}
           className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.06]"
@@ -314,13 +320,13 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         disabled={loading}
         className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold transition hover:bg-white/90 disabled:opacity-60"
       >
-        {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Creating…</span> : "Create account"}
+        {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{t("au_creating")}</span> : t("au_create_account_btn")}
       </button>
 
       <div className="text-center text-xs text-[hsl(var(--popup-muted))]">
-        Already have an account?{' '}
+        {t("au_already_have_account")}{' '}
         <button type="button" onClick={onSwitchToLogin} className="font-semibold text-white hover:underline">
-          Sign in
+          {t("au_sign_in")}
         </button>
       </div>
     </form>
@@ -328,6 +334,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
 }
 
 function ForgotForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -342,8 +349,8 @@ function ForgotForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
       setSent(true);
     } catch (err: any) {
       toast({
-        title: "Unable to send recovery email",
-        description: err?.response?.data?.message || "Please try again later.",
+        title: t("au_unable_to_send_recovery"),
+        description: err?.response?.data?.message || t("au_try_again_later"),
         variant: "destructive",
       });
     } finally {
@@ -353,12 +360,12 @@ function ForgotForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
 
   return sent ? (
     <div className="rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] p-5 text-sm text-white/80">
-      A recovery link has been sent to <span className="font-medium text-white">{email}</span>. Check your inbox and spam folder.
+      {t("au_recovery_link_sent_to")} <span className="font-medium text-white">{email}</span>. {t("au_check_inbox_spam")}
     </div>
   ) : (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">Email</label>
+        <label className="block text-sm font-medium text-[hsl(var(--popup-muted))]">{t("au_email")}</label>
         <input
           type="email"
           value={email}
@@ -374,13 +381,13 @@ function ForgotForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         disabled={loading}
         className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold transition hover:bg-white/90 disabled:opacity-60"
       >
-        {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Sending…</span> : "Send recovery link"}
+        {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{t("au_sending")}</span> : t("au_send_recovery_link")}
       </button>
 
       <div className="text-center text-xs text-[hsl(var(--popup-muted))]">
-        Remember it?{' '}
+        {t("au_remember_it")}{' '}
         <button type="button" onClick={onSwitchToLogin} className="font-semibold text-white hover:underline">
-          Sign in
+          {t("au_sign_in")}
         </button>
       </div>
     </form>

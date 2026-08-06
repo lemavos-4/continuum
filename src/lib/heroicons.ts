@@ -53,6 +53,8 @@ import {
   TrophyIcon,
   RocketLaunchIcon,
   EnvelopeIcon,
+  BugAntIcon,
+  LifebuoyIcon,
   MoonIcon,
   SunIcon,
   CalendarDaysIcon,
@@ -81,6 +83,7 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
+import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 
 export type LucideIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -141,6 +144,9 @@ export {
   TrophyIcon as Crown,
   RocketLaunchIcon as Rocket,
   EnvelopeIcon as Mail,
+  ChatBubbleLeftEllipsisIcon as MessageSquare,
+  BugAntIcon as Bug,
+  LifebuoyIcon as LifeBuoy,
   MoonIcon as Moon,
   SunIcon as Sun,
   CalendarDaysIcon as Calendar,
@@ -163,7 +169,8 @@ export {
   ArrowPathIcon as RefreshCw,
   ArrowTopRightOnSquareIcon as ExternalLink,
   BookmarkIcon as Bookmark,
-  BookmarkSquareIcon as BookmarkCheck,
+  BookmarkSquareIcon as BookmarkSquare,
+  BookmarkSolidIcon as BookmarkCheck,
   PhotoIcon as Image,
   PhotoIcon as ImageIcon,
   AdjustmentsHorizontalIcon as SlidersHorizontal,

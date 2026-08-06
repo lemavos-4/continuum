@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { timeTrackingApi } from '@/lib/api';
 import { useTimeTracking, type TimeEntry } from '@/hooks/useTimeTracking';
 import { X, Loader2 } from '@/lib/heroicons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   entityId: string;
@@ -31,6 +32,7 @@ function fmtClock(s: number) {
  * Per-entity history of time entries with simple stats.
  */
 export function EntityTimeHistory({ entityId }: Props) {
+  const { t } = useLanguage();
   const { deleteEntry } = useTimeTracking();
   const [page, setPage] = useState(1);
   const PAGE = 8;
@@ -68,14 +70,14 @@ export function EntityTimeHistory({ entityId }: Props) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs uppercase tracking-widest text-white/50 font-mono">Time History</h3>
+        <h3 className="text-xs uppercase tracking-widest text-white/50 font-mono">{t('tm_time_history')}</h3>
       </div>
 
       <div className="grid grid-cols-4 gap-2 mb-4">
-        <Stat label="Total" value={fmtCompact(stats.total)} />
-        <Stat label="Avg" value={fmtCompact(stats.avg)} />
-        <Stat label="Longest" value={fmtCompact(stats.longest)} />
-        <Stat label="Entries" value={String(stats.count)} />
+        <Stat label={t('tm_total')} value={fmtCompact(stats.total)} />
+        <Stat label={t('tm_avg_cap')} value={fmtCompact(stats.avg)} />
+        <Stat label={t('tm_longest')} value={fmtCompact(stats.longest)} />
+        <Stat label={t('tm_entries_cap')} value={String(stats.count)} />
       </div>
 
       {isLoading ? (
@@ -83,7 +85,7 @@ export function EntityTimeHistory({ entityId }: Props) {
           <Loader2 className="w-4 h-4 animate-spin text-white/40" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-white/40 text-center py-6">No entries yet.</p>
+        <p className="text-sm text-white/40 text-center py-6">{t('tm_no_entries_yet')}</p>
       ) : (
         <ul className="divide-y divide-white/[0.06]">
           {pageEntries.map((e) => (
@@ -97,7 +99,7 @@ export function EntityTimeHistory({ entityId }: Props) {
               <button
                 onClick={() => deleteEntry(e.id)}
                 className="text-white/30 hover:text-red-400 transition"
-                title="Delete entry"
+                title={t('tm_delete_entry')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -111,7 +113,7 @@ export function EntityTimeHistory({ entityId }: Props) {
           onClick={() => setPage((p) => p + 1)}
           className="mt-3 text-xs text-white/50 hover:text-white transition"
         >
-          Show more ({entries.length - pageEntries.length})
+          {t('tm_show_more', { count: entries.length - pageEntries.length })}
         </button>
       )}
     </div>

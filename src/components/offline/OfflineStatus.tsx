@@ -3,6 +3,7 @@ import { Cloud, CloudOff, RefreshCw, AlertCircle } from "@/lib/heroicons";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { flushQueue } from "@/lib/offline/sync";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ interface OfflineStatusProps {
 }
 
 export function OfflineStatus({ className, compact = false }: OfflineStatusProps) {
+  const { t } = useLanguage();
   const { status, pending, syncing } = useOfflineStatus();
   const [forcing, setForcing] = useState(false);
 
@@ -20,21 +22,21 @@ export function OfflineStatus({ className, compact = false }: OfflineStatusProps
 
   const handleSyncNow = async () => {
     if (!navigator.onLine) {
-      toast.error("You're offline. Changes will sync automatically when back online.");
+      toast.error(t("gr_toast_offline"));
       return;
     }
     setForcing(true);
     try {
       const result = await flushQueue();
       if (result.sent === 0 && result.failed === 0) {
-        toast.success("Everything is up to date.");
+        toast.success(t("gr_toast_uptodate"));
       } else if (result.failed === 0) {
-        toast.success(`${result.sent} change${result.sent === 1 ? "" : "s"} synced.`);
+        toast.success(t("gr_toast_synced", { count: result.sent, plural: result.sent === 1 ? "" : "s" }));
       } else {
-        toast.warning(`${result.sent} synced, ${result.failed} failed — will retry.`);
+        toast.warning(t("gr_toast_partial", { sent: result.sent, failed: result.failed }));
       }
     } catch {
-      toast.error("Sync failed.");
+      toast.error(t("gr_toast_sync_failed"));
     } finally {
       setForcing(false);
     }
@@ -43,15 +45,17 @@ export function OfflineStatus({ className, compact = false }: OfflineStatusProps
   const label =
     effectiveStatus === "offline"
       ? pending > 0
-        ? `Offline · ${pending} pending`
-        : "Offline"
+        ? t("gr_offline_pending", { count: pending })
+        : t("gr_offline")
       : effectiveStatus === "syncing"
-        ? "Syncing…"
+        ? t("gr_syncing")
         : effectiveStatus === "error"
-          ? `Sync issue${pending > 0 ? ` · ${pending} pending` : ""}`
+          ? pending > 0
+            ? t("gr_sync_issue", { count: pending })
+            : t("gr_sync_issue_nopending")
           : pending > 0
-            ? `${pending} pending`
-            : "Online";
+            ? t("gr_pending", { count: pending })
+            : t("gr_online");
 
   const Icon =
     effectiveStatus === "offline"
@@ -91,10 +95,10 @@ export function OfflineStatus({ className, compact = false }: OfflineStatusProps
       <TooltipContent side="bottom">
         <div className="text-xs">
           {effectiveStatus === "offline"
-            ? "Working offline. Changes save locally and sync when you're back online."
-            : "Click to sync now."}
+            ? t("gr_tooltip_offline")
+            : t("gr_tooltip_click_sync")}
           {pending > 0 && (
-            <div className="mt-1 text-muted-foreground">{pending} pending change{pending === 1 ? "" : "s"}</div>
+            <div className="mt-1 text-muted-foreground">{t("gr_tooltip_pending", { count: pending, plural: pending === 1 ? "" : "s" })}</div>
           )}
         </div>
       </TooltipContent>

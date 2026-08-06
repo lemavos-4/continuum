@@ -14,6 +14,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 import { ArrowRight } from "@/lib/heroicons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ActivityCompletionCalendarProps {
   entityId: string;
@@ -32,6 +33,7 @@ export function ActivityCompletionCalendar({
   onMarkComplete,
   onOpenDetail,
 }: ActivityCompletionCalendarProps) {
+  const { t } = useLanguage();
   void entityId;
   void onMarkComplete;
 
@@ -45,7 +47,7 @@ export function ActivityCompletionCalendar({
 
   return (
     <div className="w-full border border-white/5 bg-white/[0.01] rounded-sm p-3 sm:p-4 md:p-5">
-      <Cal aria-label="Activity calendar" className="w-full">
+      <Cal aria-label={t("tm_activity_calendar_label")} className="w-full">
         <header className="flex items-center gap-1 pb-2 sm:pb-3">
           <RACButton
             slot="previous"
@@ -95,7 +97,7 @@ export function ActivityCompletionCalendar({
 
       <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
         <div className="font-mono text-[11px] uppercase tracking-widest text-white/40">
-          <span className="text-white/70">{trackingDates.length}</span> tracked
+          <span className="text-white/70">{trackingDates.length}</span> {t("tm_tracked_word")}
         </div>
         <Button
           size="sm"
@@ -103,7 +105,7 @@ export function ActivityCompletionCalendar({
           className="gap-1.5 h-7 px-3 text-[11px]"
           onClick={onOpenDetail}
         >
-          Open detail
+          {t("tm_open_detail").replace(" →", "")}
           <ArrowRight className="w-3 h-3" />
         </Button>
       </div>

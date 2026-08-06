@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTimeTracking } from '@/hooks/useTimeTracking';
 import { useTodayTimeStats } from '@/hooks/useTodayTimeStats';
 import { ensureNotificationPermission, primeEntityName } from '@/lib/timer-notifications';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 
 // ============================================================
@@ -93,6 +94,7 @@ export function TimerWidget({
   onTimerStop,
   compact = false,
 }: TimerWidgetProps) {
+  const { t } = useLanguage();
   const {
     activeTimers,
     isTimerActive,
@@ -247,7 +249,7 @@ export function TimerWidget({
           <button
             onClick={handleStop}
             disabled={isStopping}
-            title="Stop timer"
+            title={t("tm_stop_timer")}
             className="h-6 w-6 flex items-center justify-center rounded border border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 transition text-xs"
           >
             ■
@@ -256,7 +258,7 @@ export function TimerWidget({
           <button
             onClick={handleStart}
             disabled={isStarting}
-            title="Start timer"
+            title={t("tm_start_timer")}
             className="h-6 w-6 flex items-center justify-center rounded border border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 transition text-xs"
           >
             ▶
@@ -271,11 +273,11 @@ export function TimerWidget({
       {/* Header — Activity aesthetic */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">Timer</p>
+          <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("tm_timer")}</p>
           <h3 className="mt-1 font-serif text-xl text-white truncate">{entityName}</h3>
         </div>
         <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
-          {isRunning ? (isPaused ? "Paused" : "Running") : "Idle"}
+          {isRunning ? (isPaused ? t("tm_paused") : t("tm_running")) : t("tm_idle")}
         </span>
       </div>
 
@@ -285,7 +287,7 @@ export function TimerWidget({
       </div>
 
       {timerLoading && (
-        <p className="text-[10px] uppercase tracking-widest font-mono text-white/40 text-center mb-3">Loading timer…</p>
+        <p className="text-[10px] uppercase tracking-widest font-mono text-white/40 text-center mb-3">{t("tm_loading_timer")}</p>
       )}
 
       {/* CONTROLS */}
@@ -296,7 +298,7 @@ export function TimerWidget({
             disabled={isStarting || timerLoading}
             className="col-span-2 py-3 bg-black/40 hover:bg-white/[0.06] text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
           >
-            {isStarting ? 'Starting…' : 'Start'}
+            {isStarting ? t("tm_starting") : t("tm_start")}
           </button>
         ) : (
           <>
@@ -305,14 +307,14 @@ export function TimerWidget({
               disabled={timerLoading}
               className="py-3 bg-black/40 hover:bg-white/[0.06] text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
             >
-              {isPaused ? 'Resume' : 'Pause'}
+              {isPaused ? t("tm_resume") : t("tm_pause")}
             </button>
             <button
               onClick={handleStop}
               disabled={isStopping || timerLoading}
               className="py-3 bg-black/40 hover:bg-white/[0.06] text-white/70 hover:text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
             >
-              {isStopping ? '…' : 'Stop'}
+              {isStopping ? '…' : t("tm_stop")}
             </button>
           </>
         )}
@@ -321,7 +323,7 @@ export function TimerWidget({
           disabled={!isRunning || timerLoading}
           className="py-3 bg-black/40 hover:bg-white/[0.06] text-white/50 hover:text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          Restart
+          {t("tm_restart")}
         </button>
       </div>
 
@@ -329,14 +331,14 @@ export function TimerWidget({
         onClick={() => setIsFullscreen(true)}
         className="w-full py-2.5 border border-white/5 bg-white/[0.01] hover:bg-white/[0.04] text-white/60 hover:text-white font-mono text-[10px] uppercase tracking-[0.32em] rounded-sm transition"
       >
-        Flip Clock
+        {t("tm_flip_clock")}
       </button>
 
       {/* TODAY SECTION — Activity stat grid */}
       <div className="mt-5 grid grid-cols-3 gap-px bg-white/5">
-        <SummaryStat label="Today" value={formatSeconds(today.todaySeconds + (isRunning ? currentElapsed : 0))} />
-        <SummaryStat label="Sessions" value={today.todayEntriesCount} />
-        <SummaryStat label="Avg" value={formatSeconds(today.avgEntrySeconds)} />
+        <SummaryStat label={t("tm_today")} value={formatSeconds(today.todaySeconds + (isRunning ? currentElapsed : 0))} />
+        <SummaryStat label={t("tm_sessions")} value={today.todayEntriesCount} />
+        <SummaryStat label={t("tm_avg")} value={formatSeconds(today.avgEntrySeconds)} />
       </div>
 
 
@@ -359,7 +361,7 @@ export function TimerWidget({
 
           {/* Entity name in fullscreen */}
           <div className="absolute top-8 left-1/2 -translate-x-1/2 text-[11px] sm:text-xs font-mono tracking-[0.3em] text-zinc-600 uppercase">
-            {entityName}{isPaused && <span className="ml-3 text-zinc-400">· paused</span>}
+            {entityName}{isPaused && <span className="ml-3 text-zinc-400">· {t("tm_paused_suffix")}</span>}
           </div>
 
           <div className={`flex items-center gap-1.5 sm:gap-3 md:gap-4 transition-opacity ${isPaused ? 'opacity-60' : 'opacity-100'}`}>
@@ -392,7 +394,7 @@ export function TimerWidget({
             <button
               onClick={handlePauseToggle}
               disabled={!isRunning}
-              title={isPaused ? 'Resume' : 'Pause'}
+              title={isPaused ? t("tm_resume") : t("tm_pause")}
               className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-950/80 backdrop-blur text-zinc-200 hover:bg-zinc-900 hover:border-zinc-600 transition disabled:opacity-30"
             >
               {isPaused ? (
@@ -404,7 +406,7 @@ export function TimerWidget({
             <button
               onClick={handleRestart}
               disabled={!isRunning}
-              title="Restart"
+              title={t("tm_restart")}
               className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-950/80 backdrop-blur text-zinc-300 hover:bg-zinc-900 hover:border-zinc-600 transition disabled:opacity-30"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
@@ -412,7 +414,7 @@ export function TimerWidget({
             <button
               onClick={handleStop}
               disabled={!isRunning || isStopping}
-              title="Stop"
+              title={t("tm_stop")}
               className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-950/80 backdrop-blur text-zinc-200 hover:bg-zinc-900 hover:border-red-900/60 hover:text-red-200 transition disabled:opacity-30"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
@@ -421,9 +423,9 @@ export function TimerWidget({
 
           <div className="absolute bottom-6 sm:bottom-10 text-[10px] font-mono tracking-widest text-zinc-700 uppercase">
             <span className="hidden sm:inline">
-              Press <span className="text-zinc-500 bg-zinc-950 px-2 py-1 rounded border border-zinc-900">ESC</span> to exit
+              {t("tm_esc_to_exit", { key: "" }).split("{key}")[0]}<span className="text-zinc-500 bg-zinc-950 px-2 py-1 rounded border border-zinc-900">ESC</span>{t("tm_esc_to_exit", { key: "" }).split("{key}")[1]}
             </span>
-            <span className="sm:hidden">Tap to reveal controls</span>
+            <span className="sm:hidden">{t("tm_tap_to_reveal")}</span>
           </div>
         </div>
       )}

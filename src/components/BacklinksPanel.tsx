@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notesApi } from "@/lib/api";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BacklinkItem {
   id: string;
@@ -17,6 +18,7 @@ interface BacklinksPanelProps {
 }
 
 function Section({ label, items, kind }: { label: string; items: BacklinkItem[]; kind: "linked" | "unlinked" }) {
+  const { t } = useLanguage();
   if (items.length === 0) return null;
   return (
     <section className="space-y-3">
@@ -40,7 +42,7 @@ function Section({ label, items, kind }: { label: string; items: BacklinkItem[];
                 />
                 <div className="min-w-0 flex-1">
                   <p className="font-serif text-sm text-white/90 group-hover:text-white">
-                    {item.title || "Untitled"}
+                    {item.title || t("ent_untitled")}
                   </p>
                   {item.snippet && (
                     <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-white/40">
@@ -58,6 +60,7 @@ function Section({ label, items, kind }: { label: string; items: BacklinkItem[];
 }
 
 export function BacklinksPanel({ noteId }: BacklinksPanelProps) {
+  const { t } = useLanguage();
   const [data, setData] = useState<BacklinksData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -95,13 +98,13 @@ export function BacklinksPanel({ noteId }: BacklinksPanelProps) {
       {isEmpty ? (
         <div className="py-12 text-center">
           <p className="font-serif text-base italic text-white/40">
-            Nothing references this note yet.
+            {t("ent_nothing_references")}
           </p>
         </div>
       ) : (
         <>
-          <Section label="Linked" items={linked} kind="linked" />
-          <Section label="Unlinked" items={unlinked} kind="unlinked" />
+          <Section label={t("ent_linked")} items={linked} kind="linked" />
+          <Section label={t("ent_unlinked")} items={unlinked} kind="unlinked" />
         </>
       )}
     </div>

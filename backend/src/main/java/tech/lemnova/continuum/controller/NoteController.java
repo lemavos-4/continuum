@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import tech.lemnova.continuum.application.exception.BadRequestException;
 import tech.lemnova.continuum.application.service.NoteService;
 import tech.lemnova.continuum.controller.dto.note.NoteCreateRequest;
 import tech.lemnova.continuum.controller.dto.note.NoteResponse;
@@ -19,6 +20,7 @@ import tech.lemnova.continuum.infra.security.CustomUserDetails;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notes")
@@ -49,6 +51,30 @@ public class NoteController {
     public ResponseEntity<NoteResponse> get(@AuthenticationPrincipal CustomUserDetails user,
             @PathVariable String id) {
         return ResponseEntity.ok(noteService.getById(id));
+    }
+
+    @PatchMapping("/bulk-type")
+    @Operation(summary = "Bulk update note type", description = "Assigns one note type to multiple selected notes")
+    public ResponseEntity<List<NoteSummaryDTO>> bulkType(@AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody Map<String, Object> body) {
+        Object rawIds = body.get("ids");
+        Object rawType = body.get("type");
+        if (!(rawIds instanceof List<?> ids) || ids.isEmpty()) {
+            throw new BadRequestException("ids is required");
+        }
+        if (!(rawType instanceof String type) || type.trim().isEmpty()) {
+            throw new BadRequestException("type is required");
+        }
+        List<String> noteIds = ids.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .toList();
+        if (noteIds.isEmpty()) {
+            throw new BadRequestException("ids is required");
+        }
+        return ResponseEntity.ok(noteService.updateTypes(noteIds, type).stream()
+                .map(NoteSummaryDTO::from)
+                .toList());
     }
 
     @PutMapping("/{id}")

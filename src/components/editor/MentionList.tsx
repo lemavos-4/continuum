@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import type { SuggestionKeyDownProps } from "@tiptap/suggestion";
 import { Hash, AtSign, Plus, FileText, User, Folder, Building2, Tag, CircleDot, ChevronDown } from "@/lib/heroicons";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface MentionItem {
   id: string;
@@ -40,17 +41,18 @@ const iconFor = (type: string) => {
 
 export const MentionList = forwardRef<MentionListRef, MentionListProps>(
   ({ items, command, query, variant }, ref) => {
+    const { t } = useLanguage();
     const [selected, setSelected] = useState(0);
     const [entityType, setEntityType] = useState("TOPIC");
     const [showTypeSelector, setShowTypeSelector] = useState(false);
     useEffect(() => setSelected(0), [items]);
 
     const entityTypes = [
-      { value: "PERSON", label: "Person", icon: User },
-      { value: "PROJECT", label: "Project", icon: Folder },
-      { value: "TOPIC", label: "Topic", icon: Tag },
-      { value: "ORGANIZATION", label: "Organization", icon: Building2 },
-      { value: "ACTIVITY", label: "Activity", icon: CircleDot },
+      { value: "PERSON", label: t("ed_type_person"), icon: User },
+      { value: "PROJECT", label: t("ed_type_project"), icon: Folder },
+      { value: "TOPIC", label: t("ed_type_topic"), icon: Tag },
+      { value: "ORGANIZATION", label: t("ed_type_organization"), icon: Building2 },
+      { value: "ACTIVITY", label: t("ed_type_activity"), icon: CircleDot },
     ];
 
     const select = (i: number) => {
@@ -91,14 +93,14 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40">
           <Trigger className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-xs text-muted-foreground truncate">
-            {query ? `Searching "${query}"` : variant === "note" ? "Link a note" : "Mention an entity"}
+            {query ? t("ed_searching_query", { query }) : variant === "note" ? t("ed_link_a_note") : t("ed_mention_an_entity")}
           </span>
         </div>
 
         {/* Entity type selector for entity creation */}
         {variant === "entity" && items.some(item => item.isCreate && item.createKind === "entity") && (
           <div className="px-3 py-2 border-b border-border/40">
-            <div className="text-xs text-muted-foreground mb-2">Entity type:</div>
+            <div className="text-xs text-muted-foreground mb-2">{t("ed_entity_type_label")}</div>
             <div className="relative">
               <button
                 onClick={() => setShowTypeSelector(!showTypeSelector)}
@@ -142,7 +144,7 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
 
         <div className="max-h-72 overflow-y-auto py-1">
           {items.length === 0 ? (
-            <div className="px-3 py-4 text-xs text-muted-foreground text-center">No results</div>
+            <div className="px-3 py-4 text-xs text-muted-foreground text-center">{t("ed_no_results")}</div>
           ) : (
             items.map((item, i) => {
               const Icon = item.isCreate ? Plus : iconFor(item.type);
@@ -165,7 +167,7 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
                     <div className="truncate font-medium">{item.title}</div>
                     {item.isCreate && (
                       <div className="text-[10px] text-muted-foreground">
-                        Create new {item.createKind}
+                        {t("ed_create_new", { kind: item.createKind === "entity" ? t("ed_kind_entity") : t("ed_kind_note") })}
                       </div>
                     )}
                     {!item.isCreate && (
@@ -180,9 +182,9 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
           )}
         </div>
         <div className="px-3 py-1.5 border-t border-border/40 text-[10px] text-muted-foreground flex items-center gap-3">
-          <span><kbd className="px-1 py-0.5 rounded bg-muted">↑↓</kbd> nav</span>
-          <span><kbd className="px-1 py-0.5 rounded bg-muted">↵</kbd> select</span>
-          <span><kbd className="px-1 py-0.5 rounded bg-muted">esc</kbd> close</span>
+          <span><kbd className="px-1 py-0.5 rounded bg-muted">↑↓</kbd> {t("ed_nav_hint")}</span>
+          <span><kbd className="px-1 py-0.5 rounded bg-muted">↵</kbd> {t("ed_select_hint")}</span>
+          <span><kbd className="px-1 py-0.5 rounded bg-muted">esc</kbd> {t("ed_close_hint")}</span>
         </div>
       </div>
     );

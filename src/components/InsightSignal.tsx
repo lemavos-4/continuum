@@ -3,6 +3,7 @@ import { insightsApi } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { FireIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /**
  * Loads insights once per session and resolves the most relevant
@@ -69,7 +70,17 @@ export function useInsightSignal(kind: Kind, id?: string) {
   return data;
 }
 
+
+const BADGE_KEY_MAP: Record<string, string> = {
+  "hot right now": "ins_badge_hot",
+  "worth revisiting": "ins_badge_worth_revisiting",
+  "forgotten gem": "ins_badge_forgotten_gem",
+  "key entity": "ins_badge_key_entity",
+  "hot": "ins_badge_hot",
+};
+
 export function InsightSignalBadge({ kind, id, className }: { kind: Kind; id?: string; className?: string }) {
+  const { t } = useLanguage();
   const signal = useInsightSignal(kind, id);
   if (!signal) return null;
   const isHot = signal.category === "hot";
@@ -78,16 +89,16 @@ export function InsightSignalBadge({ kind, id, className }: { kind: Kind; id?: s
     <Badge
       variant="outline"
       className={cn(
-        "inline-flex items-center gap-1 border text-[9px] font-medium uppercase tracking-wider",
+        "inline-flex items-center gap-1 border text-[9px] font-medium uppercase tracking-wider h-5 px-2",
         isHot
           ? "border-orange-500/30 bg-orange-500/10 text-orange-300"
           : "border-violet-500/30 bg-violet-500/10 text-violet-300",
         className
       )}
-      title={`${signal.badge} · score ${signal.score.toFixed(1)}`}
+      title={`${BADGE_KEY_MAP[signal.badge?.toLowerCase()?.trim()] ? t(BADGE_KEY_MAP[signal.badge.toLowerCase().trim()]) : signal.badge} · score ${signal.score.toFixed(1)}`}
     >
-      <Icon className="h-2.5 w-2.5" />
-      {signal.badge}
+      <Icon className="h-3 w-3" />
+      {BADGE_KEY_MAP[signal.badge?.toLowerCase()?.trim()] ? t(BADGE_KEY_MAP[signal.badge?.toLowerCase()?.trim()]) : signal.badge}
     </Badge>
   );
 }

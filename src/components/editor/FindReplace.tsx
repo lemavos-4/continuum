@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { searchPluginKey } from "./extensions/SearchHighlight";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   editor: Editor | null;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function FindReplace({ editor, open, onClose }: Props) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const [replace, setReplace] = useState("");
   const [caseSensitive, setCaseSensitive] = useState(false);
@@ -92,21 +94,21 @@ export function FindReplace({ editor, open, onClose }: Props) {
               onClose();
             }
           }}
-          placeholder="Find"
+          placeholder={t("ed_find_placeholder")}
           className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <span className="text-[10px] text-white/50 tabular-nums whitespace-nowrap">
           {meta.total ? `${meta.current + 1}/${meta.total}` : "0/0"}
         </span>
-        <button onClick={() => next(true)} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title="Previous (Shift+Enter)">↑</button>
-        <button onClick={() => next()} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title="Next (Enter)">↓</button>
-        <button onClick={onClose} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title="Close (Esc)">×</button>
+        <button onClick={() => next(true)} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title={t("ed_previous_title")}>↑</button>
+        <button onClick={() => next()} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title={t("ed_next_title")}>↓</button>
+        <button onClick={onClose} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title={t("ed_close_title")}>×</button>
       </div>
       <div className="flex items-center gap-1 text-[10px]">
-        <button onClick={() => setCaseSensitive((v) => !v)} className={`px-1.5 py-0.5 rounded ${caseSensitive ? "bg-primary/30 text-primary" : "text-white/50 hover:bg-white/10"}`} title="Case sensitive">Aa</button>
-        <button onClick={() => setRegex((v) => !v)} className={`px-1.5 py-0.5 rounded ${regex ? "bg-primary/30 text-primary" : "text-white/50 hover:bg-white/10"}`} title="Regex">.*</button>
+        <button onClick={() => setCaseSensitive((v) => !v)} className={`px-1.5 py-0.5 rounded ${caseSensitive ? "bg-primary/30 text-primary" : "text-white/50 hover:bg-white/10"}`} title={t("ed_case_sensitive")}>Aa</button>
+        <button onClick={() => setRegex((v) => !v)} className={`px-1.5 py-0.5 rounded ${regex ? "bg-primary/30 text-primary" : "text-white/50 hover:bg-white/10"}`} title={t("ed_regex")}>.*</button>
         <button onClick={() => setShowReplace((v) => !v)} className="px-1.5 py-0.5 rounded text-white/50 hover:bg-white/10 ml-auto">
-          {showReplace ? "− Replace" : "+ Replace"}
+          {showReplace ? t("ed_replace_hide") : t("ed_replace_show")}
         </button>
       </div>
       {showReplace && (
@@ -114,10 +116,10 @@ export function FindReplace({ editor, open, onClose }: Props) {
           <input
             value={replace}
             onChange={(e) => setReplace(e.target.value)}
-            placeholder="Replace with"
+            placeholder={t("ed_replace_placeholder")}
             className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          <button onClick={replaceAll} className="text-[10px] px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30">All</button>
+          <button onClick={replaceAll} className="text-[10px] px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30">{t("ed_replace_all")}</button>
         </div>
       )}
     </div>

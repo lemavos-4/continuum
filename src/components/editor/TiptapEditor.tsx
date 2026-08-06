@@ -41,10 +41,14 @@ import { VaultPdf } from "./VaultPdf";
 import { VaultAudio } from "./VaultAudio";
 import { AutoPair } from "./extensions/AutoPair";
 import { EditorShortcuts } from "./extensions/EditorShortcuts";
+import { HeadingFold } from "./extensions/HeadingFold";
 import { LinkHover } from "./extensions/LinkHover";
 import { SearchHighlight } from "./extensions/SearchHighlight";
 import { FindReplace } from "./FindReplace";
 import { StatusBar } from "./StatusBar";
+import { MobileCommandBar } from "./MobileCommandBar";
+
+export const EDITOR_UPLOAD_EVENT = "continuum:editor-upload";
 
 const IMAGE_MIME_RE = /^image\//i;
 const IMAGE_EXT_RE = /\.(png|jpe?g|webp|gif|svg)$/i;
@@ -260,6 +264,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
     const [isDragging, setIsDragging] = useState(false);
     const [findOpen, setFindOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const updateTimerRef = useRef<number | null>(null);
     const { toast } = useToast();
 
     const uploadFileRef = useRef<(file: File) => Promise<void>>();
@@ -270,6 +275,8 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
           heading: { levels: [1, 2, 3, 4, 5, 6] },
           codeBlock: false,
           dropcursor: false,
+          link: false,
+          underline: false,
         }),
         Underline,
         Highlight.configure({ multicolor: false }),
@@ -306,7 +313,8 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         VaultAudio,
         TaskList,
         TaskItem.configure({ nested: true }),
-        Table.configure({ resizable: true }),
+        HeadingFold,
+        Table.configure({ resizable: true, allowTableNodeSelection: true, lastColumnResizable: true }),
         TableRow,
         TableCell,
         TableHeader,
@@ -345,7 +353,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
       editable,
       editorProps: {
         attributes: {
-          class: `continuum-editor prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[60vh] ${className || ""}`,
+          class: `continuum-editor prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[60vh] ${editable ? "" : "is-readonly"} ${className || ""}`,
         },
         handleClickOn: (_view, _pos, node, _nodePos, event) => {
           const name = node.type.name;
@@ -374,7 +382,12 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         },
       },
       onUpdate: ({ editor }) => {
-        onChangeRef.current?.(editor.getJSON());
+        // Throttled: avoids re-rendering the whole note page on every keystroke.
+        if (updateTimerRef.current) window.clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = window.setTimeout(() => {
+          if (editor.isDestroyed) return;
+          onChangeRef.current?.(editor.getJSON());
+        }, 300);
       },
     });
 
@@ -483,12 +496,41 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
 
     useEffect(() => {
       if (!editor || !content) return;
+      // never overwrite what the user is actively typing
+      if (editor.isFocused) return;
       const a = JSON.stringify(editor.getJSON());
       const b = JSON.stringify(content);
       if (a !== b && typeof content === "object") editor.commands.setContent(content, { emitUpdate: false });
     }, [content, editor]);
 
-    useEffect(() => { if (editor) editor.setEditable(editable); }, [editor, editable]);
+    useEffect(() => {
+      if (!editor) return;
+      editor.setEditable(editable);
+      const dom = editor.view?.dom as HTMLElement | undefined;
+      dom?.classList.toggle("is-readonly", !editable);
+    }, [editor, editable]);
+
+    // "/" command + toolbar upload entry point
+    useEffect(() => {
+      const open = () => fileInputRef.current?.click();
+      window.addEventListener(EDITOR_UPLOAD_EVENT, open);
+      return () => window.removeEventListener(EDITOR_UPLOAD_EVENT, open);
+    }, []);
+
+    // flush any pending throttled change so nothing is lost on unmount
+    useEffect(() => {
+      return () => {
+        if (updateTimerRef.current) {
+          window.clearTimeout(updateTimerRef.current);
+          updateTimerRef.current = null;
+          try {
+            if (editor && !editor.isDestroyed) onChangeRef.current?.(editor.getJSON());
+          } catch {
+            /* editor already torn down */
+          }
+        }
+      };
+    }, [editor]);
 
     useEffect(() => {
       resetEditorCaches();
@@ -564,13 +606,20 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
             </BubbleMenu>
 
             {editor.isActive("table") && (
-              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 bg-black/95 border border-white/10 px-2 py-1.5 rounded-xl shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider px-2 font-medium">Table</span>
-                <button type="button" className="text-xs h-7 px-3 rounded hover:bg-white/10 text-neutral-300 transition-colors" onClick={() => editor.chain().focus().addColumnAfter().run()}>+ Col</button>
-                <button type="button" className="text-xs h-7 px-3 rounded hover:bg-white/10 text-neutral-300 transition-colors" onClick={() => editor.chain().focus().addRowAfter().run()}>+ Row</button>
-                <div className="w-[1px] h-4 bg-white/10 mx-1" />
-                <button type="button" className="flex items-center text-xs h-7 px-3 rounded hover:bg-red-500/20 text-red-400 transition-colors" onClick={() => editor.chain().focus().deleteTable().run()}>
-                  <Trash2 className="w-3 h-3 mr-1.5" /> Delete
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex max-w-[94vw] items-center gap-1 overflow-x-auto rounded-xl border border-white/10 bg-black/90 px-2 py-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
+                <span className="px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Table</span>
+                <TableBtn onClick={() => editor.chain().focus().addColumnBefore().run()}>← Col</TableBtn>
+                <TableBtn onClick={() => editor.chain().focus().addColumnAfter().run()}>Col →</TableBtn>
+                <TableBtn onClick={() => editor.chain().focus().addRowBefore().run()}>↑ Row</TableBtn>
+                <TableBtn onClick={() => editor.chain().focus().addRowAfter().run()}>Row ↓</TableBtn>
+                <div className="mx-1 h-4 w-[1px] bg-white/10" />
+                <TableBtn onClick={() => editor.chain().focus().toggleHeaderRow().run()}>Header</TableBtn>
+                <TableBtn onClick={() => editor.chain().focus().mergeOrSplit().run()}>Merge</TableBtn>
+                <div className="mx-1 h-4 w-[1px] bg-white/10" />
+                <TableBtn onClick={() => editor.chain().focus().deleteColumn().run()}>− Col</TableBtn>
+                <TableBtn onClick={() => editor.chain().focus().deleteRow().run()}>− Row</TableBtn>
+                <button type="button" className="flex items-center rounded px-3 text-xs h-7 text-red-400 transition-colors hover:bg-red-500/20" onClick={() => editor.chain().focus().deleteTable().run()}>
+                  <Trash2 className="mr-1.5 h-3 w-3" /> Delete
                 </button>
               </div>
             )}
@@ -625,6 +674,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
           <StatusBar editor={editor} />
         </div>
         <FindReplace editor={editor} open={findOpen} onClose={() => setFindOpen(false)} />
+        <MobileCommandBar editor={editor} />
       </>
     );
   }
@@ -649,6 +699,17 @@ function ToolbarBtn({
       }`}
     >
       <Icon className="w-3.5 h-3.5" />
+    </button>
+  );
+}
+function TableBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      className="h-7 shrink-0 whitespace-nowrap rounded px-2.5 text-xs text-neutral-300 transition-colors hover:bg-white/10 hover:text-white"
+    >
+      {children}
     </button>
   );
 }

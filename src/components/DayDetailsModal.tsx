@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DayData {
   date: Date;
@@ -32,6 +33,7 @@ interface DayDetailsModalProps {
  * Modal showing detailed time entries for a specific day
  */
 export function DayDetailsModal({ dayData, isOpen, onClose }: DayDetailsModalProps) {
+  const { t } = useLanguage();
   if (!dayData) return null;
 
   const formatDuration = (seconds: number): string => {
@@ -63,10 +65,10 @@ export function DayDetailsModal({ dayData, isOpen, onClose }: DayDetailsModalPro
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-lg text-white">
-                  Total Time: {formatDuration(dayData.totalSeconds)}
+                  {t('tm_total_time_colon', { time: formatDuration(dayData.totalSeconds) })}
                 </h3>
                 <p className="text-sm text-zinc-500">
-                  {dayData.entries.length} time {dayData.entries.length === 1 ? 'entry' : 'entries'}
+                  {t('tm_time_entry_count', { count: dayData.entries.length, word: dayData.entries.length === 1 ? t('tm_entry_singular') : t('tm_entry_plural') })}
                 </p>
               </div>
               <div className="text-right">
@@ -89,7 +91,7 @@ export function DayDetailsModal({ dayData, isOpen, onClose }: DayDetailsModalPro
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="secondary">
-                          {entry.entityTitle || `Entity ${entry.entityId}`}
+                          {entry.entityTitle || t('tm_entity_fallback', { id: entry.entityId })}
                         </Badge>
                         <span className="text-sm font-medium text-zinc-500">
                           {formatDuration(entry.durationSeconds)}
@@ -112,7 +114,7 @@ export function DayDetailsModal({ dayData, isOpen, onClose }: DayDetailsModalPro
           {dayData.entries.length === 0 && (
             <div className="text-center py-8 text-zinc-500">
               <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No time entries for this day</p>
+              <p>{t('tm_no_entries_for_day')}</p>
             </div>
           )}
         </div>

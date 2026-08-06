@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,11 +27,14 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
   destructive = false,
   onConfirm,
 }: ConfirmDialogProps) {
+  const { t } = useLanguage();
+  const resolvedConfirmText = confirmText ?? t("common_confirm");
+  const resolvedCancelText = cancelText ?? t("common_cancel");
   const handleConfirm = async () => {
     await onConfirm();
   };
@@ -43,12 +47,12 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="border-[hsl(var(--popup-border))] bg-transparent text-[hsl(var(--popup-muted))] hover:bg-white/[0.06] hover:text-white">{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel className="border-[hsl(var(--popup-border))] bg-transparent text-[hsl(var(--popup-muted))] hover:bg-white/[0.06] hover:text-white">{resolvedCancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             className={destructive ? "bg-white text-black hover:bg-white/90" : "bg-white text-black hover:bg-white/90"}
           >
-            {confirmText}
+            {resolvedConfirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

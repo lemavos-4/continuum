@@ -16,11 +16,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import type { Entity } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
  * Detail view for a single time-tracked entity
  */
 export function TimeTrackingDetail() {
+  const { t } = useLanguage();
   const { entityId } = useParams<{ entityId: string }>();
   const navigate = useNavigate();
   const [isAddingTimeOpen, setIsAddingTimeOpen] = useState(false);
@@ -91,7 +93,7 @@ export function TimeTrackingDetail() {
     if (!entityId) return;
     const durationSeconds = parseDurationString(manualDuration);
     if (durationSeconds <= 0) {
-      alert('Duration must be greater than 0');
+      alert(t('tm_duration_must_be_positive'));
       return;
     }
 
@@ -125,9 +127,9 @@ export function TimeTrackingDetail() {
   if (!entity) {
     return (
       <div className="p-6 text-center">
-        <p className="text-zinc-500">Entity not found</p>
+        <p className="text-zinc-500">{t('tm_entity_not_found')}</p>
         <Button variant="outline" onClick={() => navigate('/activities')} className="mt-4">
-          Back to List
+          {t('tm_back_to_list')}
         </Button>
       </div>
     );
@@ -150,7 +152,7 @@ export function TimeTrackingDetail() {
             {entity.title}
           </h1>
           <p className="text-sm text-zinc-500">
-            {entity.type === 'PROJECT' ? '📁 Project' : '🔥 Activity'} • {entity.description}
+            {entity.type === 'PROJECT' ? `📁 ${t('tm_project')}` : `🔥 ${t('tm_activity')}`} • {entity.description}
           </p>
         </div>
       </div>
@@ -165,31 +167,31 @@ export function TimeTrackingDetail() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-6">
-            <p className="text-sm text-zinc-400 mb-2">Total Time</p>
+            <p className="text-sm text-zinc-400 mb-2">{t('tm_total_time_cap')}</p>
             <p className="text-3xl font-mono font-bold text-zinc-400">
               {totalTimeSummary?.formattedTotal || '00:00:00'}
             </p>
             <p className="text-xs text-zinc-500 mt-2">
-              {totalTimeSummary?.totalHours?.toFixed(1) || '0.0'} hours
+              {totalTimeSummary?.totalHours?.toFixed(1) || '0.0'} {t('tm_hours_suffix')}
             </p>
           </Card>
 
           <Card className="p-6">
-            <p className="text-sm text-zinc-400 mb-2">This Week</p>
+            <p className="text-sm text-zinc-400 mb-2">{t('tm_this_week')}</p>
             <p className="text-3xl font-mono font-bold text-zinc-400">
               {formatSeconds(weeklyStats.current)}
             </p>
             <p className="text-xs text-zinc-500 mt-2">
-              {(weeklyStats.current / 3600).toFixed(1)} hours
+              {(weeklyStats.current / 3600).toFixed(1)} {t('tm_hours_suffix')}
             </p>
           </Card>
 
           <Card className="p-6">
-            <p className="text-sm text-zinc-400 mb-2">Total Sessions</p>
+            <p className="text-sm text-zinc-400 mb-2">{t('tm_total_sessions')}</p>
             <p className="text-3xl font-mono font-bold text-zinc-400">
               {totalTimeSummary?.entriesCount || 0}
             </p>
-            <p className="text-xs text-zinc-500 mt-2">days tracked</p>
+            <p className="text-xs text-zinc-500 mt-2">{t('tm_days_tracked')}</p>
           </Card>
         </div>
       )}
@@ -202,7 +204,7 @@ export function TimeTrackingDetail() {
           className="gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add Manual Time
+          {t('tm_add_manual_time')}
         </Button>
       </div>
 
@@ -210,15 +212,15 @@ export function TimeTrackingDetail() {
       <Dialog open={isAddingTimeOpen} onOpenChange={setIsAddingTimeOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Time Manually</DialogTitle>
+            <DialogTitle>{t('tm_add_time_manually')}</DialogTitle>
             <DialogDescription>
-              Record time you spent on {entity.title}
+              {t('tm_record_time_spent', { name: entity.title })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-zinc-400 block mb-2">Date</label>
+              <label className="text-sm text-zinc-400 block mb-2">{t('tm_date')}</label>
               <input
                 type="date"
                 value={manualDate}
@@ -228,7 +230,7 @@ export function TimeTrackingDetail() {
             </div>
 
             <div>
-              <label className="text-sm text-zinc-400 block mb-2">Duration (HH:MM:SS)</label>
+              <label className="text-sm text-zinc-400 block mb-2">{t('tm_duration_hms')}</label>
               <input
                 type="text"
                 value={manualDuration}
@@ -236,11 +238,11 @@ export function TimeTrackingDetail() {
                 placeholder="01:30:00"
                 className="w-full px-3 py-2 bg-zinc-950 border border-white/10 rounded-lg text-white font-mono"
               />
-              <p className="text-xs text-zinc-500 mt-1">Format: hours:minutes:seconds</p>
+              <p className="text-xs text-zinc-500 mt-1">{t('tm_format_hms')}</p>
             </div>
 
             <Button onClick={handleAddTime} className="w-full">
-              Add Time
+              {t('tm_add_time')}
             </Button>
           </div>
         </DialogContent>
@@ -248,7 +250,7 @@ export function TimeTrackingDetail() {
 
       {/* History */}
       <Card className="p-6">
-        <h2 className="text-lg font-medium text-white mb-4">History</h2>
+        <h2 className="text-lg font-medium text-white mb-4">{t('tm_history')}</h2>
         
         {breakdownLoading ? (
           <div className="space-y-2">
@@ -258,7 +260,7 @@ export function TimeTrackingDetail() {
           </div>
         ) : sortedEntries.length === 0 ? (
           <p className="text-sm text-zinc-500 text-center py-8">
-            No time entries yet. Start tracking!
+            {t('tm_no_entries_start_tracking')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -272,9 +274,9 @@ export function TimeTrackingDetail() {
                     {format(new Date(date), 'EEEE, MMM d')}
                   </p>
                   <p className="text-xs text-zinc-500">
-                    {entry.source === 'TIMER' && '⏱️ From timer'}
-                    {entry.source === 'MANUAL' && '✍️ Manual entry'}
-                    {entry.source === 'RECOVERED' && '🔄 Recovered'}
+                    {entry.source === 'TIMER' && t('tm_from_timer')}
+                    {entry.source === 'MANUAL' && t('tm_manual_entry')}
+                    {entry.source === 'RECOVERED' && t('tm_recovered')}
                   </p>
                 </div>
                 <div className="text-right flex items-center gap-3">

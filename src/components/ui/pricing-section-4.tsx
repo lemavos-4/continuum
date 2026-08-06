@@ -22,10 +22,10 @@ const plans = [
     ],
   },
   {
-    name: "Pro",
+    name: "Vision",
     description: "For power users and teams",
     price: 19.90,
-    buttonText: "Upgrade to Pro",
+    buttonText: "Upgrade to Vision",
     buttonVariant: "default" as const,
     popular: true,
     includes: [
@@ -33,7 +33,6 @@ const plans = [
       "Advanced search",
       "Custom tags",
       "API access",
-      "Priority support",
     ],
   },
   {
@@ -43,9 +42,8 @@ const plans = [
     buttonText: "Contact Sales",
     buttonVariant: "outline" as const,
     includes: [
-      "Everything in Pro, plus:",
+      "Everything in Vision, plus:",
       "Team management",
-      "Advanced analytics",
       "SSO & SAML",
       "Dedicated support",
     ],

@@ -5,15 +5,22 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Search } from "@/lib/heroicons";
 import type { Entity, EntityType } from '@/types';
 import { useEntityStore } from '@/contexts/EntityContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const ENTITY_TYPE_CONFIG: Record<EntityType, { label: string; icon: string; hoverBg: string; hoverBorder: string }> = {
-  ACTIVITY: { label: 'Activity', icon: '🟢', hoverBg: 'rgba(16,185,129,0.08)', hoverBorder: 'rgba(16,185,129,0.3)' },
-  PROJECT: { label: 'Project', icon: '🔵', hoverBg: 'rgba(59,130,246,0.08)', hoverBorder: 'rgba(59,130,246,0.3)' },
-  PERSON: { label: 'Person', icon: '🟡', hoverBg: 'rgba(245,158,11,0.08)', hoverBorder: 'rgba(245,158,11,0.3)' },
-  TOPIC: { label: 'Topic', icon: '🟣', hoverBg: 'rgba(139,92,246,0.08)', hoverBorder: 'rgba(139,92,246,0.3)' },
-  ORGANIZATION: { label: 'Organization', icon: '🟠', hoverBg: 'rgba(249,115,22,0.08)', hoverBorder: 'rgba(249,115,22,0.3)' },
-  ACCURRENCY: { label: 'Accurrency', icon: '🌸', hoverBg: 'rgba(236,72,153,0.08)', hoverBorder: 'rgba(236,72,153,0.3)' },
+const ENTITY_TYPE_ICONS: Record<EntityType, { icon: string; hoverBg: string; hoverBorder: string }> = {
+  ACTIVITY: { icon: '🟢', hoverBg: 'rgba(16,185,129,0.08)', hoverBorder: 'rgba(16,185,129,0.3)' },
+  PROJECT: { icon: '🔵', hoverBg: 'rgba(59,130,246,0.08)', hoverBorder: 'rgba(59,130,246,0.3)' },
+  PERSON: { icon: '🟡', hoverBg: 'rgba(245,158,11,0.08)', hoverBorder: 'rgba(245,158,11,0.3)' },
+  TOPIC: { icon: '🟣', hoverBg: 'rgba(139,92,246,0.08)', hoverBorder: 'rgba(139,92,246,0.3)' },
+  ORGANIZATION: { icon: '🟠', hoverBg: 'rgba(249,115,22,0.08)', hoverBorder: 'rgba(249,115,22,0.3)' },
+  ACCURRENCY: { icon: '🌸', hoverBg: 'rgba(236,72,153,0.08)', hoverBorder: 'rgba(236,72,153,0.3)' },
 };
+
+function getEntityTypeLabel(t: (key: string) => string, type: EntityType): string {
+  const key = `ent_type_${type.toLowerCase()}`;
+  const translated = t(key);
+  return translated === key ? type : translated;
+}
 
 const BADGE_COLORS: Record<EntityType, string> = {
   ACTIVITY: '#10b981',
@@ -42,6 +49,7 @@ export const EntityMentionSelector = memo(function EntityMentionSelector({
   isLoading = false,
 }: EntityMentionSelectorProps) {
   const { setActiveMention, addEntityToNote } = useEntityStore();
+  const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
 
   const filteredEntities = useMemo(() => {
@@ -100,7 +108,7 @@ export const EntityMentionSelector = memo(function EntityMentionSelector({
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
           <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <input
-            placeholder="Search for entity..."
+            placeholder={t("ent_search_placeholder")}
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
@@ -117,7 +125,8 @@ export const EntityMentionSelector = memo(function EntityMentionSelector({
               </div>
             ) : filteredEntities.length > 0 ? (
               filteredEntities.map((entity, index) => {
-                const config = ENTITY_TYPE_CONFIG[entity.type];
+                const config = ENTITY_TYPE_ICONS[entity.type];
+                const label = getEntityTypeLabel(t, entity.type);
                 const badgeColor = BADGE_COLORS[entity.type] || '#888';
                 const isActive = index === activeIndex;
                 return (
@@ -138,7 +147,7 @@ export const EntityMentionSelector = memo(function EntityMentionSelector({
                       )}
                     </div>
                     <Badge variant="outline" className="shrink-0 text-xs" style={{ color: badgeColor, borderColor: `${badgeColor}33` }}>
-                      {config.label}
+                      {label}
                     </Badge>
                   </button>
                 );
@@ -146,7 +155,7 @@ export const EntityMentionSelector = memo(function EntityMentionSelector({
             ) : (
               <div className="flex flex-col items-center justify-center py-6 gap-1">
                 <Search className="w-4 h-4 text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">No entities found</p>
+                <p className="text-xs text-muted-foreground">{t("ent_no_entities_found")}</p>
               </div>
             )}
           </div>
@@ -156,10 +165,10 @@ export const EntityMentionSelector = memo(function EntityMentionSelector({
         <div className="px-3 py-1.5 border-t border-border/50 text-xs text-muted-foreground flex items-center justify-between">
           <span>
             {filteredEntities.length === 0
-              ? 'Type to search'
-              : `${filteredEntities.length} encontrada${filteredEntities.length !== 1 ? 's' : ''}`}
+              ? t("ent_type_to_search")
+              : t("ent_found_count", { count: filteredEntities.length })}
           </span>
-          <span className="hidden sm:inline">↑↓ navigate · Enter select · Esc close</span>
+          <span className="hidden sm:inline">{t("ent_kbd_hint")}</span>
         </div>
       </motion.div>
     </AnimatePresence>

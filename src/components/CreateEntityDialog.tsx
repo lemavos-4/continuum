@@ -8,15 +8,18 @@ import { Loader2 } from "@/lib/heroicons";
 import { entitiesApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { usePlanGate } from "@/hooks/usePlanGate";
+import { useLanguage } from "@/contexts/LanguageContext";
 import type { Entity } from "@/types";
 
-const TYPE_OPTIONS: { value: string; label: string; hint: string }[] = [
-  { value: "PROJECT", label: "Project", hint: "Track time and progress" },
-  { value: "ACTIVITY", label: "Activity", hint: "Daily habit or recurring task" },
-  { value: "TOPIC", label: "Topic", hint: "Knowledge area or subject" },
-  { value: "PERSON", label: "Person", hint: "Someone in your network" },
-  { value: "ORGANIZATION", label: "Organization", hint: "Company or group" },
-];
+function getTypeOptions(t: (key: string, vars?: Record<string, unknown>) => string): { value: string; label: string; hint: string }[] {
+  return [
+    { value: "PROJECT", label: t("ent_type_project"), hint: t("ent_hint_project") },
+    { value: "ACTIVITY", label: t("ent_type_activity"), hint: t("ent_hint_activity") },
+    { value: "TOPIC", label: t("ent_type_topic"), hint: t("ent_hint_topic") },
+    { value: "PERSON", label: t("ent_type_person"), hint: t("ent_hint_person") },
+    { value: "ORGANIZATION", label: t("ent_type_organization"), hint: t("ent_hint_organization") },
+  ];
+}
 
 interface Props {
   open: boolean;
@@ -32,7 +35,9 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { canCreateEntity, applyUsageDelta, refresh } = usePlanGate();
+  const TYPE_OPTIONS = getTypeOptions(t);
 
   useEffect(() => {
     if (open) {
@@ -47,7 +52,7 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
   const handleSubmit = async () => {
     if (!title.trim()) return;
     if (!canCreateEntity) {
-      toast({ title: "Plan limit reached", description: "Upgrade to create more entities.", variant: "destructive" });
+      toast({ title: t("ent_plan_limit_reached"), description: t("ent_upgrade_to_create"), variant: "destructive" });
       onOpenChange(false);
       return;
     }
@@ -56,13 +61,13 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
       const { data } = await entitiesApi.create(title.trim(), type, description.trim() || undefined);
       applyUsageDelta({ entitiesCount: 1, activitiesCount: type === "ACTIVITY" ? 1 : 0 });
       void refresh();
-      toast({ title: `${selected.label} created`, description: data?.title });
+      toast({ title: t("ent_created_toast", { type: selected.label }), description: data?.title });
       onCreated?.(data as Entity);
       onOpenChange(false);
     } catch (err: any) {
       toast({
-        title: "Could not create",
-        description: err?.response?.data?.message || err?.message || "Try again",
+        title: t("ent_could_not_create"),
+        description: err?.response?.data?.message || err?.message || t("ent_try_again"),
         variant: "destructive",
       });
     } finally {
@@ -75,19 +80,19 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex flex-col">
-            <DialogTitle>New {selected.label}</DialogTitle>
+            <DialogTitle>{t("ent_new_type", { type: selected.label })}</DialogTitle>
             <DialogDescription>{selected.hint}</DialogDescription>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 pt-1">
           <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Title</Label>
+            <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("ent_title")}</Label>
             <Input
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={`Name your ${selected.label.toLowerCase()}`}
+              placeholder={t("ent_name_your", { type: selected.label.toLowerCase() })}
               className="h-11 bg-white/[0.03] border-white/[0.06] focus-visible:ring-white/20"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && title.trim()) {
@@ -100,7 +105,7 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
 
           {!lockType && (
             <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Type</Label>
+              <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("ent_type")}</Label>
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger className="h-11 bg-white/[0.03] border-white/[0.06]">
                   <SelectValue />
@@ -120,22 +125,22 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Description (optional)</Label>
+            <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("ent_description_optional")}</Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="A short note"
+              placeholder={t("ent_a_short_note")}
               className="h-11 bg-white/[0.03] border-white/[0.06] focus-visible:ring-white/20"
             />
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
-              Cancel
+              {t("ent_cancel")}
             </Button>
             <Button onClick={handleSubmit} disabled={submitting || !title.trim()}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Create {selected.label}
+              {t("ent_create_type", { type: selected.label })}
             </Button>
           </div>
         </div>

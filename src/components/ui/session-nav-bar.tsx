@@ -5,13 +5,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
 import {
   Activity,
-  ChevronsUpDown,
   HardDrive,
   LayoutDashboard,
-  LogOut,
   GlobeAlt,
   Search,
-  Settings,
   StickyNote,
   Tag,
   Timer,
@@ -35,17 +32,10 @@ import {
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+// dropdown-menu not used here anymore
 
 const sidebarVariants = {
   open: { width: "15rem" },
@@ -128,7 +118,7 @@ function SidebarLink({
 
 export function SessionNavBar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -136,13 +126,6 @@ export function SessionNavBar() {
 
   const initial = (user?.username || user?.email || "U").trim().charAt(0).toUpperCase();
   const display = user?.username || user?.email?.split("@")[0] || "Guest";
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
-
-  const handleLogoutRequest = () => setConfirmLogoutOpen(true);
 
   return (
     <motion.aside
@@ -227,69 +210,25 @@ export function SessionNavBar() {
 
           {/* Footer */}
           <div className="flex flex-col gap-1 border-t border-sidebar-border p-2">
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="flex h-9 w-full items-center justify-start gap-2 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                >
-                  <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sidebar-primary text-[10px] font-bold text-sidebar-primary-foreground">
-                    {initial}
-                  </div>
-                  <motion.span
-                    variants={labelVariants}
-                    className="flex w-full items-center gap-2 overflow-hidden"
-                  >
-                    {!isCollapsed && (
-                      <>
-                        <span className="truncate text-sm font-medium normal-case tracking-normal">{display}</span>
-                        <ChevronsUpDown className="ml-auto h-3.5 w-3.5 text-sidebar-foreground/70" />
-                      </>
-                    )}
-                  </motion.span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="right"
-                align="end"
-                sideOffset={8}
-                className="w-56"
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate("/profile")}
+                className="flex h-9 items-center gap-2 rounded-md px-2 text-sidebar-foreground"
               >
-                <div className="flex flex-col gap-0.5 px-2 py-1.5">
-                  <span className="truncate text-sm font-medium normal-case tracking-normal text-[hsl(var(--popup-foreground))]">{display}</span>
-                  <span className="truncate text-xs text-[hsl(var(--popup-muted))]">{user?.email}</span>
-                  <span className="mt-1 inline-flex w-fit items-center rounded border border-[hsl(var(--popup-border))] px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(var(--popup-muted))]">
-                    {user?.plan === "VISION" ? "PRO" : (user?.plan || "FREE")}
-                  </span>
+                <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sidebar-primary text-[10px] font-bold text-sidebar-primary-foreground">
+                  {initial}
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  <UserCircle className="mr-2 h-4 w-4" /> {t("nav_profile")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/subscription")}>
-                  <Settings className="mr-2 h-4 w-4" /> {t("nav_subscription")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogoutRequest}>
-                  <LogOut className="mr-2 h-4 w-4" /> {t("nav_logout")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <motion.span variants={labelVariants} className="flex items-center gap-2 overflow-hidden">
+                  {!isCollapsed && <span className="truncate text-sm font-medium normal-case tracking-normal">{display}</span>}
+                </motion.span>
+              </button>
+
+              {/* No logout button here — profile page handles sign out */}
+            </div>
           </div>
         </div>
       </div>
-      <ConfirmDialog
-        open={confirmLogoutOpen}
-        onOpenChange={setConfirmLogoutOpen}
-        title={t("auth_signOut")}
-        description={t("auth_signOutDesc")}
-        confirmText={t("nav_logout")}
-        destructive
-        onConfirm={async () => {
-          setConfirmLogoutOpen(false);
-          await handleLogout();
-        }}
-      />
     </motion.aside>
   );
 }

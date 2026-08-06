@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
+import { EMAIL_AUTH_ENABLED as DEV_MODE } from "@/lib/dev-mode";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "@/lib/heroicons";
 import { useToast } from "@/hooks/use-toast";
 import AuthShell from "@/components/auth/AuthShell";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // DEV_MODE toggle — when VITE_DEV_MODE=true, show the email/password
 // login form alongside the Google sign-in button. In production this
 // stays false and we redirect straight to Google.
-const DEV_MODE = String(import.meta.env.VITE_DEV_MODE ?? "false").toLowerCase() === "true";
 
 export default function Login() {
+  const { t } = useLanguage();
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -32,7 +34,7 @@ export default function Login() {
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-sm text-white/70">Redirecting to Google login...</p>
+          <p className="text-sm text-white/70">{t("au_redirecting_google")}</p>
         </div>
       </div>
     );
@@ -46,8 +48,8 @@ export default function Login() {
       navigate("/", { replace: true });
     } catch (err: any) {
       toast({
-        title: "Login failed",
-        description: err?.response?.data?.message || "Check your email and password.",
+        title: t("au_login_failed"),
+        description: err?.response?.data?.message || t("au_check_email_password"),
         variant: "destructive",
       });
     } finally {
@@ -61,27 +63,27 @@ export default function Login() {
       await loginWithGoogle();
     } catch {
       setGoogleLoading(false);
-      toast({ title: "Error starting Google login", variant: "destructive" });
+      toast({ title: t("au_error_starting_google"), variant: "destructive" });
     }
   };
 
   return (
     <AuthShell
       eyebrow="Continuum · DEV"
-      title="Sign in"
-      subtitle="Development mode — email & password enabled."
+      title={t("au_dev_title")}
+      subtitle={t("au_dev_subtitle")}
       footer={
         <span>
-          No account?{" "}
+          {t("au_no_account")}{" "}
           <Link to="/register" className="text-white hover:underline">
-            Create one
+            {t("au_create_one")}
           </Link>
         </span>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="label-caps text-white/50">Email</label>
+          <label className="label-caps text-white/50">{t("au_email")}</label>
           <input
             type="email"
             required
@@ -92,7 +94,7 @@ export default function Login() {
           />
         </div>
         <div>
-          <label className="label-caps text-white/50">Password</label>
+          <label className="label-caps text-white/50">{t("au_password")}</label>
           <input
             type="password"
             required
@@ -108,13 +110,13 @@ export default function Login() {
           className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-sm hover:bg-white/90 transition disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-          Sign in
+          {t("au_sign_in")}
         </button>
       </form>
 
       <div className="my-6 flex items-center gap-3 text-[10px] uppercase tracking-widest text-white/30">
         <span className="flex-1 h-px bg-white/10" />
-        or
+        {t("au_or")}
         <span className="flex-1 h-px bg-white/10" />
       </div>
 
@@ -124,7 +126,7 @@ export default function Login() {
         className="w-full border border-white/15 hover:border-white/40 text-sm py-2.5 rounded-sm transition flex items-center justify-center gap-2"
       >
         {googleLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Continue with Google
+        {t("au_continue_with_google")}
       </button>
     </AuthShell>
   );

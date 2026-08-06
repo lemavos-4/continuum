@@ -1,11 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import InstallAppButton from "@/components/pwa/InstallAppButton";
+import SubscriptionModal from "@/components/subscription/SubscriptionModal";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
+import { version } from "@/lib/version";
 import { usePlanGate } from "@/hooks/usePlanGate";
-import { getCurrentPlan, getPlanLimits } from "@/lib/plan";
+import { getCurrentPlan, getPlanLimits, isUnlimited } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -20,16 +26,51 @@ import {
   ArrowPathIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
-  SunIcon,
-  MoonIcon,
+  LifebuoyIcon,
+  ChatBubbleLeftEllipsisIcon,
+  BugAntIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { useTheme } from "@/contexts/ThemeContext";
 import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
 import { flushQueue, getLastSyncAt } from "@/lib/offline/sync";
 import { toast as sonnerToast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
-const formatLimitValue = (value: number, suffix = "") => (value === -1 ? "Unlimited" : `${value}${suffix}`);
+/* ── Shared building blocks ──────────────────────────────────────────── */
+
+function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div>
+      <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{eyebrow}</p>
+      <h2 className="mt-1 font-serif text-xl text-foreground">{title}</h2>
+    </div>
+  );
+}
+
+function SettingRow({
+  icon: Icon,
+  title,
+  subtitle,
+  action,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-4 px-4 py-3.5">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-foreground/80">{title}</p>
+        {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
 
 function OfflineSyncRow() {
   const { status, pending, syncing } = useOfflineStatus();
@@ -66,36 +107,43 @@ function OfflineSyncRow() {
         : "Up to date";
 
   return (
-    <div className="flex items-center gap-4 py-4">
-      <ArrowPathIcon className={`h-4 w-4 text-foreground/30 shrink-0 ${syncing || busy ? "animate-spin" : ""}`} />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-foreground/70">Offline & Sync</p>
-        <p className="text-xs text-foreground/30 truncate">{subtitle}</p>
+    <div className="flex items-center gap-4 px-4 py-3.5">
+      <ArrowPathIcon className={`h-4 w-4 shrink-0 text-muted-foreground ${syncing || busy ? "animate-spin" : ""}`} />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-foreground/80">Offline & Sync</p>
+        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </div>
-      <button
+      <Button
         type="button"
+        variant="quiet"
+        size="xs"
         onClick={onSync}
         disabled={busy || syncing}
-        className="text-xs text-white/70 hover:text-white underline underline-offset-4 disabled:opacity-40"
+        className="normal-case"
       >
         {busy || syncing ? "Syncing…" : "Sync now"}
-      </button>
+      </Button>
     </div>
   );
 }
 
+/* ── Page ────────────────────────────────────────────────────────────*/
+
 export default function Profile() {
+  const { user, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const { usage, loading: usageLoading } = usePlanGate();
-  const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
   const handleExportData = async () => {
@@ -140,9 +188,9 @@ export default function Profile() {
 
   const planDetails = useMemo(
     () => [
-      { label: "Vault Limit", value: limits.maxVaultSizeMB === -1 ? "Unlimited" : `${limits.maxVaultSizeMB} MB` },
-      { label: "Upload Metadata", value: limits.maxMetadataSizeKb === -1 ? "Unlimited" : `${limits.maxMetadataSizeKb} KB` },
-      { label: "History", value: limits.historyDays === -1 ? "Unlimited" : `${limits.historyDays} days` },
+      { label: "Vault Limit", value: isUnlimited(limits.maxVaultSizeMB) ? "Unlimited" : `${limits.maxVaultSizeMB} MB` },
+      { label: "Upload Metadata", value: isUnlimited(limits.maxMetadataSizeKb ?? -1) ? "Unlimited" : `${limits.maxMetadataSizeKb} KB` },
+      { label: "History", value: isUnlimited(limits.historyDays) ? "Unlimited" : `${limits.historyDays} days` },
     ],
     [limits],
   );
@@ -164,206 +212,304 @@ export default function Profile() {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  const initials = (user?.username || user?.email || "?").slice(0, 1).toUpperCase();
+
   return (
     <AppLayout>
-      <div className="mx-auto max-w-5xl px-6 py-10 lg:px-12 lg:py-16 space-y-12">
+      <div className="mx-auto max-w-4xl space-y-8 px-4 py-6 sm:px-6 lg:px-12 lg:py-14">
 
-        {/* HEADER */}
-        <header>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">Settings</p>
-          <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">Profile</h1>
-          <p className="mt-2 text-sm text-white/50">Manage your account credentials and application preferences.</p>
+        {/* IDENTITY HEADER */}
+        <header className="flex items-center gap-4 border-b border-border pb-6">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent font-serif text-xl text-foreground">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
+              {user?.username || t("profile_title")}
+            </h1>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+          <Badge variant="meta" className="shrink-0">{currentPlan}</Badge>
         </header>
 
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+        {/* ACCOUNT */}
+        <section className="space-y-4">
+          <SectionTitle eyebrow={t("profile_settings")} title={t("profile_accountDetails")} />
 
-          {/* ACCOUNT SECTION */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-sm font-semibold text-white/80">Account Details</h2>
-            </div>
-
-            <div className="space-y-5 border border-white/5 bg-white/[0.01] p-6 rounded-sm">
+          <Card variant="faint">
+            <CardContent className="space-y-5 p-4 sm:p-6">
               <div className="space-y-2">
-                <Label htmlFor="profile-username" className="text-xs text-white/40">Username</Label>
+                <Label htmlFor="profile-username" className="text-xs text-muted-foreground">{t("profile_username")}</Label>
                 <div className="relative">
-                  <UserIcon className="absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+                  <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="profile-username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Your username"
-                    className="w-full border-0 border-b border-white/10 bg-transparent pl-6 rounded-none text-sm text-white placeholder:text-white/20 focus:border-white/40 focus:outline-none focus:ring-0 focus-visible:ring-0"
+                    placeholder={t("profile_usernamePlaceholder")}
+                    className="pl-9"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="profile-email" className="text-xs text-white/40">Email Address</Label>
+                <Label htmlFor="profile-email" className="text-xs text-muted-foreground">{t("profile_emailAddress")}</Label>
                 <div className="relative">
-                  <EnvelopeIcon className="absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/20" />
+                  <EnvelopeIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="profile-email"
                     type="email"
                     value={email}
                     readOnly
-                    className="w-full border-0 border-b border-white/5 bg-transparent pl-6 pr-16 rounded-none text-sm text-white/45 cursor-not-allowed focus:outline-none focus:ring-0"
+                    className="cursor-not-allowed pl-9 pr-20 text-muted-foreground"
                   />
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-white/40 bg-white/[0.04] border border-white/5 px-1.5 py-0.5 rounded-sm">
-                    Google
-                  </span>
+                  <Badge variant="meta" className="absolute right-2 top-1/2 -translate-y-1/2">Google</Badge>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/[0.04]">
+              <div className="grid grid-cols-2 gap-4 border-t border-border pt-4">
                 <div>
-                  <p className="text-xs text-white/30">Current Plan</p>
-                  <p className="mt-1 text-sm font-medium text-white/70">{currentPlan === "VISION" ? "PRO" : currentPlan}</p>
+                  <p className="text-xs text-muted-foreground">{t("profile_currentPlan")}</p>
+                  <p className="mt-1 text-sm font-medium text-foreground/80">{currentPlan}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/30">Member Since</p>
-                  <p className="mt-1 text-sm font-medium text-white/70">
-                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+                  <p className="text-xs text-muted-foreground">{t("profile_memberSince")}</p>
+                  <p className="mt-1 text-sm font-medium text-foreground/80">
+                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—"}
                   </p>
                 </div>
               </div>
 
-              <button
+              <Button
                 onClick={() => setSaveConfirmOpen(true)}
                 disabled={saving || !username.trim()}
-                className="flex items-center justify-center gap-2 w-full h-9 border border-white/15 bg-transparent hover:border-white/40 text-white/80 hover:text-white rounded-sm text-sm font-medium transition-colors disabled:opacity-40 mt-4"
+                className="w-full gap-2 normal-case"
               >
-                {saving && <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />}
-                Save changes
-              </button>
+                {saving && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
+                {t("profile_saveChanges")}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => setSubscriptionOpen(true)}
+                className="w-full gap-2 normal-case"
+              >
+                {t("nav_subscription")}
+              </Button>
+
+              <SubscriptionModal open={subscriptionOpen} onOpenChange={setSubscriptionOpen} />
+
 
               <ConfirmDialog
                 open={saveConfirmOpen}
                 onOpenChange={setSaveConfirmOpen}
-                title="Save profile changes?"
-                description="Your username will be updated across your account network."
-                confirmText="Save"
+                title={t("profile_saveConfirmTitle")}
+                description={t("profile_saveConfirmDesc")}
+                confirmText={t("common_save")}
                 onConfirm={async () => {
                   setSaveConfirmOpen(false);
                   await handleSave();
                 }}
               />
-            </div>
+            </CardContent>
+          </Card>
+        </section>
 
-            <div className="flex items-center gap-3 border border-white/5 bg-white/[0.01] p-4 rounded-sm">
-              <ShieldCheckIcon className="h-4 w-4 text-white/40 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-white/70">Secure Authentication</p>
-                <p className="text-xs text-white/30 truncate">Verified and connected via Google Sign-In.</p>
+        {/* PREFERENCES */}
+        <section className="space-y-4">
+          <SectionTitle eyebrow={t("profile_settings")} title={t("profile_prefsAppearance")} />
+
+          <Card variant="faint">
+            <CardContent className="divide-y divide-border p-0">
+              <div className="px-4">
+                <LanguageSelector />
               </div>
-            </div>
-
-            <div className="border border-white/5 bg-white/[0.01] p-5 rounded-sm space-y-3">
-              <div className="flex items-start gap-3">
-                <ArrowUpTrayIcon className="h-4 w-4 text-white/40 shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-white/70">Import Markdown</p>
-                  <p className="text-xs text-white/30 mt-0.5">
-                    Bring notes from Obsidian, Logseq, or any folder of .md files. Entities are detected automatically — you confirm.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setImportOpen(true)}
-                className="w-full h-9 border border-white/15 bg-transparent hover:border-white/40 text-white/80 hover:text-white rounded-sm text-sm font-medium transition-colors"
-              >
-                Import Markdown Files
-              </button>
-            </div>
-          </div>
-
-          {/* PREFERENCES SECTION */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-sm font-semibold text-white/80">Preferences & Appearance</h2>
-            </div>
-
-            <div className="border-t border-b border-white/5 divide-y divide-white/[0.04] dark:border-white/5 light:border-black/5">
-              <div className="flex items-center gap-4 py-4">
-                <CalendarIcon className="h-4 w-4 text-foreground/30 shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-foreground/70">History Retention</p>
-                  <p className="text-xs text-foreground/30">{formatLimitValue(limits.historyDays, " days")}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 py-4">
-                <LockClosedIcon className="h-4 w-4 text-foreground/30 shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-foreground/70">Security Layer</p>
-                  <p className="text-xs text-foreground/30">Active session tokens are isolated and protected.</p>
-                </div>
-              </div>
-
+              <SettingRow
+                icon={CalendarIcon}
+                title={t("profile_history")}
+                subtitle={limits.historyDays === -1 ? t("common_unlimited") : t("profile_historyDays", { n: limits.historyDays })}
+              />
+              <SettingRow
+                icon={LockClosedIcon}
+                title={t("profile_securityLayer")}
+                subtitle={t("profile_securityLayerDesc")}
+              />
+              <SettingRow
+                icon={ShieldCheckIcon}
+                title={t("profile_secureAuth")}
+                subtitle={t("profile_secureAuthDesc")}
+              />
               <OfflineSyncRow />
-            </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* DATA */}
+        <section className="space-y-4">
+          <SectionTitle eyebrow={t("profile_settings")} title={t("profile_exportData")} />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card variant="faint">
+              <CardContent className="space-y-3 p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <ArrowUpTrayIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-foreground/80">{t("profile_importMd")}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t("profile_importMdDesc")}</p>
+                  </div>
+                </div>
+                <Button variant="outline" onClick={() => setImportOpen(true)} className="w-full normal-case">
+                  {t("profile_importMdBtn")}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card variant="faint">
+              <CardContent className="space-y-3 p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <ArrowDownTrayIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-foreground/80">{t("profile_exportData")}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">continuum-backup.json</p>
+                  </div>
+                </div>
+                {user?.dataExport ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleExportData}
+                    disabled={exporting}
+                    className="w-full gap-2 normal-case"
+                  >
+                    <ArrowDownTrayIcon className="h-3.5 w-3.5" />
+                    {exporting ? t("profile_exporting") : t("profile_downloadBackup")}
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{t("profile_locked")}</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* LIMITS SECTION */}
-          <section className="space-y-6 pt-4 border-t border-white/5 lg:col-span-2">
-            <div>
-              <h2 className="text-sm font-semibold text-white/80">Plan Usage & Limits</h2>
+          <Card variant="faint">
+            <CardContent className="p-4 sm:p-5">
+              <InstallAppButton />
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* PLAN & USAGE */}
+        <section className="space-y-4">
+          <SectionTitle eyebrow={currentPlan} title={t("profile_planUsage")} />
+
+          {usageLoading && !usage ? (
+            <div className="flex justify-center py-12">
+              <ArrowPathIcon className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-
-            {usageLoading && !usage ? (
-              <div className="flex justify-center py-12">
-                <ArrowPathIcon className="w-5 h-5 animate-spin text-white/20" />
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-3">
-                {usageResources.map((resource) => {
-                  const unlimited = resource.max === -1;
-                  const percent = unlimited ? 100 : Math.min((resource.current / resource.max) * 100, 100);
-
-                  return (
-                    <div key={resource.label} className="border border-white/5 bg-white/[0.01] p-5 rounded-sm space-y-3">
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {usageResources.map((resource) => {
+                const unlimited = resource.max === -1;
+                const percent = unlimited ? 100 : Math.min((resource.current / resource.max) * 100, 100);
+                return (
+                  <Card key={resource.label} variant="faint">
+                    <CardContent className="space-y-3 p-4 sm:p-5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-white/80">{resource.label}</span>
-                        <span className="text-xs text-white/40 tabular-nums">
+                        <span className="text-xs font-medium text-foreground/80">{resource.label}</span>
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
                           {unlimited ? "∞" : `${resource.current.toFixed(resource.suffix ? 1 : 0)} / ${resource.max}${resource.suffix}`}
                         </span>
                       </div>
-                      <Progress value={unlimited ? 0 : percent} className="h-[2px] bg-white/5 rounded-none" />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* PLAN DETAILS */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {planDetails.map((detail) => (
-                <div key={detail.label} className="border border-white/5 bg-white/[0.01] p-4 flex items-center justify-between gap-3 text-xs rounded-sm">
-                  <span className="text-white/40 text-xs">{detail.label}</span>
-                  <span className="text-xs text-white/70 tabular-nums">{detail.value}</span>
-                </div>
-              ))}
-
-              <div className="border border-white/5 bg-white/[0.01] p-4 flex items-center justify-between gap-3 text-xs rounded-sm">
-                <span className="text-white/40 text-xs">Export Data</span>
-                {user?.dataExport ? (
-                  <button
-                    type="button"
-                    onClick={handleExportData}
-                    disabled={exporting}
-                    className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white underline underline-offset-4 disabled:opacity-40 transition-colors"
-                  >
-                    <ArrowDownTrayIcon className="w-3 h-3" />
-                    {exporting ? "Exporting…" : "Download Backup"}
-                  </button>
-                ) : (
-                  <span className="text-white/20 text-xs">Locked</span>
-                )}
-              </div>
+                      <Progress value={unlimited ? 0 : percent} className="h-[2px] rounded-none bg-accent" />
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          </section>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {planDetails.map((detail) => (
+              <Card key={detail.label} variant="faint">
+                <CardContent className="flex items-center justify-between gap-3 p-4">
+                  <span className="text-xs text-muted-foreground">{detail.label}</span>
+                  <span className="font-mono text-xs tabular-nums text-foreground/80">{detail.value}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* HELP & SUPPORT */}
+        <section className="space-y-4">
+          <SectionTitle eyebrow={t("profile_settings")} title={t("profile_supportCenter")} />
+
+          <Card variant="faint" className="w-full">
+            <CardContent className="divide-y divide-border p-0">
+              <a href="#/support" className="flex items-center gap-4 px-4 py-3.5 w-full">
+                <LifebuoyIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-foreground/80">{t("profile_supportCenter")}</p>
+                  <p className="truncate text-xs text-muted-foreground">{t("profile_supportCenterDesc")}</p>
+                </div>
+                <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </a>
+              <a
+                href="mailto:feedback@continuum.onl?subject=Continuum%20%E2%80%94%20Feedback"
+                className="flex items-center gap-4 px-4 py-3.5 w-full"
+              >
+                <ChatBubbleLeftEllipsisIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-foreground/80">{t("profile_sendFeedback")}</p>
+                  <p className="truncate text-xs text-muted-foreground">feedback@continuum.onl</p>
+                </div>
+                <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </a>
+              <a
+                href="mailto:bugs@continuum.onl?subject=Continuum%20%E2%80%94%20Bug%20report"
+                className="flex items-center gap-4 px-4 py-3.5 w-full"
+              >
+                <BugAntIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-foreground/80">{t("profile_reportBug")}</p>
+                  <p className="truncate text-xs text-muted-foreground">bugs@continuum.onl</p>
+                </div>
+                <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </a>
+            </CardContent>
+          </Card>
+        </section>
+
+        <div>
+          <Button
+            variant="destructive"
+            onClick={() => setLogoutConfirmOpen(true)}
+            className="w-full normal-case"
+          >
+            {t("nav_logout")}
+          </Button>
         </div>
+
+        <ConfirmDialog
+          open={logoutConfirmOpen}
+          onOpenChange={setLogoutConfirmOpen}
+          title={t("auth_signOut")}
+          description={t("auth_signOutDesc")}
+          confirmText={t("nav_logout")}
+          destructive={true}
+          onConfirm={async () => {
+            setLogoutConfirmOpen(false);
+            await handleLogout();
+          }}
+        />
+        <div className="flex w-full justify-center pb-4 font-mono text-[10px] text-muted-foreground">{version}</div>
       </div>
+
       <MarkdownImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
