@@ -33,6 +33,7 @@ export default function Subscription() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [plans, setPlans] = useState<Array<{ plan: Plan; limits: PlanLimits; priceId?: string }>>([]);
   const [prices, setPrices] = useState<{ monthly?: string }>({});
 
@@ -50,6 +51,41 @@ export default function Subscription() {
       .then(({ data }) => setSub(data))
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  // Returning from Stripe Checkout: force a sync with Stripe instead of trusting
+  // the webhook to have already landed (removes the checkout/webhook race).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.split("?")[1] || window.location.search);
+    if (params.get("status") !== "success") return;
+
+    let cancelled = false;
+    setSyncing(true);
+
+    const attempt = async (tries: number): Promise<void> => {
+      if (cancelled) return;
+      try {
+        const { data } = await subscriptionApi.sync();
+        if (cancelled) return;
+        setSub(data);
+        if (data?.effectivePlan && data.effectivePlan !== "FREE") {
+          setSyncing(false);
+          toast({ title: t("bill_success") || "Plan activated" });
+          return;
+        }
+      } catch {
+        /* keep retrying — reconciliation job is the final safety net */
+      }
+      if (tries <= 1) {
+        setSyncing(false);
+        return;
+      }
+      setTimeout(() => attempt(tries - 1), 2500);
+    };
+
+    attempt(5);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

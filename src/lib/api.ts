@@ -460,6 +460,8 @@ export const trackingApi = {
 
 export const subscriptionApi = {
   me: () => api.get("/api/subscriptions/me"),
+  // Pulls truth from Stripe (used right after returning from Checkout).
+  sync: () => api.post("/api/subscriptions/sync"),
   // Accepts either a Stripe price id (price_xxx) or a plan code ("VISION").
   checkout: (priceOrPlan: string) =>
     api.post("/api/subscriptions/checkout", { priceId: priceOrPlan, planId: priceOrPlan }),
