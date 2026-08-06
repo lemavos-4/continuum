@@ -43,12 +43,19 @@ public class StripeWebhookController {
             log.error("[Stripe] Invalid signature: {}", e.getMessage());
             return ResponseEntity.status(400).body("Invalid signature");
         }
+        long started = System.currentTimeMillis();
         try {
-            log.info("[Stripe] Event received: {} [{}]", event.getType(), event.getId());
+            log.info("[Stripe][webhook] received type={} id={} apiVersion={} livemode={}",
+                    event.getType(), event.getId(), event.getApiVersion(), event.getLivemode());
             subscriptionService.handleStripeEvent(event);
+            log.info("[Stripe][webhook] acknowledged id={} in {}ms", event.getId(),
+                    System.currentTimeMillis() - started);
         } catch (Exception e) {
-            log.error("[Stripe] Webhook processing error: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("processing error");
+            // 5xx on purpose: Stripe will retry with backoff, and the event stays
+            // FAILED in stripe_event_logs so the reconciliation job also replays it.
+            log.error("[Stripe][webhook] processing error id={} type={} ({}ms): {}",
+                    event.getId(), event.getType(), System.currentTimeMillis() - started, e.getMessage(), e);
+            return ResponseEntity.status(500).body("processing error — retry expected");
         }
         return ResponseEntity.ok("ok");
     }

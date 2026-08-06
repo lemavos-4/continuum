@@ -11,6 +11,7 @@ import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.SubscriptionCancelParams;
 import com.stripe.param.SubscriptionUpdateParams;
+import com.stripe.param.SubscriptionListParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -196,6 +197,35 @@ public class StripeService {
     }
 
     /* ─────────────────── Helpers ─────────────────── */
+
+    /**
+     * Most relevant subscription for a customer: prefers a live one
+     * (active / trialing / past_due), falling back to the most recently created.
+     * Used by the post-checkout sync and by the reconciliation job.
+     */
+    public Subscription findLatestRelevantSubscription(String customerId) throws StripeException {
+        if (customerId == null || customerId.isBlank()) return null;
+        var list = Subscription.list(SubscriptionListParams.builder()
+                .setCustomer(customerId)
+                .setStatus(SubscriptionListParams.Status.ALL)
+                .setLimit(20L)
+                .build());
+        Subscription fallback = null;
+        for (Subscription s : list.getData()) {
+            if (fallback == null) fallback = s;
+            String st = s.getStatus();
+            if ("active".equals(st) || "trialing".equals(st) || "past_due".equals(st)) return s;
+        }
+        return fallback;
+    }
+
+    /** All live subscriptions on the account — the source of truth for reconciliation. */
+    public Iterable<Subscription> iterateLiveSubscriptions() throws StripeException {
+        return Subscription.list(SubscriptionListParams.builder()
+                .setStatus(SubscriptionListParams.Status.ALL)
+                .setLimit(100L)
+                .build()).autoPagingIterable();
+    }
 
     public String resolvePriceId(String value) {
         if (value == null || value.isBlank()) return null;

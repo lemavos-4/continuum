@@ -9,6 +9,7 @@ import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.lemnova.continuum.application.exception.BadRequestException;
@@ -19,6 +20,7 @@ import tech.lemnova.continuum.domain.plan.PlanConfiguration;
 import tech.lemnova.continuum.domain.plan.PlanType;
 import tech.lemnova.continuum.domain.stripe.StripeEventLog;
 import tech.lemnova.continuum.domain.stripe.StripeEventLogRepository;
+import tech.lemnova.continuum.domain.stripe.StripeEventStatus;
 import tech.lemnova.continuum.domain.subscription.Subscription;
 import tech.lemnova.continuum.domain.subscription.SubscriptionRepository;
 import tech.lemnova.continuum.domain.subscription.SubscriptionStatus;
@@ -26,6 +28,7 @@ import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
 
 import java.time.Instant;
+import java.util.concurrent.Callable;
 
 /**
  * Business logic around user subscriptions. The Stripe HTTP layer lives in
@@ -128,33 +131,85 @@ public class SubscriptionService {
         stripe.refundCharge(chargeId, amountCents);
     }
 
+    /* ─────────────────── Post-checkout sync (race-condition guard) ─────────────────── */
+
+    /**
+     * Pulls the truth from Stripe for a single user and applies it locally. Called
+     * when the browser comes back from Checkout and by the reconciliation job, so
+     * access is granted even if the webhook is late, lost, or failed.
+     */
+    public SubscriptionDTO syncFromStripe(String userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        String customerId = user.getStripeCustomerId();
+        if (customerId == null || customerId.isBlank()) {
+            log.info("[Stripe][sync] user={} has no Stripe customer yet — nothing to sync", userId);
+            return getSubscription(userId);
+        }
+        try {
+            com.stripe.model.Subscription remote = withRetry(
+                    () -> stripe.findLatestRelevantSubscription(customerId), "list-subscriptions");
+            if (remote == null) {
+                log.info("[Stripe][sync] no subscription found on Stripe for customer={} (user={})", customerId, userId);
+                return getSubscription(userId);
+            }
+            applyStripeSubscription(userId, remote);
+            log.info("[Stripe][sync] user={} reconciled from Stripe sub={} status={}",
+                    userId, remote.getId(), remote.getStatus());
+        } catch (Exception e) {
+            log.error("[Stripe][sync] Failed to sync user={} from Stripe: {}", userId, e.getMessage(), e);
+        }
+        return getSubscription(userId);
+    }
+
     /* ─────────────────── Webhook entrypoint ─────────────────── */
 
-    @Transactional
-    public void handleStripeEvent(Event event) {
-        if (event == null || event.getId() == null) return;
-        if (isProcessed(event.getId())) {
-            log.debug("[Stripe] Duplicate event {} ignored", event.getId());
-            return;
+    /**
+     * Idempotent webhook entrypoint.
+     *
+     * <p>Contract: the event id is claimed atomically <em>before</em> any business
+     * logic runs (unique index on {@code eventId}), so concurrent deliveries of the
+     * same event can never both process. The claim is only flipped to
+     * {@code PROCESSED} after the handler fully succeeded — a failure marks it
+     * {@code FAILED} and rethrows, so Stripe retries and the reconciliation job can
+     * replay it. Nothing is ever "silently" acknowledged.
+     *
+     * @return true when the event was applied (or was already applied), false never —
+     *         failures throw so the caller answers 5xx and Stripe retries.
+     */
+    public boolean handleStripeEvent(Event event) {
+        if (event == null || event.getId() == null) return true;
+        String eventId = event.getId();
+        String type = event.getType();
+
+        StripeEventLog claim = claim(eventId, type);
+        if (claim == null) {
+            log.info("[Stripe][webhook] event={} type={} already processed — acknowledging duplicate", eventId, type);
+            return true;
         }
 
-        String type = event.getType();
+        log.info("[Stripe][webhook] processing event={} type={} attempt={}", eventId, type, claim.getAttempts());
         try {
             switch (type) {
-                case "checkout.session.completed" -> handleCheckoutCompleted(event);
+                case "checkout.session.completed", "checkout.session.async_payment_succeeded"
+                        -> handleCheckoutCompleted(event);
                 case "customer.subscription.created",
                      "customer.subscription.updated",
                      "customer.subscription.trial_will_end" -> handleSubscriptionUpsert(event);
                 case "customer.subscription.deleted" -> handleSubscriptionDeleted(event);
-                case "invoice.payment_succeeded" -> handleInvoicePaymentSucceeded(event);
+                case "invoice.paid", "invoice.payment_succeeded" -> handleInvoicePaymentSucceeded(event);
                 case "invoice.payment_failed" -> handleInvoicePaymentFailed(event);
-                case "charge.refunded" -> log.info("[Stripe] Refund processed: {}", event.getId());
-                default -> log.debug("[Stripe] Ignored event type: {}", type);
+                case "charge.refunded" -> log.info("[Stripe][webhook] refund event={} recorded", eventId);
+                default -> log.info("[Stripe][webhook] event={} type={} not handled (no-op)", eventId, type);
             }
-            markProcessed(event, null, null);
+            markProcessed(claim);
+            log.info("[Stripe][webhook] event={} type={} applied successfully", eventId, type);
+            return true;
         } catch (Exception e) {
-            log.error("[Stripe] Error processing event {} ({}): {}", event.getId(), type, e.getMessage(), e);
-            throw new RuntimeException(e);
+            markFailed(claim, e);
+            log.error("[Stripe][webhook] event={} type={} FAILED (will be retried): {}",
+                    eventId, type, e.getMessage(), e);
+            throw new RuntimeException("Failed to process Stripe event " + eventId, e);
         }
     }
 
@@ -162,49 +217,64 @@ public class SubscriptionService {
 
     private void handleCheckoutCompleted(Event event) {
         Session session = (Session) deserialize(event);
-        if (session == null) return;
+        if (session == null) throw new IllegalStateException("Could not deserialize checkout.session payload");
 
         String userId = session.getClientReferenceId();
         String customerId = session.getCustomer();
         String subscriptionId = session.getSubscription();
+        log.info("[Stripe][checkout] session={} user={} customer={} subscription={} payment_status={}",
+                session.getId(), userId, customerId, subscriptionId, session.getPaymentStatus());
 
         if (userId != null && customerId != null) {
             userRepo.findById(userId).ifPresent(u -> {
-                if (u.getStripeCustomerId() == null) {
+                if (u.getStripeCustomerId() == null || u.getStripeCustomerId().isBlank()) {
                     u.setStripeCustomerId(customerId);
                     userRepo.save(u);
+                    log.info("[Stripe][checkout] linked customer={} to user={}", customerId, userId);
                 }
             });
         }
 
-        if (subscriptionId != null) {
-            try {
-                com.stripe.model.Subscription sub = com.stripe.model.Subscription.retrieve(subscriptionId);
-                String uid = userId != null ? userId : resolveUserIdFromCustomer(customerId);
-                if (uid != null) applyStripeSubscription(uid, sub);
-            } catch (Exception e) {
-                log.error("[Stripe] Failed to hydrate subscription after checkout: {}", e.getMessage());
-            }
+        String uid = userId != null ? userId : resolveUserIdFromCustomer(customerId);
+        if (uid == null) {
+            // Do NOT swallow: without a user we cannot deliver the service.
+            throw new IllegalStateException(
+                    "Paid checkout session " + session.getId() + " could not be mapped to a user (customer="
+                            + customerId + ") — access NOT granted");
         }
+
+        if (subscriptionId == null) {
+            log.warn("[Stripe][checkout] session={} has no subscription (one-off payment?) — nothing to provision",
+                    session.getId());
+            return;
+        }
+
+        final String subId = subscriptionId;
+        com.stripe.model.Subscription sub =
+                withRetry(() -> com.stripe.model.Subscription.retrieve(subId), "retrieve-subscription");
+        applyStripeSubscription(uid, sub);
     }
 
     private void handleSubscriptionUpsert(Event event) {
         com.stripe.model.Subscription sub = (com.stripe.model.Subscription) deserialize(event);
-        if (sub == null) return;
+        if (sub == null) throw new IllegalStateException("Could not deserialize customer.subscription payload");
         String userId = metadataUserId(sub);
         if (userId == null) userId = resolveUserIdFromCustomer(sub.getCustomer());
         if (userId == null) {
-            log.warn("[Stripe] Cannot resolve user for subscription {}", sub.getId());
-            return;
+            throw new IllegalStateException("Cannot resolve user for subscription " + sub.getId()
+                    + " (customer=" + sub.getCustomer() + ")");
         }
         applyStripeSubscription(userId, sub);
     }
 
     private void handleSubscriptionDeleted(Event event) {
         com.stripe.model.Subscription sub = (com.stripe.model.Subscription) deserialize(event);
-        if (sub == null) return;
+        if (sub == null) throw new IllegalStateException("Could not deserialize customer.subscription payload");
         Subscription local = subRepo.findByStripeSubscriptionId(sub.getId()).orElse(null);
-        if (local == null) return;
+        if (local == null) {
+            log.info("[Stripe][sub-deleted] no local subscription for {} — nothing to revoke", sub.getId());
+            return;
+        }
         local.setStatus(SubscriptionStatus.CANCELED);
         local.setPlanType(PlanType.FREE);
         local.setCanceledAt(Instant.now());
@@ -215,38 +285,95 @@ public class SubscriptionService {
             u.syncPlan(PlanType.FREE);
             userRepo.save(u);
         });
+        log.info("[Stripe][sub-deleted] user={} downgraded to FREE (sub={})", local.getUserId(), sub.getId());
     }
 
     private void handleInvoicePaymentSucceeded(Event event) {
         Invoice invoice = (Invoice) deserialize(event);
-        if (invoice == null) return;
+        if (invoice == null) throw new IllegalStateException("Could not deserialize invoice payload");
         String subId = invoice.getSubscription();
-        if (subId == null) return;
-        try {
-            com.stripe.model.Subscription sub = com.stripe.model.Subscription.retrieve(subId);
-            String userId = metadataUserId(sub);
-            if (userId == null) userId = resolveUserIdFromCustomer(sub.getCustomer());
-            if (userId != null) applyStripeSubscription(userId, sub);
-        } catch (Exception e) {
-            log.error("[Stripe] Failed to refresh subscription after payment: {}", e.getMessage());
+        if (subId == null) {
+            log.info("[Stripe][invoice-paid] invoice={} not tied to a subscription — skipping", invoice.getId());
+            return;
         }
+        com.stripe.model.Subscription sub =
+                withRetry(() -> com.stripe.model.Subscription.retrieve(subId), "retrieve-subscription");
+        String userId = metadataUserId(sub);
+        if (userId == null) userId = resolveUserIdFromCustomer(sub.getCustomer());
+        if (userId == null) {
+            throw new IllegalStateException("Paid invoice " + invoice.getId()
+                    + " could not be mapped to a user (customer=" + sub.getCustomer() + ")");
+        }
+        applyStripeSubscription(userId, sub);
     }
 
     private void handleInvoicePaymentFailed(Event event) {
         Invoice invoice = (Invoice) deserialize(event);
-        if (invoice == null) return;
+        if (invoice == null) throw new IllegalStateException("Could not deserialize invoice payload");
         String subId = invoice.getSubscription();
         if (subId == null) return;
         subRepo.findByStripeSubscriptionId(subId).ifPresent(local -> {
             local.setStatus(SubscriptionStatus.PAST_DUE);
             local.setUpdatedAt(Instant.now());
             subRepo.save(local);
+            log.warn("[Stripe][invoice-failed] user={} marked PAST_DUE (sub={})", local.getUserId(), subId);
         });
     }
 
     /* ─────────────────── Reconciliation ─────────────────── */
 
-    private void applyStripeSubscription(String userId, com.stripe.model.Subscription sSub) {
+    /** Exposes Stripe's subscription list to the reconciliation job. */
+    public Iterable<com.stripe.model.Subscription> stripeIterateLiveSubscriptions() throws StripeException {
+        return stripe.iterateLiveSubscriptions();
+    }
+
+    /**
+     * Compares one Stripe subscription against local state and repairs it when they
+     * diverge. Returns true when a repair was applied (used for job reporting).
+     */
+    public boolean reconcileRemoteSubscription(com.stripe.model.Subscription remote) {
+        if (remote == null) return false;
+        String userId = metadataUserId(remote);
+        if (userId == null) userId = resolveUserIdFromCustomer(remote.getCustomer());
+        if (userId == null) {
+            log.warn("[Stripe][reconcile] sub={} customer={} has no matching local user — skipping",
+                    remote.getId(), remote.getCustomer());
+            return false;
+        }
+        final String uid = userId;
+        Subscription local = subRepo.findByStripeSubscriptionId(remote.getId())
+                .or(() -> subRepo.findByUserId(uid))
+                .orElse(null);
+
+        SubscriptionStatus remoteStatus = mapStatus(remote.getStatus());
+        PlanType remotePlan = determinePlan(firstPriceId(remote));
+        boolean diverged = local == null
+                || !remote.getId().equals(local.getStripeSubscriptionId())
+                || local.getStatus() != remoteStatus
+                || local.getPlanType() != remotePlan;
+
+        PlanType userPlan = userRepo.findById(uid).map(User::getPlan).orElse(null);
+        if (!diverged && local != null && userPlan != local.getEffectivePlan()) {
+            diverged = true;
+        }
+        if (!diverged) return false;
+
+        log.warn("[Stripe][reconcile] repairing user={} sub={} local={}/{} remote={}/{}",
+                uid, remote.getId(),
+                local == null ? "none" : local.getPlanType(), local == null ? "none" : local.getStatus(),
+                remotePlan, remoteStatus);
+        applyStripeSubscription(uid, remote);
+        return true;
+    }
+
+    private static String firstPriceId(com.stripe.model.Subscription sSub) {
+        if (sSub.getItems() == null || sSub.getItems().getData().isEmpty()) return null;
+        var item = sSub.getItems().getData().get(0);
+        return item.getPrice() == null ? null : item.getPrice().getId();
+    }
+
+    @Transactional
+    public void applyStripeSubscription(String userId, com.stripe.model.Subscription sSub) {
         Subscription local = subRepo.findByStripeSubscriptionId(sSub.getId())
                 .or(() -> subRepo.findByUserId(userId))
                 .orElseGet(Subscription::new);
@@ -288,8 +415,9 @@ public class SubscriptionService {
             userRepo.save(user);
         });
 
-        log.info("[Stripe] Synced sub={} user={} plan={} status={}",
-                sSub.getId(), userId, local.getPlanType(), local.getStatus());
+        log.info("[Stripe][apply] sub={} user={} plan={} status={} effective={} periodEnd={}",
+                sSub.getId(), userId, local.getPlanType(), local.getStatus(),
+                local.getEffectivePlan(), local.getCurrentPeriodEnd());
     }
 
     private PlanType determinePlan(String priceId) {
@@ -370,20 +498,82 @@ public class SubscriptionService {
         });
     }
 
-    /* ─────────────────── Idempotency ─────────────────── */
+    /* ─────────────────── Retry for transient Stripe failures ─────────────────── */
 
-    private boolean isProcessed(String eventId) {
-        return eventId != null && eventLog.existsByEventId(eventId);
+    static <T> T withRetry(Callable<T> call, String label) {
+        int attempts = 3;
+        RuntimeException last = null;
+        for (int i = 1; i <= attempts; i++) {
+            try {
+                return call.call();
+            } catch (Exception e) {
+                last = (e instanceof RuntimeException re) ? re : new RuntimeException(e);
+                boolean transientFailure = !(e instanceof com.stripe.exception.InvalidRequestException);
+                log.warn("[Stripe][retry] {} attempt {}/{} failed ({}): {}",
+                        label, i, attempts, transientFailure ? "transient" : "permanent", e.getMessage());
+                if (!transientFailure || i == attempts) break;
+                try {
+                    Thread.sleep(300L * (1L << (i - 1)));
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        throw last;
     }
 
-    private void markProcessed(Event event, String subId, String customerId) {
-        if (eventLog.existsByEventId(event.getId())) return;
+    /* ─────────────────── Idempotency ─────────────────── */
+
+    /**
+     * Atomically claims an event id. Returns {@code null} when the event was already
+     * fully processed (duplicate delivery), otherwise the claim row to complete.
+     * Relies on the unique index on {@code eventId} so two concurrent deliveries
+     * cannot both win the claim.
+     */
+    private StripeEventLog claim(String eventId, String type) {
+        StripeEventLog existing = eventLog.findByEventId(eventId).orElse(null);
+        if (existing != null) {
+            if (existing.getStatus() == StripeEventStatus.PROCESSED) return null;
+            // Previous attempt crashed (or is stuck) — retry it.
+            existing.setStatus(StripeEventStatus.PROCESSING);
+            existing.setAttempts(existing.getAttempts() + 1);
+            existing.setUpdatedAt(Instant.now());
+            return eventLog.save(existing);
+        }
         StripeEventLog entry = new StripeEventLog();
-        entry.setEventId(event.getId());
-        entry.setEventType(event.getType());
-        entry.setSubscriptionId(subId);
-        entry.setCustomerId(customerId);
-        entry.setProcessedAt(Instant.now());
-        eventLog.save(entry);
+        entry.setEventId(eventId);
+        entry.setEventType(type);
+        entry.setStatus(StripeEventStatus.PROCESSING);
+        entry.setAttempts(1);
+        entry.setReceivedAt(Instant.now());
+        entry.setUpdatedAt(Instant.now());
+        try {
+            return eventLog.insert(entry);
+        } catch (DuplicateKeyException e) {
+            // Another delivery of the same event won the race — it owns the work.
+            log.info("[Stripe][webhook] event={} claimed concurrently — acknowledging duplicate", eventId);
+            return null;
+        }
+    }
+
+    private void markProcessed(StripeEventLog claim) {
+        claim.setStatus(StripeEventStatus.PROCESSED);
+        claim.setLastError(null);
+        claim.setProcessedAt(Instant.now());
+        claim.setUpdatedAt(Instant.now());
+        eventLog.save(claim);
+    }
+
+    private void markFailed(StripeEventLog claim, Exception e) {
+        try {
+            claim.setStatus(StripeEventStatus.FAILED);
+            claim.setLastError(e.getClass().getSimpleName() + ": " + e.getMessage());
+            claim.setUpdatedAt(Instant.now());
+            eventLog.save(claim);
+        } catch (Exception persistError) {
+            log.error("[Stripe][webhook] could not persist failure for event={}: {}",
+                    claim.getEventId(), persistError.getMessage());
+        }
     }
 }
