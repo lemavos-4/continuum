@@ -340,8 +340,9 @@ public class SubscriptionService {
                     remote.getId(), remote.getCustomer());
             return false;
         }
+        final String uid = userId;
         Subscription local = subRepo.findByStripeSubscriptionId(remote.getId())
-                .or(() -> subRepo.findByUserId(userId))
+                .or(() -> subRepo.findByUserId(uid))
                 .orElse(null);
 
         SubscriptionStatus remoteStatus = mapStatus(remote.getStatus());
@@ -351,17 +352,17 @@ public class SubscriptionService {
                 || local.getStatus() != remoteStatus
                 || local.getPlanType() != remotePlan;
 
-        PlanType userPlan = userRepo.findById(userId).map(User::getPlan).orElse(null);
+        PlanType userPlan = userRepo.findById(uid).map(User::getPlan).orElse(null);
         if (!diverged && local != null && userPlan != local.getEffectivePlan()) {
             diverged = true;
         }
         if (!diverged) return false;
 
         log.warn("[Stripe][reconcile] repairing user={} sub={} local={}/{} remote={}/{}",
-                userId, remote.getId(),
+                uid, remote.getId(),
                 local == null ? "none" : local.getPlanType(), local == null ? "none" : local.getStatus(),
                 remotePlan, remoteStatus);
-        applyStripeSubscription(userId, remote);
+        applyStripeSubscription(uid, remote);
         return true;
     }
 
