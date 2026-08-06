@@ -322,6 +322,50 @@ public class SubscriptionService {
 
     /* ─────────────────── Reconciliation ─────────────────── */
 
+    /**
+     * Compares one Stripe subscription against local state and repairs it when they
+     * diverge. Returns true when a repair was applied (used for job reporting).
+     */
+    public boolean reconcileRemoteSubscription(com.stripe.model.Subscription remote) {
+        if (remote == null) return false;
+        String userId = metadataUserId(remote);
+        if (userId == null) userId = resolveUserIdFromCustomer(remote.getCustomer());
+        if (userId == null) {
+            log.warn("[Stripe][reconcile] sub={} customer={} has no matching local user — skipping",
+                    remote.getId(), remote.getCustomer());
+            return false;
+        }
+        Subscription local = subRepo.findByStripeSubscriptionId(remote.getId())
+                .or(() -> subRepo.findByUserId(userId))
+                .orElse(null);
+
+        SubscriptionStatus remoteStatus = mapStatus(remote.getStatus());
+        PlanType remotePlan = determinePlan(firstPriceId(remote));
+        boolean diverged = local == null
+                || !remote.getId().equals(local.getStripeSubscriptionId())
+                || local.getStatus() != remoteStatus
+                || local.getPlanType() != remotePlan;
+
+        PlanType userPlan = userRepo.findById(userId).map(User::getPlan).orElse(null);
+        if (!diverged && local != null && userPlan != local.getEffectivePlan()) {
+            diverged = true;
+        }
+        if (!diverged) return false;
+
+        log.warn("[Stripe][reconcile] repairing user={} sub={} local={}/{} remote={}/{}",
+                userId, remote.getId(),
+                local == null ? "none" : local.getPlanType(), local == null ? "none" : local.getStatus(),
+                remotePlan, remoteStatus);
+        applyStripeSubscription(userId, remote);
+        return true;
+    }
+
+    private static String firstPriceId(com.stripe.model.Subscription sSub) {
+        if (sSub.getItems() == null || sSub.getItems().getData().isEmpty()) return null;
+        var item = sSub.getItems().getData().get(0);
+        return item.getPrice() == null ? null : item.getPrice().getId();
+    }
+
     @Transactional
     public void applyStripeSubscription(String userId, com.stripe.model.Subscription sSub) {
         Subscription local = subRepo.findByStripeSubscriptionId(sSub.getId())
