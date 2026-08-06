@@ -29,6 +29,24 @@ public class StripeEventLog {
 
     private String customerId;
 
+    private String userId;
+
+    /** Where the event is in its lifecycle — drives idempotency + retries. */
+    @Builder.Default
+    @Indexed
+    private StripeEventStatus status = StripeEventStatus.PROCESSING;
+
+    @Builder.Default
+    private int attempts = 0;
+
+    private String lastError;
+
+    @Builder.Default
+    private Instant receivedAt = Instant.now();
+
+    @Builder.Default
+    private Instant updatedAt = Instant.now();
+
     @Builder.Default
     private Instant processedAt = Instant.now();
 }
