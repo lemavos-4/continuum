@@ -26,6 +26,16 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.getSubscription(user.getUserId()));
     }
 
+    /**
+     * Pulls the latest state straight from Stripe. The frontend calls this right
+     * after returning from Checkout, so access is granted even if the webhook is
+     * delayed or lost (removes the checkout/webhook race).
+     */
+    @PostMapping("/sync")
+    public ResponseEntity<SubscriptionDTO> sync(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(subscriptionService.syncFromStripe(user.getUserId()));
+    }
+
     @PostMapping("/checkout")
     public ResponseEntity<CheckoutResponse> checkout(
             @AuthenticationPrincipal CustomUserDetails user,
