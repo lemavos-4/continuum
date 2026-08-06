@@ -322,6 +322,11 @@ public class SubscriptionService {
 
     /* ─────────────────── Reconciliation ─────────────────── */
 
+    /** Exposes Stripe's subscription list to the reconciliation job. */
+    public Iterable<com.stripe.model.Subscription> stripeIterateLiveSubscriptions() throws StripeException {
+        return stripe.iterateLiveSubscriptions();
+    }
+
     /**
      * Compares one Stripe subscription against local state and repairs it when they
      * diverge. Returns true when a repair was applied (used for job reporting).
