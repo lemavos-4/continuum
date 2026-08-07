@@ -21,6 +21,7 @@ import {
   Loader2, HardDrive, Trash2, Music, ExternalLink,
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
+import { ensureWallpaperLoaded, getWallpaperFileIdSync } from "@/lib/note-wallpaper";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -207,8 +208,6 @@ export default function Vault() {
   const { loading: authLoading } = useRequireAuth();
   const { applyUsageDelta } = usePlanGate();
   const limits = getPlanLimits(user);
-
-  const hiddenFileId = wallpaperFileId;
 
   const fetchFiles = async () => {
     setLoading(true);
