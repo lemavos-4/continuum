@@ -195,6 +195,9 @@ public class MarkdownImportService {
             return n;
         }
         if (node instanceof BulletList || node instanceof OrderedList) {
+            if (node instanceof BulletList && isTaskList((BulletList) node)) {
+                return convertTaskList((BulletList) node);
+            }
             ObjectNode n = mapper.createObjectNode();
             n.put("type", node instanceof BulletList ? "bulletList" : "orderedList");
             ArrayNode items = mapper.createArrayNode();
@@ -277,10 +280,92 @@ public class MarkdownImportService {
     }
 
     private void collectInlines(Node parent, ArrayNode out, List<ObjectNode> marks) {
+        collectInlines(parent, out, marks, false);
+    }
+
+    private static final Pattern TASK_PREFIX = Pattern.compile("^\\s*\\[([ xX])\\]\\s*");
+
+    /** GFM task lists: commonmark-java (without the ext) leaves `[ ] ` as plain text. */
+    private boolean isTaskList(BulletList list) {
+        Node c = list.getFirstChild();
+        boolean any = false;
+        while (c != null) {
+            if (c instanceof ListItem li) {
+                String first = firstItemText(li);
+                if (first == null || !TASK_PREFIX.matcher(first).find()) return false;
+                any = true;
+            }
+            c = c.getNext();
+        }
+        return any;
+    }
+
+    private String firstItemText(ListItem li) {
+        Node first = li.getFirstChild();
+        if (!(first instanceof Paragraph)) return null;
+        return inlineText(first);
+    }
+
+    private JsonNode convertTaskList(BulletList list) {
+        ObjectNode n = mapper.createObjectNode();
+        n.put("type", "taskList");
+        ArrayNode items = mapper.createArrayNode();
+        Node c = list.getFirstChild();
+        while (c != null) {
+            if (c instanceof ListItem li) {
+                String first = firstItemText(li);
+                boolean checked = first != null && first.trim().toLowerCase(Locale.ROOT).startsWith("[x]");
+                ObjectNode item = mapper.createObjectNode();
+                item.put("type", "taskItem");
+                ObjectNode attrs = mapper.createObjectNode();
+                attrs.put("checked", checked);
+                item.set("attrs", attrs);
+
+                ArrayNode itemContent = mapper.createArrayNode();
+                Node ic = li.getFirstChild();
+                boolean firstBlock = true;
+                while (ic != null) {
+                    JsonNode b;
+                    if (firstBlock && ic instanceof Paragraph) {
+                        ObjectNode para = mapper.createObjectNode();
+                        para.put("type", "paragraph");
+                        ArrayNode content = mapper.createArrayNode();
+                        collectInlines(ic, content, new ArrayList<>(), true);
+                        if (!content.isEmpty()) para.set("content", content);
+                        b = para;
+                    } else if (ic instanceof BulletList nested && isTaskList(nested)) {
+                        b = convertTaskList(nested);
+                    } else {
+                        b = convertBlock(ic);
+                    }
+                    if (b != null) itemContent.add(b);
+                    firstBlock = false;
+                    ic = ic.getNext();
+                }
+                if (itemContent.isEmpty()) itemContent.add(emptyParagraph());
+                item.set("content", itemContent);
+                items.add(item);
+            }
+            c = c.getNext();
+        }
+        n.set("content", items);
+        return n;
+    }
+
+    private void collectInlines(Node parent, ArrayNode out, List<ObjectNode> marks, boolean stripTaskPrefix) {
         Node c = parent.getFirstChild();
+        boolean stripPending = stripTaskPrefix;
         while (c != null) {
             if (c instanceof Text t) {
-                if (!t.getLiteral().isEmpty()) out.add(textNode(t.getLiteral(), marks));
+                String literal = t.getLiteral();
+                if (stripPending) {
+                    Matcher tm = TASK_PREFIX.matcher(literal);
+                    if (tm.find()) {
+                        literal = literal.substring(tm.end());
+                        stripPending = false;
+                    }
+                }
+                if (!literal.isEmpty()) out.add(textNode(literal, marks));
             } else if (c instanceof StrongEmphasis) {
                 List<ObjectNode> m2 = appendMark(marks, "bold");
                 collectInlines(c, out, m2);
