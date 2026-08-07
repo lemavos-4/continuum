@@ -192,4 +192,8 @@ export async function removeWallpaper(): Promise<NoteWallpaperSettings> {
   return next;
 }
 
-export { resolveVaultBlob };
+export function getWallpaperFileIdSync(): string | null {
+  return cache.fileId;
+}
+
+export { resolveVaultBlob, resolveVaultBlobFast };
