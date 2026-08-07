@@ -85,11 +85,3 @@ export async function resolveVaultBlobFast(fileId: string): Promise<string> {
   } catch { /* ignore */ }
   return resolveVaultBlob(fileId);
 }
-
-function legacyInvalidate(fileId: string) {
-  const url = blobCache.get(fileId);
-  if (url) {
-    URL.revokeObjectURL(url);
-    blobCache.delete(fileId);
-  }
-}
