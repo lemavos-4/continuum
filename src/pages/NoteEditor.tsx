@@ -33,13 +33,14 @@ import {
   isAllowedWallpaperFile,
   loadWallpaperSettings,
   removeWallpaper,
-  resolveVaultBlob,
+  resolveVaultBlobFast,
   saveWallpaperSettings,
   subscribeWallpaper,
   uploadWallpaper,
   type NoteWallpaperSettings,
 } from "@/lib/note-wallpaper";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getNoteFoldsSync, loadNoteFolds, saveNoteFolds } from "@/lib/note-folds";
 
 interface NoteData {
   id: string;
@@ -79,7 +80,8 @@ export default function NoteEditor() {
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "creating">("idle");
   const [showBacklinks, setShowBacklinks] = useState(false);
-  const [readOnly, setReadOnly] = useState(false);
+  // Notes open in view mode by default.
+  const [readOnly, setReadOnly] = useState(true);
 
   // ── Wallpaper (global to all notes, persisted in localStorage) ──────────
   const [wallpaper, setWallpaper] = useState<NoteWallpaperSettings>(() => loadWallpaperSettings());
@@ -95,7 +97,7 @@ export default function NoteEditor() {
   useEffect(() => {
     let cancelled = false;
     if (!wallpaper.fileId) { setWallpaperUrl(null); return; }
-    resolveVaultBlob(wallpaper.fileId)
+    resolveVaultBlobFast(wallpaper.fileId)
       .then((url) => { if (!cancelled) setWallpaperUrl(url); })
       .catch(() => { if (!cancelled) setWallpaperUrl(null); });
     return () => { cancelled = true; };
@@ -132,6 +134,24 @@ export default function NoteEditor() {
     const next = { ...wallpaper, ...patch };
     saveWallpaperSettings(next);
   };
+
+  // ── Collapsed headings (persisted server-side per note) ────────────────
+  const [foldedHeadings, setFoldedHeadings] = useState<number[] | undefined>(undefined);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setFoldedHeadings(getNoteFoldsSync(id));
+    loadNoteFolds(id).then((indices) => {
+      if (!cancelled) setFoldedHeadings(indices);
+    });
+    return () => { cancelled = true; };
+  }, [id]);
+
+  const handleFoldChange = useCallback((indices: number[]) => {
+    if (!id) return;
+    saveNoteFolds(id, indices);
+  }, [id]);
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedJSON = useRef<string>("");
@@ -538,11 +558,6 @@ export default function NoteEditor() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                        <Label className="text-xs text-foreground">{t("ed_auto_save")}</Label>
-                        <span className="text-[10px] uppercase tracking-wider text-emerald-400/80">{t("ed_always_on")}</span>
-                      </div>
-
 
                       {/* Wallpaper Settings */}
                       <div className="pt-3 border-t border-white/5 space-y-3">
@@ -650,6 +665,8 @@ export default function NoteEditor() {
                     editable={!readOnly}
                     currentNoteId={note?.id}
                     onSave={flushSave}
+                    foldedHeadings={foldedHeadings}
+                    onFoldedHeadingsChange={handleFoldChange}
                   />
 
 
@@ -668,8 +685,11 @@ export default function NoteEditor() {
         </div>
 
         {/* Combined Context Sidebar */}
-        <aside className={`shrink-0 border-l border-white/5 bg-black/45 backdrop-blur-2xl transition-all duration-300 ease-in-out overflow-hidden flex flex-col
-          ${showBacklinks ? "w-80 opacity-100" : "w-0 opacity-0 border-none"}`}>
+        <aside
+          aria-hidden={!showBacklinks}
+          className={`absolute right-0 top-0 bottom-0 z-30 flex w-full max-w-[20rem] flex-col overflow-hidden border-l border-white/5 bg-black/80 backdrop-blur-2xl transition-transform duration-300 ease-in-out
+          ${showBacklinks ? "translate-x-0" : "pointer-events-none translate-x-full"}`}
+        >
           
           <div className="flex items-center justify-between border-b border-white/5 px-5 py-4 shrink-0">
             <div>

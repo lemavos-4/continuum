@@ -1,5 +1,5 @@
 import { preferencesApi, vaultApi } from "@/lib/api";
-import { invalidateVaultBlob, resolveVaultBlob } from "@/lib/vault-blob";
+import { invalidateVaultBlob, resolveVaultBlob, resolveVaultBlobFast } from "@/lib/vault-blob";
 
 export interface NoteWallpaperSettings {
   fileId: string | null;
@@ -15,7 +15,21 @@ export const DEFAULT_WALLPAPER: NoteWallpaperSettings = {
 
 const listeners = new Set<(s: NoteWallpaperSettings) => void>();
 
-let cache: NoteWallpaperSettings = { ...DEFAULT_WALLPAPER };
+const LS_KEY = "continuum:wallpaper";
+
+function readLocalCache(): NoteWallpaperSettings {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return normalize(JSON.parse(raw));
+  } catch { /* ignore */ }
+  return { ...DEFAULT_WALLPAPER };
+}
+
+function writeLocalCache(s: NoteWallpaperSettings) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+
+let cache: NoteWallpaperSettings = readLocalCache();
 let loaded = false;
 let loadPromise: Promise<NoteWallpaperSettings> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -44,8 +58,9 @@ export function loadWallpaperSettings(): NoteWallpaperSettings {
         const res = await preferencesApi.get();
         const data: any = typeof res.data === "string" ? safeParse(res.data) : res.data;
         cache = normalize(data);
+        writeLocalCache(cache);
       } catch {
-        cache = { ...DEFAULT_WALLPAPER };
+        cache = readLocalCache();
       } finally {
         loaded = true;
         listeners.forEach((l) => l(cache));
@@ -102,6 +117,7 @@ export function saveWallpaperSettings(
   options: { immediate?: boolean } = {}
 ): Promise<void> | void {
   cache = normalize(settings);
+  writeLocalCache(cache);
   loaded = true;
   listeners.forEach((l) => l(cache));
   if (options.immediate) {
@@ -176,4 +192,8 @@ export async function removeWallpaper(): Promise<NoteWallpaperSettings> {
   return next;
 }
 
-export { resolveVaultBlob };
+export function getWallpaperFileIdSync(): string | null {
+  return cache.fileId;
+}
+
+export { resolveVaultBlob, resolveVaultBlobFast };

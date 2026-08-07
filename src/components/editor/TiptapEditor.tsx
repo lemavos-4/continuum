@@ -39,6 +39,7 @@ import { SlashCommands } from "./SlashCommands";
 import { VaultImage } from "./VaultImage";
 import { VaultPdf } from "./VaultPdf";
 import { VaultAudio } from "./VaultAudio";
+import { VaultVideo } from "./VaultVideo";
 import { AutoPair } from "./extensions/AutoPair";
 import { EditorShortcuts } from "./extensions/EditorShortcuts";
 import { HeadingFold } from "./extensions/HeadingFold";
@@ -58,6 +59,9 @@ const isPdfFile = (file: File) => file.type === "application/pdf" || PDF_EXT_RE.
 const AUDIO_MIME_RE = /^audio\//i;
 const AUDIO_EXT_RE = /\.(mp3|m4a|wav|ogg|aac)$/i;
 const isAudioFile = (file: File) => AUDIO_MIME_RE.test(file.type) || AUDIO_EXT_RE.test(file.name);
+const VIDEO_MIME_RE = /^video\//i;
+const VIDEO_EXT_RE = /\.(mp4|webm|mov|m4v|ogv)$/i;
+const isVideoFile = (file: File) => VIDEO_MIME_RE.test(file.type) || VIDEO_EXT_RE.test(file.name);
 
 const lowlight = createLowlight(common);
 
@@ -250,10 +254,14 @@ interface Props {
   className?: string;
   currentNoteId?: string;
   onSave?: () => void;
+  foldedHeadings?: number[];
+  onFoldedHeadingsChange?: (indices: number[]) => void;
 }
 
 export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
-  ({ content, onChange, editable = true, className, currentNoteId, onSave }, ref) => {
+  ({ content, onChange, editable = true, className, currentNoteId, onSave, foldedHeadings, onFoldedHeadingsChange }, ref) => {
+    const onFoldChangeRef = useRef(onFoldedHeadingsChange);
+    onFoldChangeRef.current = onFoldedHeadingsChange;
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
     const onSaveRef = useRef(onSave);
@@ -263,6 +271,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
     const [isUploading, setIsUploading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [findOpen, setFindOpen] = useState(false);
+    const [inTable, setInTable] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const updateTimerRef = useRef<number | null>(null);
     const { toast } = useToast();
@@ -311,9 +320,12 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         VaultImage,
         VaultPdf,
         VaultAudio,
+        VaultVideo,
         TaskList,
         TaskItem.configure({ nested: true }),
-        HeadingFold,
+        HeadingFold.configure({
+          onFoldChange: (indices) => onFoldChangeRef.current?.(indices),
+        }),
         Table.configure({ resizable: true, allowTableNodeSelection: true, lastColumnResizable: true }),
         TableRow,
         TableCell,
@@ -370,7 +382,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
           const items = event.clipboardData?.items;
           if (!items) return false;
           for (const item of items) {
-            if (item.type.startsWith("image/") || item.type === "application/pdf" || item.type.startsWith("audio/")) {
+            if (item.type.startsWith("image/") || item.type === "application/pdf" || item.type.startsWith("audio/") || item.type.startsWith("video/")) {
               const file = item.getAsFile();
               if (file && uploadFileRef.current) {
                 uploadFileRef.current(file);
@@ -410,6 +422,11 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         } else if (isPdfFile(file)) {
           editor.chain().focus().insertContent([
             { type: "vaultPdf", attrs: { vaultId: vaultFile.id, fileName: vaultFile.fileName } },
+            { type: "paragraph" },
+          ]).run();
+        } else if (isVideoFile(file)) {
+          editor.chain().focus().insertContent([
+            { type: "vaultVideo", attrs: { vaultId: vaultFile.id, fileName: vaultFile.fileName } },
             { type: "paragraph" },
           ]).run();
         } else if (isAudioFile(file)) {
@@ -503,6 +520,31 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
       if (a !== b && typeof content === "object") editor.commands.setContent(content, { emitUpdate: false });
     }, [content, editor]);
 
+    // Keep table toolbar visibility in sync with the caret (mouse, keyboard and touch).
+    useEffect(() => {
+      if (!editor) return;
+      const sync = () => setInTable(editor.isActive("table"));
+      editor.on("selectionUpdate", sync);
+      editor.on("transaction", sync);
+      editor.on("focus", sync);
+      sync();
+      return () => {
+        editor.off("selectionUpdate", sync);
+        editor.off("transaction", sync);
+        editor.off("focus", sync);
+      };
+    }, [editor]);
+
+    // Restore persisted heading fold state (server-side, per note).
+    const appliedFoldsRef = useRef<string | null>(null);
+    useEffect(() => {
+      if (!editor || !foldedHeadings) return;
+      const sig = `${currentNoteId ?? ""}:${foldedHeadings.join(",")}`;
+      if (appliedFoldsRef.current === sig) return;
+      appliedFoldsRef.current = sig;
+      editor.commands.setFoldedHeadings(foldedHeadings);
+    }, [editor, foldedHeadings, currentNoteId]);
+
     useEffect(() => {
       if (!editor) return;
       editor.setEditable(editable);
@@ -544,7 +586,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,application/pdf,audio/*"
+          accept="image/*,video/*,application/pdf,audio/*"
           className="hidden"
           onChange={handleFileUpload}
         />
@@ -605,7 +647,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
               />
             </BubbleMenu>
 
-            {editor.isActive("table") && (
+            {inTable && (
               <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex max-w-[94vw] items-center gap-1 overflow-x-auto rounded-xl border border-white/10 bg-black/90 px-2 py-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
                 <span className="px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Table</span>
                 <TableBtn onClick={() => editor.chain().focus().addColumnBefore().run()}>← Col</TableBtn>
@@ -614,11 +656,13 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
                 <TableBtn onClick={() => editor.chain().focus().addRowAfter().run()}>Row ↓</TableBtn>
                 <div className="mx-1 h-4 w-[1px] bg-white/10" />
                 <TableBtn onClick={() => editor.chain().focus().toggleHeaderRow().run()}>Header</TableBtn>
+                <TableBtn onClick={() => resizeCurrentColumn(editor, -40)}>Width −</TableBtn>
+                <TableBtn onClick={() => resizeCurrentColumn(editor, 40)}>Width +</TableBtn>
                 <TableBtn onClick={() => editor.chain().focus().mergeOrSplit().run()}>Merge</TableBtn>
                 <div className="mx-1 h-4 w-[1px] bg-white/10" />
                 <TableBtn onClick={() => editor.chain().focus().deleteColumn().run()}>− Col</TableBtn>
                 <TableBtn onClick={() => editor.chain().focus().deleteRow().run()}>− Row</TableBtn>
-                <button type="button" className="flex items-center rounded px-3 text-xs h-7 text-red-400 transition-colors hover:bg-red-500/20" onClick={() => editor.chain().focus().deleteTable().run()}>
+                <button type="button" className="flex items-center rounded px-3 text-xs h-7 text-red-400 transition-colors hover:bg-red-500/20" onPointerDown={(ev) => { ev.preventDefault(); editor.chain().focus().deleteTable().run(); }}>
                   <Trash2 className="mr-1.5 h-3 w-3" /> Delete
                 </button>
               </div>
@@ -702,11 +746,21 @@ function ToolbarBtn({
     </button>
   );
 }
+/** Touch-friendly column resize: nudges the current cell's colwidth. */
+function resizeCurrentColumn(editor: Editor, delta: number) {
+  const attrs = editor.getAttributes("tableCell");
+  const headerAttrs = editor.getAttributes("tableHeader");
+  const current = (attrs?.colwidth ?? headerAttrs?.colwidth) as number[] | null | undefined;
+  const base = Array.isArray(current) && current.length ? current[0] : 160;
+  const next = Math.max(60, Math.min(720, base + delta));
+  editor.chain().focus().setCellAttribute("colwidth", [next]).run();
+}
+
 function TableBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      onPointerDown={(e) => { e.preventDefault(); onClick(); }}
       className="h-7 shrink-0 whitespace-nowrap rounded px-2.5 text-xs text-neutral-300 transition-colors hover:bg-white/10 hover:text-white"
     >
       {children}

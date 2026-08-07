@@ -21,6 +21,7 @@ import {
   Loader2, HardDrive, Trash2, Music, ExternalLink,
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
+import { ensureWallpaperLoaded, getWallpaperFileIdSync } from "@/lib/note-wallpaper";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -196,6 +197,11 @@ export default function Vault() {
   const [pdfPreview, setPdfPreview] = useState<VaultFile | null>(null);
   const [category, setCategory] = useState<Category>("images");
   const [search, setSearch] = useState("");
+  const [wallpaperFileId, setWallpaperFileId] = useState<string | null>(() => getWallpaperFileIdSync());
+
+  useEffect(() => {
+    void ensureWallpaperLoaded().then((w) => setWallpaperFileId(w.fileId));
+  }, []);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -207,7 +213,9 @@ export default function Vault() {
     setLoading(true);
     try {
       const { data } = await vaultApi.list();
-      setFiles(Array.isArray(data) ? data : []);
+      const all = Array.isArray(data) ? data : [];
+      // The editor wallpaper is a system file: never listed, never counted.
+      setFiles(all.filter((f: VaultFile) => f.id !== wallpaperFileId));
     } catch {
       toast({ title: t("gr_vault_error_loading"), variant: "destructive" });
     } finally {
@@ -215,7 +223,7 @@ export default function Vault() {
     }
   };
 
-  useEffect(() => { fetchFiles(); }, []);
+  useEffect(() => { fetchFiles(); }, [wallpaperFileId]);
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();

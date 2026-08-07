@@ -60,11 +60,28 @@ export function invalidateVaultBlob(fileId: string) {
     URL.revokeObjectURL(url);
     blobCache.delete(fileId);
   }
-  // Best-effort drop from persistent cache too.
   void (async () => {
     try {
       const { idbDelete } = await import("@/lib/offline/db");
       await idbDelete(STORES.WALLPAPERS, fileId);
     } catch { /* ignore */ }
   })();
+}
+
+/**
+ * Instant-first resolution: memory cache → persisted blob (IndexedDB) → network.
+ * Used for the editor wallpaper so it paints without a network round-trip.
+ */
+export async function resolveVaultBlobFast(fileId: string): Promise<string> {
+  const cached = blobCache.get(fileId);
+  if (cached) return cached;
+  try {
+    const persisted = await idbGet<PersistedBlob>(STORES.WALLPAPERS, fileId);
+    if (persisted?.blob) {
+      const url = URL.createObjectURL(persisted.blob);
+      blobCache.set(fileId, url);
+      return url;
+    }
+  } catch { /* ignore */ }
+  return resolveVaultBlob(fileId);
 }
