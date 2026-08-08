@@ -256,15 +256,29 @@ export default function Dashboard() {
     const step = Math.max(1, Math.ceil(spanDays / MAX_POINTS));
 
     const points: Array<{ date: string; ts: number; score: number; label: string }> = [];
+    // Seed with the last known score BEFORE the window so the line never
+    // renders empty just because the history predates the selected range.
+    const windowStart = new Date(today);
+    windowStart.setDate(today.getDate() - (spanDays - 1));
+    let carried = 0;
+    for (const p of fullHistory) {
+      if (p.ts < windowStart.getTime()) carried = p.score;
+      else break;
+    }
+
     for (let i = spanDays - 1; i >= 0; i -= step) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = localDateKey(d);
+      const found = byDate.get(key);
+      if (found !== undefined) carried = found;
       points.push({
         date: key,
         ts: d.getTime(),
-        score: byDate.get(key) ?? 0,
-        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        // Carry the previous value forward: score is a cumulative index, not a
+        // per-day event, so gaps must not collapse the chart to zero.
+        score: carried,
+        label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
       });
     }
     return points;
@@ -273,9 +287,12 @@ export default function Dashboard() {
   const scoreStats = useMemo(() => {
     const values = scoreTimelineData.map((p: any) => p.score);
     const max = Math.max(...values, 0.1);
-    const hasData = scoreTimelineData.some((p: any) => p.score > 0);
+    const hasData =
+      scoreTimelineData.some((p: any) => p.score > 0) ||
+      fullHistory.length > 0 ||
+      currentScore > 0;
     return { current: currentScore, max, hasData };
-  }, [scoreTimelineData, currentScore]);
+  }, [scoreTimelineData, currentScore, fullHistory]);
 
   if (summaryLoading) return <DashboardSkeleton />;
 
