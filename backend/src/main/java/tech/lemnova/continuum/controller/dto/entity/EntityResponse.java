@@ -31,7 +31,7 @@ public record EntityResponse(
             : Collections.emptyList();
 
         if (historyDays > 0 && historyDays != Integer.MAX_VALUE && !dates.isEmpty()) {
-            LocalDate cutoff = LocalDate.now().minusDays(historyDays);
+            LocalDate cutoff = tech.lemnova.continuum.infra.web.RequestZone.today().minusDays(historyDays);
             dates = dates.stream()
                 .filter(d -> d != null && !d.isBefore(cutoff))
                 .toList();

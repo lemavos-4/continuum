@@ -88,8 +88,8 @@ public class MetricsService {
             LocalDate firstDate = refs.stream()
                     .map(NoteReference::getDate)
                     .min(LocalDate::compareTo)
-                    .orElse(LocalDate.now());
-            long days = ChronoUnit.DAYS.between(firstDate, LocalDate.now()) + 1;
+                    .orElse(tech.lemnova.continuum.infra.web.RequestZone.today());
+            long days = ChronoUnit.DAYS.between(firstDate, tech.lemnova.continuum.infra.web.RequestZone.today()) + 1;
             freq = days <= 0 ? 0.0 : ((double) refs.size()) / days;
         }
 
@@ -156,7 +156,7 @@ public class MetricsService {
 
         // tracking events preloaded
         List<TrackingEvent> events = vaultData.readTrackingEvents(user.getVaultId());
-        LocalDate today = LocalDate.now();
+        LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
         LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
 
         Set<String> completedToday = events.stream()
@@ -218,7 +218,7 @@ public class MetricsService {
             }
         }
 
-        scoresByDate.put(LocalDate.now().toString(), computedHistory.getLast().score());
+        scoresByDate.put(tech.lemnova.continuum.infra.web.RequestZone.today().toString(), computedHistory.getLast().score());
 
         snapshot.setUserId(userId);
         snapshot.setScoresByDate(scoresByDate);
@@ -227,8 +227,8 @@ public class MetricsService {
 
         int historyDays = planConfig.getHistoryDays(user.getPlan());
         LocalDate cutoff = (historyDays == Integer.MAX_VALUE)
-                ? LocalDate.now().minusYears(100)
-                : LocalDate.now().minusDays(historyDays);
+                ? tech.lemnova.continuum.infra.web.RequestZone.today().minusYears(100)
+                : tech.lemnova.continuum.infra.web.RequestZone.today().minusDays(historyDays);
 
         return scoresByDate.entrySet().stream()
                 .map(entry -> new ScoreTimelineResponse.ScorePoint(LocalDate.parse(entry.getKey()), entry.getValue()))
@@ -252,7 +252,7 @@ public class MetricsService {
                 .filter(e -> userId.equals(e.getUserId()))
                 .toList();
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
         LocalDate firstNoteDate = notes.stream()
                 .map(note -> {
                     Instant at = note.getCreatedAt() != null ? note.getCreatedAt() : note.getUpdatedAt();
@@ -363,7 +363,7 @@ public class MetricsService {
         Map<String, Long>   counts = refs.stream().collect(Collectors.groupingBy(NoteReference::getEntityId, Collectors.counting()));
         Map<String, String> names  = refs.stream().collect(Collectors.toMap(NoteReference::getEntityId, NoteReference::getEntityName, (a, b) -> a));
         Map<String, String> types  = refs.stream().collect(Collectors.toMap(NoteReference::getEntityId, ref -> ref.getEntityType().name(), (a, b) -> a));
-        LocalDate today = LocalDate.now();
+        LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
         return counts.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(limit)

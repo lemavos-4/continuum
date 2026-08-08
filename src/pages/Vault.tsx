@@ -18,21 +18,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FileText, Image as ImageIcon, File as FileGeneric,
-  Loader2, HardDrive, Trash2, Music, ExternalLink,
+  Loader2, HardDrive, Trash2, Music, ExternalLink, Play, Edit,
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
 import { ensureWallpaperLoaded, getWallpaperFileIdSync } from "@/lib/note-wallpaper";
+import { loadVaultNames, displayName, renameVaultFile, splitExtension } from "@/lib/vault-names";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { resolveVaultBlob, invalidateVaultBlob } from "@/lib/vault-blob";
 
-type Category = "images" | "audio" | "pdf" | "other";
+type Category = "images" | "video" | "audio" | "pdf" | "other";
 
 function categoryOf(file: VaultFile): Category {
   const t = (file.contentType || "").toLowerCase();
   const n = (file.fileName || "").toLowerCase();
   if (t.startsWith("image/") || /\.(png|jpe?g|webp|gif|svg)$/.test(n)) return "images";
+  if (t.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogv|avi|mkv)$/.test(n)) return "video";
   if (t.startsWith("audio/") || /\.(mp3|m4a|wav|ogg|aac)$/.test(n)) return "audio";
   if (t === "application/pdf" || /\.pdf$/.test(n)) return "pdf";
   return "other";
@@ -61,56 +63,112 @@ function useBlobUrl(fileId: string | null) {
 
 /* ── Componentes de Itens Modificados pro Novo Design ────────────────── */
 
-function ImageThumb({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
+function ItemActions({
+  file, onDelete, onRename, className,
+}: { file: VaultFile; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; className?: string }) {
+  return (
+    <div className={className}>
+      <Button
+        type="button" size="icon" variant="ghost"
+        className="h-7 w-7 rounded-sm text-white/40 hover:text-white hover:bg-white/5"
+        onClick={(e) => { e.stopPropagation(); onRename(file); }}
+        aria-label="Rename file"
+      >
+        <Edit className="h-3.5 w-3.5" />
+      </Button>
+      <Button
+        type="button" size="icon" variant="ghost"
+        className="h-7 w-7 rounded-sm text-white/40 hover:text-red-400 hover:bg-white/5"
+        onClick={(e) => { e.stopPropagation(); onDelete(file); }}
+        aria-label="Delete file"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
+function ImageThumb({ file, name, onDelete, onRename, onOpen }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; onOpen: (f: VaultFile) => void;
+}) {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
-    <Card variant="subtle" className="group relative overflow-hidden border-white/5 bg-black/10 aspect-square p-0 transition-colors hover:border-white/20">
+    <Card variant="subtle" className="group relative cursor-zoom-in overflow-hidden border-white/5 bg-black/10 aspect-square p-0 transition-colors hover:border-white/20" onClick={() => onOpen(file)}>
       {error ? (
         <div className="flex items-center justify-center h-full text-[11px] text-red-400/70 font-mono">{t("gr_vault_error_generic")}</div>
       ) : url ? (
-        <img src={url} alt={file.fileName} className="w-full h-full object-cover transition-opacity duration-300 opacity-80 group-hover:opacity-100" />
+        <img src={url} alt={name} className="w-full h-full object-cover transition-opacity duration-300 opacity-80 group-hover:opacity-100" />
       ) : (
         <div className="flex items-center justify-center h-full">
           <Loader2 className="h-3 w-3 animate-spin text-white/20" />
         </div>
       )}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-        <p className="text-xs text-white/90 truncate">{file.fileName}</p>
+        <p className="text-xs text-white/90 truncate">{name}</p>
         <p className="text-[10px] font-mono text-white/40 mt-0.5">{formatSize(file.size)}</p>
       </div>
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        className="absolute top-2 right-2 h-7 w-7 rounded-sm bg-black/40 text-white/40 hover:text-red-400 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-all"
-        onClick={() => onDelete(file)}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <ItemActions
+        file={file}
+        onDelete={onDelete}
+        onRename={onRename}
+        className="absolute top-1.5 right-1.5 flex items-center rounded-sm bg-black/50 opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100"
+      />
     </Card>
   );
 }
 
-function AudioPlayer({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
+function VideoCard({ file, name, onDelete, onRename, onOpen }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; onOpen: (f: VaultFile) => void;
+}) {
+  const { url, error } = useBlobUrl(file.id);
+  const { t } = useLanguage();
+  return (
+    <Card variant="subtle" className="group relative flex flex-col overflow-hidden border-white/5 bg-black/10 p-0 transition-colors hover:border-white/20">
+      <button
+        type="button"
+        onClick={() => onOpen(file)}
+        className="relative flex aspect-video w-full items-center justify-center bg-black/50"
+      >
+        {error ? (
+          <span className="text-[11px] font-mono text-red-400/60">{t("gr_vault_error_generic")}</span>
+        ) : url ? (
+          <>
+            <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover opacity-70 transition-opacity group-hover:opacity-100" />
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/60">
+                <Play className="h-4 w-4 text-white" />
+              </span>
+            </span>
+          </>
+        ) : (
+          <Loader2 className="h-3 w-3 animate-spin text-white/20" />
+        )}
+      </button>
+      <div className="flex items-center justify-between gap-2 p-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-serif text-white/80 group-hover:text-white">{name}</p>
+          <p className="mt-0.5 text-[10px] font-mono text-white/30">{formatSize(file.size)}</p>
+        </div>
+        <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
+      </div>
+    </Card>
+  );
+}
+
+function AudioPlayer({ file, name, onDelete, onRename }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void;
+}) {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
     <Card variant="subtle" className="group relative flex flex-col justify-between border-white/5 bg-black/10 p-4 transition-colors hover:border-white/10">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{file.fileName}</p>
+          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{name}</p>
           <p className="text-[10px] font-mono text-white/30 mt-0.5">{formatSize(file.size)}</p>
         </div>
-        <Button 
-          type="button" 
-          size="icon" 
-          variant="ghost" 
-          onClick={() => onDelete(file)} 
-          className="h-7 w-7 rounded-sm text-white/20 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-white/5 transition-all"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
       </div>
       <div className="mt-4">
         {error ? (
@@ -127,7 +185,9 @@ function AudioPlayer({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultF
   );
 }
 
-function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: VaultFile) => void; onOpen: (f: VaultFile) => void }) {
+function PdfCard({ file, name, onDelete, onRename, onOpen }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; onOpen: (f: VaultFile) => void;
+}) {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
@@ -136,7 +196,7 @@ function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: Va
         {error ? (
           <div className="text-[11px] font-mono text-red-400/60">{t("gr_vault_error_generic")}</div>
         ) : url ? (
-          <iframe src={`${url}#toolbar=0&navpanes=0`} title={file.fileName} className="w-full h-full pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity" />
+          <iframe src={`${url}#toolbar=0&navpanes=0`} title={name} className="w-full h-full pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity" />
         ) : (
           <Loader2 className="h-3 w-3 animate-spin text-white/20" />
         )}
@@ -146,43 +206,35 @@ function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: Va
       </button>
       <div className="p-3 flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-serif text-white/80 truncate group-hover:text-white">{file.fileName}</p>
+          <p className="text-xs font-serif text-white/80 truncate group-hover:text-white">{name}</p>
           <p className="text-[10px] font-mono text-white/30 mt-0.5">{formatSize(file.size)}</p>
         </div>
         <div className="flex items-center shrink-0">
           <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-sm text-white/30 hover:text-white hover:bg-white/5" onClick={() => onOpen(file)}>
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-sm text-white/30 hover:text-red-400 hover:bg-white/5" onClick={() => onDelete(file)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex items-center" />
         </div>
       </div>
     </Card>
   );
 }
 
-function OtherFileRow({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
+function OtherFileRow({ file, name, onDelete, onRename }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void;
+}) {
   return (
     <div className="group relative flex items-center justify-between py-4 border-b border-white/[0.06] hover:bg-white/[0.01] transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <FileGeneric className="w-3.5 h-3.5 text-white/30 shrink-0" />
         <div className="min-w-0">
-          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{file.fileName}</p>
+          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{name}</p>
           <p className="text-[10px] font-mono text-white/30 mt-0.5">
             {formatSize(file.size)} &middot; {new Date(file.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
       </div>
-      <Button 
-        type="button" 
-        size="icon" 
-        variant="ghost" 
-        className="h-7 w-7 rounded-sm text-white/20 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-white/5 transition-all" 
-        onClick={() => onDelete(file)}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
     </div>
   );
 }
@@ -195,6 +247,10 @@ export default function Vault() {
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<VaultFile | null>(null);
   const [pdfPreview, setPdfPreview] = useState<VaultFile | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<VaultFile | null>(null);
+  const [renameTarget, setRenameTarget] = useState<VaultFile | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [names, setNames] = useState<Record<string, string>>({});
   const [category, setCategory] = useState<Category>("images");
   const [search, setSearch] = useState("");
   const [wallpaperFileId, setWallpaperFileId] = useState<string | null>(() => getWallpaperFileIdSync());
@@ -202,6 +258,32 @@ export default function Vault() {
   useEffect(() => {
     void ensureWallpaperLoaded().then((w) => setWallpaperFileId(w.fileId));
   }, []);
+
+  useEffect(() => {
+    void loadVaultNames().then((m) => setNames({ ...m }));
+  }, []);
+
+  const nameOf = (f: VaultFile) => displayName(f.id, f.fileName || "");
+
+  const openRename = (f: VaultFile) => {
+    setRenameTarget(f);
+    setRenameValue(splitExtension(nameOf(f)).base);
+  };
+
+  const submitRename = async () => {
+    const file = renameTarget;
+    if (!file) return;
+    setRenameTarget(null);
+    try {
+      // Only the base name changes — the extension (and therefore the file
+      // type) is preserved automatically.
+      await renameVaultFile(file.id, renameValue);
+      setNames({ ...(await loadVaultNames()) });
+      toast({ title: t("gr_vault_renamed") || "File renamed" });
+    } catch {
+      toast({ title: t("gr_vault_rename_failed") || "Could not rename file", variant: "destructive" });
+    }
+  };
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -228,12 +310,12 @@ export default function Vault() {
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
     const visible = q
-      ? files.filter((f) => (f.fileName || "").toLowerCase().includes(q))
+      ? files.filter((f) => nameOf(f).toLowerCase().includes(q) || (f.fileName || "").toLowerCase().includes(q))
       : files;
-    const g: Record<Category, VaultFile[]> = { images: [], audio: [], pdf: [], other: [] };
+    const g: Record<Category, VaultFile[]> = { images: [], video: [], audio: [], pdf: [], other: [] };
     for (const f of visible) g[categoryOf(f)].push(f);
     return g;
-  }, [files, search]);
+  }, [files, search, names]);
 
 
   const confirmDelete = async () => {
@@ -333,6 +415,7 @@ export default function Vault() {
                   onChange={(v) => setCategory(v as Category)}
                   options={[
                     { value: "images", label: `${t("gr_vault_tab_photos")} · ${grouped.images.length}` },
+                    { value: "video", label: `${t("gr_vault_tab_video") || "Video"} · ${grouped.video.length}` },
                     { value: "audio", label: `${t("gr_vault_tab_audio")} · ${grouped.audio.length}` },
                     { value: "pdf", label: `${t("gr_vault_tab_pdf")} · ${grouped.pdf.length}` },
                     { value: "other", label: `${t("gr_vault_tab_other")} · ${grouped.other.length}` },
@@ -346,7 +429,19 @@ export default function Vault() {
                 ) : (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {grouped.images.map((f) => (
-                      <ImageThumb key={f.id} file={f} onDelete={setPendingDelete} />
+                      <ImageThumb key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setMediaPreview} />
+                    ))}
+                  </div>
+                )
+              )}
+
+              {category === "video" && (
+                grouped.video.length === 0 ? (
+                  <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_video") || "No videos yet."}</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    {grouped.video.map((f) => (
+                      <VideoCard key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setMediaPreview} />
                     ))}
                   </div>
                 )
@@ -358,7 +453,7 @@ export default function Vault() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
                     {grouped.audio.map((f) => (
-                      <AudioPlayer key={f.id} file={f} onDelete={setPendingDelete} />
+                      <AudioPlayer key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} />
                     ))}
                   </div>
                 )
@@ -370,7 +465,7 @@ export default function Vault() {
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {grouped.pdf.map((f) => (
-                      <PdfCard key={f.id} file={f} onDelete={setPendingDelete} onOpen={setPdfPreview} />
+                      <PdfCard key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setPdfPreview} />
                     ))}
                   </div>
                 )
@@ -382,7 +477,7 @@ export default function Vault() {
                 ) : (
                   <div className="divide-y divide-border">
                     {grouped.other.map((f) => (
-                      <OtherFileRow key={f.id} file={f} onDelete={setPendingDelete} />
+                      <OtherFileRow key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} />
                     ))}
                   </div>
                 )
@@ -399,7 +494,7 @@ export default function Vault() {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif text-xl font-normal text-white">{t("gr_vault_remove_title")}</AlertDialogTitle>
             <AlertDialogDescription className="text-white/40 text-xs mt-2">
-              {t("gr_vault_remove_desc", { fileName: pendingDelete?.fileName || t("gr_vault_this_asset") })}
+              {t("gr_vault_remove_desc", { fileName: (pendingDelete ? nameOf(pendingDelete) : "") || t("gr_vault_this_asset") })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2">
@@ -431,6 +526,59 @@ export default function Vault() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* MEDIA PLAYER — images and videos */}
+      <Dialog open={!!mediaPreview} onOpenChange={(open) => !open && setMediaPreview(null)}>
+        <DialogContent
+          hideClose
+          overlayClassName="bg-black/90 backdrop-blur-md"
+          className="fixed inset-0 left-0 top-0 z-50 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
+        >
+          <div className="flex items-center justify-between border-b border-white/5 bg-black/40 px-6 py-4 text-white backdrop-blur-xl">
+            <p className="max-w-xl truncate font-serif text-sm">{mediaPreview ? nameOf(mediaPreview) : ""}</p>
+            <Button size="sm" variant="ghost" onClick={() => setMediaPreview(null)} className="rounded-sm text-xs text-white/40 hover:bg-white/5 hover:text-white">
+              {t("gr_vault_close")}
+            </Button>
+          </div>
+          <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
+            {mediaPreview && <MediaViewerBody file={mediaPreview} name={nameOf(mediaPreview)} />}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* RENAME DIALOG — extension is preserved silently */}
+      <Dialog open={!!renameTarget} onOpenChange={(open) => !open && setRenameTarget(null)}>
+        <DialogContent className="max-w-sm rounded-sm border border-white/10 bg-black">
+          <p className="font-serif text-xl text-white">{t("gr_vault_rename_title") || "Rename file"}</p>
+          <Input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitRename(); } }}
+            className="mt-2 h-11 rounded-sm border-white/10 bg-white/[0.03] text-sm text-white"
+          />
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setRenameTarget(null)} className="rounded-sm text-xs text-white/50 hover:bg-white/5 hover:text-white">
+              {t("gr_vault_cancel")}
+            </Button>
+            <Button size="sm" onClick={() => void submitRename()} disabled={!renameValue.trim()} className="rounded-sm bg-white text-xs font-medium text-black hover:bg-white/90">
+              {t("gr_vault_save") || "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
+  );
+}
+
+function MediaViewerBody({ file, name }: { file: VaultFile; name: string }) {
+  const { url, error } = useBlobUrl(file.id);
+  const isVideo = categoryOf(file) === "video";
+  if (error) return <p className="font-mono text-xs text-red-400/70">{name}</p>;
+  if (!url) return <Loader2 className="h-5 w-5 animate-spin text-white/30" />;
+  return isVideo ? (
+    <video src={url} controls autoPlay playsInline className="max-h-full max-w-full rounded-sm border border-white/10 bg-black" />
+  ) : (
+    <img src={url} alt={name} className="max-h-full max-w-full rounded-sm object-contain" />
   );
 }

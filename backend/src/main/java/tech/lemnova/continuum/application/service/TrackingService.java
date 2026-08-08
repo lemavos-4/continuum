@@ -41,8 +41,8 @@ public class TrackingService {
     /** Earliest date this user is allowed to receive historical data for. */
     private LocalDate retentionCutoff(User user) {
         int days = planConfig.getHistoryDays(user.getPlan());
-        if (days == Integer.MAX_VALUE || days <= 0) return LocalDate.now().minusYears(100);
-        return LocalDate.now().minusDays(days);
+        if (days == Integer.MAX_VALUE || days <= 0) return tech.lemnova.continuum.infra.web.RequestZone.today().minusYears(100);
+        return tech.lemnova.continuum.infra.web.RequestZone.today().minusDays(days);
     }
 
     public TrackingEvent track(String userId, String entityId, TrackEventRequest req) {
@@ -50,7 +50,7 @@ public class TrackingService {
         Entity entity = entityService.get(userId, entityId);
         if (!entity.isTrackable()) throw new BadRequestException("Entity not trackable");
 
-        LocalDate date = req.date() != null ? req.date() : LocalDate.now();
+        LocalDate date = req.date() != null ? req.date() : tech.lemnova.continuum.infra.web.RequestZone.today();
         List<TrackingEvent> events = trackingRepo.findByUserIdAndEntityIdAndDate(userId, entityId, date);
 
         TrackingEvent event;
@@ -85,7 +85,7 @@ public class TrackingService {
 
     public Map<LocalDate, Double> getHeatmap(String userId, String entityId) {
         User user = getUser(userId);
-        LocalDate end = LocalDate.now();
+        LocalDate end = tech.lemnova.continuum.infra.web.RequestZone.today();
         LocalDate start = retentionCutoff(user);
         return getHeatmapInternal(userId, entityId, start, end);
     }
@@ -97,7 +97,7 @@ public class TrackingService {
         // Backend is the source of truth: clamp the requested window into the
         // user's allowed retention range. Data outside this window is never returned.
         LocalDate effectiveStart = (start == null || start.isBefore(cutoff)) ? cutoff : start;
-        LocalDate effectiveEnd = end == null ? LocalDate.now() : end;
+        LocalDate effectiveEnd = end == null ? tech.lemnova.continuum.infra.web.RequestZone.today() : end;
         return getHeatmapInternal(userId, entityId, effectiveStart, effectiveEnd);
     }
 
@@ -123,7 +123,7 @@ public class TrackingService {
                 .mapToDouble(e -> e.getNumericValue().doubleValue()).average().orElse(0.0);
 
         // weeklyCompletionRate: dias com eventos nesta semana / 7
-        LocalDate today = LocalDate.now();
+        LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
         LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
         Set<LocalDate> datesThisWeek = all.stream()
                 .map(TrackingEvent::getDate)
@@ -137,7 +137,7 @@ public class TrackingService {
     }
 
     public List<TrackingEvent> getTodayEvents(String userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
         return trackingRepo.findByUserId(userId).stream()
                 .filter(e -> today.equals(e.getDate()))
                 .collect(Collectors.toList());
@@ -169,7 +169,7 @@ public class TrackingService {
         int effectiveDays = (retention == Integer.MAX_VALUE) ? days : Math.min(days, retention);
         if (effectiveDays <= 0) effectiveDays = 1;
 
-        LocalDate end = LocalDate.now();
+        LocalDate end = tech.lemnova.continuum.infra.web.RequestZone.today();
         LocalDate start = end.minusDays(effectiveDays - 1);
 
         return trackingRepo.findByUserId(userId).stream()

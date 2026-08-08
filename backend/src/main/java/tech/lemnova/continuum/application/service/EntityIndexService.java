@@ -55,15 +55,15 @@ public class EntityIndexService {
                         .map(NoteReference::getDate)
                         .filter(java.util.Objects::nonNull)
                         .min(java.time.LocalDate::compareTo)
-                        .orElse(java.time.LocalDate.now());
+                        .orElse(tech.lemnova.continuum.infra.web.RequestZone.today());
                 java.time.LocalDate lastDate = refs.stream()
                         .map(NoteReference::getDate)
                         .filter(java.util.Objects::nonNull)
                         .max(java.time.LocalDate::compareTo)
-                        .orElse(java.time.LocalDate.now());
+                        .orElse(tech.lemnova.continuum.infra.web.RequestZone.today());
 
                 long total = refs.size();
-                long days = java.time.temporal.ChronoUnit.DAYS.between(firstDate, java.time.LocalDate.now()) + 1;
+                long days = java.time.temporal.ChronoUnit.DAYS.between(firstDate, tech.lemnova.continuum.infra.web.RequestZone.today()) + 1;
                 double freq = days <= 0 ? 0.0 : ((double) total) / days;
 
                 Instant first = firstDate.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();

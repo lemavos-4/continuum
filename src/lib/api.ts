@@ -109,6 +109,13 @@ const normalizeSearchResults = (payload: unknown) => {
 // Interceptor: attach JWT (skip only login and registration endpoints)
 api.interceptors.request.use((config) => {
   const url = config.url ?? "";
+  // Always tell the backend which timezone the user is in, so "today"
+  // (activities, tracking, heatmaps) is computed in the user's local day.
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) config.headers["X-Timezone"] = tz;
+    config.headers["X-TZ-Offset"] = String(-new Date().getTimezoneOffset());
+  } catch { /* ignore */ }
   const skipAuth =
     url === "/api/auth/login" ||
     url === "/api/auth/register" ||

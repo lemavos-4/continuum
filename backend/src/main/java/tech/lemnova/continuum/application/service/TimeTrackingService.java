@@ -33,7 +33,7 @@ public class TimeTrackingService {
     private LocalDate getDefaultStartDate(String userId) {
         User user = userRepo.findById(userId).orElseThrow();
         if (user.getPlan() == PlanType.FREE) {
-            return LocalDate.now().minusMonths(3);
+            return tech.lemnova.continuum.infra.web.RequestZone.today().minusMonths(3);
         }
         return null;
     }
@@ -98,7 +98,7 @@ public class TimeTrackingService {
                 .userId(userId)
                 .entityId(session.getEntityId())
                 .vaultId(session.getVaultId())
-                .date(LocalDate.now())
+                .date(tech.lemnova.continuum.infra.web.RequestZone.today())
                 .durationSeconds(Math.max(1L, elapsedSeconds))
                 .note(request.getNote())
                 .source(TimeEntrySource.TIMER)
@@ -172,7 +172,7 @@ public class TimeTrackingService {
         if (request.getDurationSeconds() == null || request.getDurationSeconds() <= 0) {
             throw new tech.lemnova.continuum.application.exception.BadRequestException("durationSeconds must be positive");
         }
-        LocalDate date = request.getDate() != null ? request.getDate() : LocalDate.now();
+        LocalDate date = request.getDate() != null ? request.getDate() : tech.lemnova.continuum.infra.web.RequestZone.today();
 
         // Fallback vaultId from user record if missing
         String resolvedVaultId = (vaultId != null && !vaultId.isBlank())
@@ -258,7 +258,7 @@ public class TimeTrackingService {
      */
     public List<TimeEntryResponse> getTimeInRange(String userId, String entityId, LocalDate from, LocalDate to) {
         LocalDate effectiveFrom = from != null ? from : getDefaultStartDate(userId);
-        LocalDate effectiveTo = to != null ? to : LocalDate.now();
+        LocalDate effectiveTo = to != null ? to : tech.lemnova.continuum.infra.web.RequestZone.today();
         List<TimeEntry> entries = timeEntryRepository.findByUserIdAndEntityIdAndDateBetweenOrderByDateDesc(
                 userId, entityId, effectiveFrom, effectiveTo
         );
@@ -353,7 +353,7 @@ public class TimeTrackingService {
                     .userId(userId)
                     .entityId(entityId)
                     .vaultId(lastSession.getVaultId())
-                    .date(LocalDate.now())
+                    .date(tech.lemnova.continuum.infra.web.RequestZone.today())
                     .durationSeconds(elapsedSeconds)
                     .note("Recovered from interrupted session")
                     .source(TimeEntrySource.RECOVERED)
@@ -385,8 +385,8 @@ public class TimeTrackingService {
      * All entries for the user in a date range (any entity). Used for heatmap/today views.
      */
     public List<TimeEntryResponse> getAllInRange(String userId, LocalDate from, LocalDate to) {
-        LocalDate effectiveFrom = from != null ? from : LocalDate.now().minusYears(1);
-        LocalDate effectiveTo = to != null ? to : LocalDate.now();
+        LocalDate effectiveFrom = from != null ? from : tech.lemnova.continuum.infra.web.RequestZone.today().minusYears(1);
+        LocalDate effectiveTo = to != null ? to : tech.lemnova.continuum.infra.web.RequestZone.today();
         return timeEntryRepository.findByUserIdAndArchivedAtIsNull(userId).stream()
                 .filter(e -> e.getDate() != null
                         && !e.getDate().isBefore(effectiveFrom)
@@ -400,7 +400,7 @@ public class TimeTrackingService {
      * All entries today across all entities.
      */
     public List<TimeEntryResponse> getToday(String userId) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
         return timeEntryRepository.findByUserIdAndArchivedAtIsNull(userId).stream()
                 .filter(e -> today.equals(e.getDate()))
                 .sorted(Comparator.comparing(TimeEntry::getCreatedAt,

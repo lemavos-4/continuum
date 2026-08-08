@@ -19,10 +19,20 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Table as TableIcon,
+  Upload,
+  Play,
+  File as FileIcon,
+  Trash2,
 } from "@/lib/heroicons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+
+export const EDITOR_UPLOAD_EVENT = "continuum:editor-upload";
+
+function requestUpload(accept: string) {
+  window.dispatchEvent(new CustomEvent(EDITOR_UPLOAD_EVENT, { detail: { accept } }));
+}
 
 interface Props {
   editor: Editor | null;
@@ -61,17 +71,22 @@ const COMMANDS: Cmd[] = [
       e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     },
   },
-  {
-    key: "image",
-    label: "ed_cmd_image",
-    icon: ImageIcon,
-    run: (e, t) => {
-      const url = window.prompt(t ? t("ed_prompt_image_url") : "Image URL");
-      if (!url) return;
-      e.chain().focus().setImage({ src: url }).run();
-    },
-  },
+  { key: "photo", label: "ed_cmd_image", icon: ImageIcon, run: () => requestUpload("image/*") },
+  { key: "video", label: "ed_cmd_video", icon: Play, run: () => requestUpload("video/*") },
+  { key: "file", label: "ed_cmd_file", icon: FileIcon, run: () => requestUpload("application/pdf,audio/*,image/*,video/*") },
   { key: "table", label: "ed_cmd_table", icon: TableIcon, run: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+];
+
+const TABLE_ACTIONS: Array<{ key: string; label: string; run: (e: Editor) => void; danger?: boolean }> = [
+  { key: "colBefore", label: "← Col", run: (e) => e.chain().focus().addColumnBefore().run() },
+  { key: "colAfter", label: "Col →", run: (e) => e.chain().focus().addColumnAfter().run() },
+  { key: "rowBefore", label: "↑ Row", run: (e) => e.chain().focus().addRowBefore().run() },
+  { key: "rowAfter", label: "Row ↓", run: (e) => e.chain().focus().addRowAfter().run() },
+  { key: "header", label: "Header", run: (e) => e.chain().focus().toggleHeaderRow().run() },
+  { key: "merge", label: "Merge", run: (e) => e.chain().focus().mergeOrSplit().run() },
+  { key: "delCol", label: "− Col", run: (e) => e.chain().focus().deleteColumn().run(), danger: true },
+  { key: "delRow", label: "− Row", run: (e) => e.chain().focus().deleteRow().run(), danger: true },
+  { key: "delTable", label: "Delete table", run: (e) => e.chain().focus().deleteTable().run(), danger: true },
 ];
 
 export function MobileCommandBar({ editor }: Props) {
@@ -79,12 +94,32 @@ export function MobileCommandBar({ editor }: Props) {
   const { t } = useLanguage(); 
   const [offset, setOffset] = useState(0);
   const [kbOpen, setKbOpen] = useState(false);
+  const [inTable, setInTable] = useState(false);
+  const [tableMode, setTableMode] = useState(false);
   const pointerState = useRef<{ x: number; y: number; pointerId: number | null; cancelled: boolean }>({
     x: 0,
     y: 0,
     pointerId: null,
     cancelled: false,
   });
+
+  // Track whether the caret currently sits inside a table.
+  useEffect(() => {
+    if (!editor) return;
+    const sync = () => {
+      const active = editor.isActive("table");
+      setInTable(active);
+      if (!active) setTableMode(false);
+      else setTableMode(true);
+    };
+    sync();
+    editor.on("selectionUpdate", sync);
+    editor.on("transaction", sync);
+    return () => {
+      editor.off("selectionUpdate", sync);
+      editor.off("transaction", sync);
+    };
+  }, [editor]);
 
   // Track visual viewport for keyboard position.
   useEffect(() => {
@@ -156,14 +191,14 @@ export function MobileCommandBar({ editor }: Props) {
   };
 
   if (!isMobile || !editor) return null;
-  if (!kbOpen) return null;
+  if (!kbOpen && !inTable) return null;
 
   return (
     <div
       role="toolbar"
       aria-label={t("editor_commands") || "Editor commands"}
       className={cn(
-        "fixed left-2 right-2 z-[60] flex items-center gap-1 rounded-2xl border border-white/10",
+        "fixed left-2 right-2 z-[60] flex flex-col gap-1 rounded-2xl border border-white/10",
         "bg-black/90 backdrop-blur-xl shadow-2xl px-2 py-1.5"
       )}
       style={{
@@ -175,6 +210,40 @@ export function MobileCommandBar({ editor }: Props) {
       onMouseDown={(e) => e.preventDefault()}
       onTouchStart={(e) => e.stopPropagation()}
     >
+      {inTable && tableMode && (
+        <div className="flex items-center gap-1 border-b border-white/10 pb-1.5">
+          <span className="shrink-0 px-1 text-[9px] uppercase tracking-widest text-white/40">
+            <TableIcon className="h-3.5 w-3.5" />
+          </span>
+          <div className="flex-1 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 min-w-max">
+              {TABLE_ACTIONS.map((a) => (
+                <button
+                  key={a.key}
+                  type="button"
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={(e) => handlePointerUp(e, { key: a.key, label: a.label, icon: TableIcon, run: a.run })}
+                  onPointerCancel={handlePointerCancel}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onTouchEnd={(e) => e.preventDefault()}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-[12px] transition-colors",
+                    a.danger
+                      ? "bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                      : "bg-white/[0.06] text-white/80 hover:bg-white/10"
+                  )}
+                  aria-label={a.label}
+                >
+                  {a.key === "delTable" ? <Trash2 className="h-3.5 w-3.5" /> : null}
+                  <span>{a.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="flex items-center gap-1">
       <div className="flex-1 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-1 min-w-max">
           {COMMANDS.map((c) => {
@@ -205,6 +274,7 @@ export function MobileCommandBar({ editor }: Props) {
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );
