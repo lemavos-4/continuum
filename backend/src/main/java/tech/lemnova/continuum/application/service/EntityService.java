@@ -76,7 +76,7 @@ public class EntityService {
 
     private LocalDate getDefaultStartDate(User user) {
         if (user.getPlan() == PlanType.FREE) {
-            return LocalDate.now().minusMonths(3);
+            return tech.lemnova.continuum.infra.web.RequestZone.today().minusMonths(3);
         }
         return null; // No limit for VISION
     }
@@ -266,7 +266,7 @@ public class EntityService {
     public Page<Entity> listByUser(String userId, Pageable pageable, LocalDate startDate, LocalDate endDate) {
         User user = getUser(userId);
         LocalDate effectiveStart = startDate != null ? startDate : getDefaultStartDate(user);
-        LocalDate effectiveEnd = endDate != null ? endDate : LocalDate.now();
+        LocalDate effectiveEnd = endDate != null ? endDate : tech.lemnova.continuum.infra.web.RequestZone.today();
         // Note: EntityRepository needs a method to filter by createdAt between start and end
         // For now, assume we filter in memory or add to repo
         Page<Entity> all = entityRepo.findByUserId(userId, pageable);
@@ -320,7 +320,7 @@ public class EntityService {
         }
         
         // Adicionar a data atual se ainda não existir (evita duplicata)
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = tech.lemnova.continuum.infra.web.RequestZone.today();
         if (entity.getTrackingDates() == null) {
             entity.setTrackingDates(new java.util.ArrayList<>());
         }
