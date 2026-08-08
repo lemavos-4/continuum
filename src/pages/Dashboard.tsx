@@ -55,6 +55,13 @@ const formatNoteDate = (timestamp?: number) => {
   return new Date(timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
+// Local (user timezone) YYYY-MM-DD key — never UTC, otherwise the chart loses
+// today's point for users behind/ahead of UTC.
+const localDateKey = (d: Date) => {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
 // --- SUB-COMPONENTS ---
 const DashboardSkeleton = () => (
   <AppLayout>
