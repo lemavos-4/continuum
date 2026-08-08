@@ -554,9 +554,15 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
 
     // "/" command + toolbar upload entry point
     useEffect(() => {
-      const open = () => fileInputRef.current?.click();
-      window.addEventListener(EDITOR_UPLOAD_EVENT, open);
-      return () => window.removeEventListener(EDITOR_UPLOAD_EVENT, open);
+      const open = (ev: Event) => {
+        const accept = (ev as CustomEvent)?.detail?.accept as string | undefined;
+        if (fileInputRef.current) {
+          fileInputRef.current.accept = accept || "image/*,video/*,application/pdf,audio/*";
+        }
+        fileInputRef.current?.click();
+      };
+      window.addEventListener(EDITOR_UPLOAD_EVENT, open as EventListener);
+      return () => window.removeEventListener(EDITOR_UPLOAD_EVENT, open as EventListener);
     }, []);
 
     // flush any pending throttled change so nothing is lost on unmount
