@@ -18,21 +18,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FileText, Image as ImageIcon, File as FileGeneric,
-  Loader2, HardDrive, Trash2, Music, ExternalLink,
+  Loader2, HardDrive, Trash2, Music, ExternalLink, Play, Edit3,
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
 import { ensureWallpaperLoaded, getWallpaperFileIdSync } from "@/lib/note-wallpaper";
+import { loadVaultNames, displayName, renameVaultFile, splitExtension } from "@/lib/vault-names";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { resolveVaultBlob, invalidateVaultBlob } from "@/lib/vault-blob";
 
-type Category = "images" | "audio" | "pdf" | "other";
+type Category = "images" | "video" | "audio" | "pdf" | "other";
 
 function categoryOf(file: VaultFile): Category {
   const t = (file.contentType || "").toLowerCase();
   const n = (file.fileName || "").toLowerCase();
   if (t.startsWith("image/") || /\.(png|jpe?g|webp|gif|svg)$/.test(n)) return "images";
+  if (t.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogv|avi|mkv)$/.test(n)) return "video";
   if (t.startsWith("audio/") || /\.(mp3|m4a|wav|ogg|aac)$/.test(n)) return "audio";
   if (t === "application/pdf" || /\.pdf$/.test(n)) return "pdf";
   return "other";
