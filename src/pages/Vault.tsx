@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FileText, Image as ImageIcon, File as FileGeneric,
-  Loader2, HardDrive, Trash2, Music, ExternalLink, Play, Edit3,
+  Loader2, HardDrive, Trash2, Music, ExternalLink, Play, Edit,
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
 import { ensureWallpaperLoaded, getWallpaperFileIdSync } from "@/lib/note-wallpaper";
@@ -63,56 +63,112 @@ function useBlobUrl(fileId: string | null) {
 
 /* ── Componentes de Itens Modificados pro Novo Design ────────────────── */
 
-function ImageThumb({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
+function ItemActions({
+  file, onDelete, onRename, className,
+}: { file: VaultFile; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; className?: string }) {
+  return (
+    <div className={className}>
+      <Button
+        type="button" size="icon" variant="ghost"
+        className="h-7 w-7 rounded-sm text-white/40 hover:text-white hover:bg-white/5"
+        onClick={(e) => { e.stopPropagation(); onRename(file); }}
+        aria-label="Rename file"
+      >
+        <Edit className="h-3.5 w-3.5" />
+      </Button>
+      <Button
+        type="button" size="icon" variant="ghost"
+        className="h-7 w-7 rounded-sm text-white/40 hover:text-red-400 hover:bg-white/5"
+        onClick={(e) => { e.stopPropagation(); onDelete(file); }}
+        aria-label="Delete file"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
+function ImageThumb({ file, name, onDelete, onRename, onOpen }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; onOpen: (f: VaultFile) => void;
+}) {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
-    <Card variant="subtle" className="group relative overflow-hidden border-white/5 bg-black/10 aspect-square p-0 transition-colors hover:border-white/20">
+    <Card variant="subtle" className="group relative cursor-zoom-in overflow-hidden border-white/5 bg-black/10 aspect-square p-0 transition-colors hover:border-white/20" onClick={() => onOpen(file)}>
       {error ? (
         <div className="flex items-center justify-center h-full text-[11px] text-red-400/70 font-mono">{t("gr_vault_error_generic")}</div>
       ) : url ? (
-        <img src={url} alt={file.fileName} className="w-full h-full object-cover transition-opacity duration-300 opacity-80 group-hover:opacity-100" />
+        <img src={url} alt={name} className="w-full h-full object-cover transition-opacity duration-300 opacity-80 group-hover:opacity-100" />
       ) : (
         <div className="flex items-center justify-center h-full">
           <Loader2 className="h-3 w-3 animate-spin text-white/20" />
         </div>
       )}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-        <p className="text-xs text-white/90 truncate">{file.fileName}</p>
+        <p className="text-xs text-white/90 truncate">{name}</p>
         <p className="text-[10px] font-mono text-white/40 mt-0.5">{formatSize(file.size)}</p>
       </div>
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        className="absolute top-2 right-2 h-7 w-7 rounded-sm bg-black/40 text-white/40 hover:text-red-400 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-all"
-        onClick={() => onDelete(file)}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <ItemActions
+        file={file}
+        onDelete={onDelete}
+        onRename={onRename}
+        className="absolute top-1.5 right-1.5 flex items-center rounded-sm bg-black/50 opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100"
+      />
     </Card>
   );
 }
 
-function AudioPlayer({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
+function VideoCard({ file, name, onDelete, onRename, onOpen }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; onOpen: (f: VaultFile) => void;
+}) {
+  const { url, error } = useBlobUrl(file.id);
+  const { t } = useLanguage();
+  return (
+    <Card variant="subtle" className="group relative flex flex-col overflow-hidden border-white/5 bg-black/10 p-0 transition-colors hover:border-white/20">
+      <button
+        type="button"
+        onClick={() => onOpen(file)}
+        className="relative flex aspect-video w-full items-center justify-center bg-black/50"
+      >
+        {error ? (
+          <span className="text-[11px] font-mono text-red-400/60">{t("gr_vault_error_generic")}</span>
+        ) : url ? (
+          <>
+            <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover opacity-70 transition-opacity group-hover:opacity-100" />
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/60">
+                <Play className="h-4 w-4 text-white" />
+              </span>
+            </span>
+          </>
+        ) : (
+          <Loader2 className="h-3 w-3 animate-spin text-white/20" />
+        )}
+      </button>
+      <div className="flex items-center justify-between gap-2 p-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-serif text-white/80 group-hover:text-white">{name}</p>
+          <p className="mt-0.5 text-[10px] font-mono text-white/30">{formatSize(file.size)}</p>
+        </div>
+        <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
+      </div>
+    </Card>
+  );
+}
+
+function AudioPlayer({ file, name, onDelete, onRename }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void;
+}) {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
     <Card variant="subtle" className="group relative flex flex-col justify-between border-white/5 bg-black/10 p-4 transition-colors hover:border-white/10">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{file.fileName}</p>
+          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{name}</p>
           <p className="text-[10px] font-mono text-white/30 mt-0.5">{formatSize(file.size)}</p>
         </div>
-        <Button 
-          type="button" 
-          size="icon" 
-          variant="ghost" 
-          onClick={() => onDelete(file)} 
-          className="h-7 w-7 rounded-sm text-white/20 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-white/5 transition-all"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
       </div>
       <div className="mt-4">
         {error ? (
@@ -129,7 +185,9 @@ function AudioPlayer({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultF
   );
 }
 
-function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: VaultFile) => void; onOpen: (f: VaultFile) => void }) {
+function PdfCard({ file, name, onDelete, onRename, onOpen }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; onOpen: (f: VaultFile) => void;
+}) {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
@@ -138,7 +196,7 @@ function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: Va
         {error ? (
           <div className="text-[11px] font-mono text-red-400/60">{t("gr_vault_error_generic")}</div>
         ) : url ? (
-          <iframe src={`${url}#toolbar=0&navpanes=0`} title={file.fileName} className="w-full h-full pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity" />
+          <iframe src={`${url}#toolbar=0&navpanes=0`} title={name} className="w-full h-full pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity" />
         ) : (
           <Loader2 className="h-3 w-3 animate-spin text-white/20" />
         )}
@@ -148,43 +206,35 @@ function PdfCard({ file, onDelete, onOpen }: { file: VaultFile; onDelete: (f: Va
       </button>
       <div className="p-3 flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-serif text-white/80 truncate group-hover:text-white">{file.fileName}</p>
+          <p className="text-xs font-serif text-white/80 truncate group-hover:text-white">{name}</p>
           <p className="text-[10px] font-mono text-white/30 mt-0.5">{formatSize(file.size)}</p>
         </div>
         <div className="flex items-center shrink-0">
           <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-sm text-white/30 hover:text-white hover:bg-white/5" onClick={() => onOpen(file)}>
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-sm text-white/30 hover:text-red-400 hover:bg-white/5" onClick={() => onDelete(file)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex items-center" />
         </div>
       </div>
     </Card>
   );
 }
 
-function OtherFileRow({ file, onDelete }: { file: VaultFile; onDelete: (f: VaultFile) => void }) {
+function OtherFileRow({ file, name, onDelete, onRename }: {
+  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void;
+}) {
   return (
     <div className="group relative flex items-center justify-between py-4 border-b border-white/[0.06] hover:bg-white/[0.01] transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <FileGeneric className="w-3.5 h-3.5 text-white/30 shrink-0" />
         <div className="min-w-0">
-          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{file.fileName}</p>
+          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{name}</p>
           <p className="text-[10px] font-mono text-white/30 mt-0.5">
             {formatSize(file.size)} &middot; {new Date(file.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
       </div>
-      <Button 
-        type="button" 
-        size="icon" 
-        variant="ghost" 
-        className="h-7 w-7 rounded-sm text-white/20 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-white/5 transition-all" 
-        onClick={() => onDelete(file)}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
     </div>
   );
 }
