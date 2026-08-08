@@ -247,6 +247,10 @@ export default function Vault() {
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<VaultFile | null>(null);
   const [pdfPreview, setPdfPreview] = useState<VaultFile | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<VaultFile | null>(null);
+  const [renameTarget, setRenameTarget] = useState<VaultFile | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [names, setNames] = useState<Record<string, string>>({});
   const [category, setCategory] = useState<Category>("images");
   const [search, setSearch] = useState("");
   const [wallpaperFileId, setWallpaperFileId] = useState<string | null>(() => getWallpaperFileIdSync());
@@ -254,6 +258,32 @@ export default function Vault() {
   useEffect(() => {
     void ensureWallpaperLoaded().then((w) => setWallpaperFileId(w.fileId));
   }, []);
+
+  useEffect(() => {
+    void loadVaultNames().then((m) => setNames({ ...m }));
+  }, []);
+
+  const nameOf = (f: VaultFile) => displayName(f.id, f.fileName || "");
+
+  const openRename = (f: VaultFile) => {
+    setRenameTarget(f);
+    setRenameValue(splitExtension(nameOf(f)).base);
+  };
+
+  const submitRename = async () => {
+    const file = renameTarget;
+    if (!file) return;
+    setRenameTarget(null);
+    try {
+      // Only the base name changes — the extension (and therefore the file
+      // type) is preserved automatically.
+      await renameVaultFile(file.id, renameValue);
+      setNames({ ...(await loadVaultNames()) });
+      toast({ title: t("gr_vault_renamed") || "File renamed" });
+    } catch {
+      toast({ title: t("gr_vault_rename_failed") || "Could not rename file", variant: "destructive" });
+    }
+  };
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -280,12 +310,12 @@ export default function Vault() {
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
     const visible = q
-      ? files.filter((f) => (f.fileName || "").toLowerCase().includes(q))
+      ? files.filter((f) => nameOf(f).toLowerCase().includes(q) || (f.fileName || "").toLowerCase().includes(q))
       : files;
-    const g: Record<Category, VaultFile[]> = { images: [], audio: [], pdf: [], other: [] };
+    const g: Record<Category, VaultFile[]> = { images: [], video: [], audio: [], pdf: [], other: [] };
     for (const f of visible) g[categoryOf(f)].push(f);
     return g;
-  }, [files, search]);
+  }, [files, search, names]);
 
 
   const confirmDelete = async () => {
