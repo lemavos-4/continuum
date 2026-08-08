@@ -415,6 +415,7 @@ export default function Vault() {
                   onChange={(v) => setCategory(v as Category)}
                   options={[
                     { value: "images", label: `${t("gr_vault_tab_photos")} · ${grouped.images.length}` },
+                    { value: "video", label: `${t("gr_vault_tab_video") || "Video"} · ${grouped.video.length}` },
                     { value: "audio", label: `${t("gr_vault_tab_audio")} · ${grouped.audio.length}` },
                     { value: "pdf", label: `${t("gr_vault_tab_pdf")} · ${grouped.pdf.length}` },
                     { value: "other", label: `${t("gr_vault_tab_other")} · ${grouped.other.length}` },
@@ -428,7 +429,19 @@ export default function Vault() {
                 ) : (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {grouped.images.map((f) => (
-                      <ImageThumb key={f.id} file={f} onDelete={setPendingDelete} />
+                      <ImageThumb key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setMediaPreview} />
+                    ))}
+                  </div>
+                )
+              )}
+
+              {category === "video" && (
+                grouped.video.length === 0 ? (
+                  <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_video") || "No videos yet."}</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    {grouped.video.map((f) => (
+                      <VideoCard key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setMediaPreview} />
                     ))}
                   </div>
                 )
@@ -440,7 +453,7 @@ export default function Vault() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
                     {grouped.audio.map((f) => (
-                      <AudioPlayer key={f.id} file={f} onDelete={setPendingDelete} />
+                      <AudioPlayer key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} />
                     ))}
                   </div>
                 )
@@ -452,7 +465,7 @@ export default function Vault() {
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {grouped.pdf.map((f) => (
-                      <PdfCard key={f.id} file={f} onDelete={setPendingDelete} onOpen={setPdfPreview} />
+                      <PdfCard key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setPdfPreview} />
                     ))}
                   </div>
                 )
@@ -464,7 +477,7 @@ export default function Vault() {
                 ) : (
                   <div className="divide-y divide-border">
                     {grouped.other.map((f) => (
-                      <OtherFileRow key={f.id} file={f} onDelete={setPendingDelete} />
+                      <OtherFileRow key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} />
                     ))}
                   </div>
                 )
@@ -481,7 +494,7 @@ export default function Vault() {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif text-xl font-normal text-white">{t("gr_vault_remove_title")}</AlertDialogTitle>
             <AlertDialogDescription className="text-white/40 text-xs mt-2">
-              {t("gr_vault_remove_desc", { fileName: pendingDelete?.fileName || t("gr_vault_this_asset") })}
+              {t("gr_vault_remove_desc", { fileName: (pendingDelete ? nameOf(pendingDelete) : "") || t("gr_vault_this_asset") })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2">
@@ -513,6 +526,59 @@ export default function Vault() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* MEDIA PLAYER — images and videos */}
+      <Dialog open={!!mediaPreview} onOpenChange={(open) => !open && setMediaPreview(null)}>
+        <DialogContent
+          hideClose
+          overlayClassName="bg-black/90 backdrop-blur-md"
+          className="fixed inset-0 left-0 top-0 z-50 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
+        >
+          <div className="flex items-center justify-between border-b border-white/5 bg-black/40 px-6 py-4 text-white backdrop-blur-xl">
+            <p className="max-w-xl truncate font-serif text-sm">{mediaPreview ? nameOf(mediaPreview) : ""}</p>
+            <Button size="sm" variant="ghost" onClick={() => setMediaPreview(null)} className="rounded-sm text-xs text-white/40 hover:bg-white/5 hover:text-white">
+              {t("gr_vault_close")}
+            </Button>
+          </div>
+          <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
+            {mediaPreview && <MediaViewerBody file={mediaPreview} name={nameOf(mediaPreview)} />}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* RENAME DIALOG — extension is preserved silently */}
+      <Dialog open={!!renameTarget} onOpenChange={(open) => !open && setRenameTarget(null)}>
+        <DialogContent className="max-w-sm rounded-sm border border-white/10 bg-black">
+          <p className="font-serif text-xl text-white">{t("gr_vault_rename_title") || "Rename file"}</p>
+          <Input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitRename(); } }}
+            className="mt-2 h-11 rounded-sm border-white/10 bg-white/[0.03] text-sm text-white"
+          />
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setRenameTarget(null)} className="rounded-sm text-xs text-white/50 hover:bg-white/5 hover:text-white">
+              {t("gr_vault_cancel")}
+            </Button>
+            <Button size="sm" onClick={() => void submitRename()} disabled={!renameValue.trim()} className="rounded-sm bg-white text-xs font-medium text-black hover:bg-white/90">
+              {t("gr_vault_save") || "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
+  );
+}
+
+function MediaViewerBody({ file, name }: { file: VaultFile; name: string }) {
+  const { url, error } = useBlobUrl(file.id);
+  const isVideo = categoryOf(file) === "video";
+  if (error) return <p className="font-mono text-xs text-red-400/70">{name}</p>;
+  if (!url) return <Loader2 className="h-5 w-5 animate-spin text-white/30" />;
+  return isVideo ? (
+    <video src={url} controls autoPlay playsInline className="max-h-full max-w-full rounded-sm border border-white/10 bg-black" />
+  ) : (
+    <img src={url} alt={name} className="max-h-full max-w-full rounded-sm object-contain" />
   );
 }
