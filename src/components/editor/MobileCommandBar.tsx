@@ -17,11 +17,8 @@ import {
   Italic,
   Strikethrough,
   Link as LinkIcon,
-  Image as ImageIcon,
   Table as TableIcon,
   Upload,
-  Play,
-  File as FileIcon,
   Trash2,
 } from "@/lib/heroicons";
 import { useIsMobile } from "@/hooks/use-mobile";

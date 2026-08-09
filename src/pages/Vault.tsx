@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FileText, Image as ImageIcon, File as FileGeneric,
-  Loader2, HardDrive, Trash2, Music, ExternalLink, Play, Edit,
+  Loader2, HardDrive, Trash2, Music, ExternalLink, Edit,
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
 import { ensureWallpaperLoaded, getWallpaperFileIdSync } from "@/lib/note-wallpaper";
