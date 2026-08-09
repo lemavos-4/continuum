@@ -80,6 +80,63 @@ export const dict: Module = {
     lp_footer_terms: "Terms and Conditions",
     lp_footer_privacy: "Privacy",
     lp_footer_rights: "All rights reserved.",
+
+    lp_about_back_to_home: "← Back to home",
+    lp_about_eyebrow: "About",
+    lp_about_title: "About Continuum",
+    lp_about_subtitle: "Your second brain, without the friction.",
+    lp_about_section_1_title: "What is Continuum?",
+    lp_about_section_1_body:
+      "Continuum is a modern knowledge management platform designed to help you capture, connect, and rediscover your ideas at the speed of thought. Notes link themselves through mentions and topics, building a living graph of everything you care about.",
+    lp_about_section_2_title: "Our philosophy",
+    lp_about_section_2_body:
+      "No folder mess, no rigid hierarchy — just pure flow. Your most relevant notes and entities resurface automatically based on how you actually use them, so your knowledge works for you.",
+    lp_about_section_3_title: "Built to last",
+    lp_about_section_3_body:
+      "Native sync across every device, full offline support, and a design that stays out of your way. Continuum is here to grow with your thinking over time.",
+    lp_about_support_cta: "Visit the support center →",
+    lp_about_pricing_cta: "See pricing →",
+    lp_about_contact: "Get in touch at",
+
+    lp_privacy_back_to_home: "← Back to home",
+    lp_privacy_title: "Privacy Policy",
+    lp_privacy_last_updated: "Last updated: May 22, 2026",
+    lp_privacy_section_1_title: "1. Our Philosophy",
+    lp_privacy_section_1_body:
+      "At Continuum, we deeply respect your personal information. Your notes and knowledge are yours — we exist to help you organize your life and thoughts, not to exploit your data.",
+    lp_privacy_section_2_title: "2. Information We Collect",
+    lp_privacy_section_2_body:
+      "We collect the information you provide while using the app: your notes, entities, relationships, time tracking data, and technical information needed to run the service.",
+    lp_privacy_section_3_title: "3. How We Use Your Data",
+    lp_privacy_section_3_body:
+      "We use your data to: • Provide and maintain your workspace • Generate personal insights and connections • Improve the performance and security of the app",
+    lp_privacy_section_4_title: "4. Data Sharing",
+    lp_privacy_section_4_body:
+      "We do not sell your personal data. We only share information with trusted service providers (such as hosting and analytics) when necessary, under strict confidentiality agreements.",
+    lp_privacy_section_5_title: "5. Your Rights",
+    lp_privacy_section_5_body:
+      "You can request access to, correction, or deletion of your data at any time. Just contact us and we will respond promptly.",
+    lp_privacy_contact: "Any questions about your privacy? Reach out to",
+
+    lp_terms_back_to_home: "← Back to home",
+    lp_terms_title: "Terms of Service",
+    lp_terms_last_updated: "Last updated: May 22, 2026",
+    lp_terms_section_1_title: "1. Welcome to Continuum",
+    lp_terms_section_1_body:
+      "Continuum is a personal knowledge app designed to help you capture, connect, and understand your notes, people, projects and ideas over time. By using Continuum, you agree to these Terms of Service.",
+    lp_terms_section_2_title: "2. Your Content",
+    lp_terms_section_2_body:
+      "You own all the content you create in Continuum — your notes, entities, relationships and knowledge graph. We only store and process your data to provide the service, generate insights and keep everything working.",
+    lp_terms_section_3_title: "3. Acceptable Use",
+    lp_terms_section_3_body:
+      "You may not use Continuum for any illegal, abusive, or harmful activities. We reserve the right to suspend or terminate accounts that violate these terms.",
+    lp_terms_section_4_title: "4. Changes to the Service",
+    lp_terms_section_4_body:
+      "We are constantly improving Continuum. We may add, modify or remove features. Significant changes will be communicated to you.",
+    lp_terms_section_5_title: "5. Termination",
+    lp_terms_section_5_body:
+      "You can stop using Continuum at any time. We may also suspend or terminate your access if you breach these terms.",
+    lp_terms_contact: "If you have any questions about these Terms, feel free to contact us at",
   },
 
   es: {
@@ -156,6 +213,63 @@ export const dict: Module = {
     lp_footer_terms: "Términos y condiciones",
     lp_footer_privacy: "Privacidad",
     lp_footer_rights: "Todos los derechos reservados.",
+
+    lp_about_back_to_home: "← Volver al inicio",
+    lp_about_eyebrow: "Acerca de",
+    lp_about_title: "Acerca de Continuum",
+    lp_about_subtitle: "Tu segundo cerebro, sin fricción.",
+    lp_about_section_1_title: "¿Qué es Continuum?",
+    lp_about_section_1_body:
+      "Continuum es una plataforma moderna de gestión del conocimiento diseñada para ayudarte a capturar, conectar y redescubrir tus ideas a la velocidad del pensamiento. Las notas se enlazan entre sí mediante menciones y temas, construyendo un grafo vivo de todo lo que te importa.",
+    lp_about_section_2_title: "Nuestra filosofía",
+    lp_about_section_2_body:
+      "Sin caos de carpetas ni jerarquías rígidas: solo flujo. Tus notas y entidades más relevantes resurgen automáticamente según cómo las usas realmente, para que tu conocimiento trabaje para ti.",
+    lp_about_section_3_title: "Diseñado para durar",
+    lp_about_section_3_body:
+      "Sincronización nativa en todos tus dispositivos, soporte offline completo y un diseño que no interrumpe. Continuum está aquí para crecer junto con tu forma de pensar.",
+    lp_about_support_cta: "Visitar el centro de soporte →",
+    lp_about_pricing_cta: "Ver precios →",
+    lp_about_contact: "Ponte en contacto en",
+
+    lp_privacy_back_to_home: "← Volver al inicio",
+    lp_privacy_title: "Política de privacidad",
+    lp_privacy_last_updated: "Última actualización: 22 de mayo de 2026",
+    lp_privacy_section_1_title: "1. Nuestra filosofía",
+    lp_privacy_section_1_body:
+      "En Continuum respetamos profundamente tu información personal. Tus notas y conocimiento son tuyos: existimos para ayudarte a organizar tu vida y tus ideas, no para explotar tus datos.",
+    lp_privacy_section_2_title: "2. Información que recopilamos",
+    lp_privacy_section_2_body:
+      "Recopilamos la información que nos proporcionas al usar la app: tus notas, entidades, relaciones, datos de seguimiento de tiempo e información técnica necesaria para operar el servicio.",
+    lp_privacy_section_3_title: "3. Cómo usamos tus datos",
+    lp_privacy_section_3_body:
+      "Usamos tus datos para: • Proporcionar y mantener tu espacio de trabajo • Generar insights y conexiones personales • Mejorar el rendimiento y la seguridad de la app",
+    lp_privacy_section_4_title: "4. Compartición de datos",
+    lp_privacy_section_4_body:
+      "No vendemos tus datos personales. Solo compartimos información con proveedores de confianza (como hosting y analytics) cuando es necesario, bajo acuerdos estrictos de confidencialidad.",
+    lp_privacy_section_5_title: "5. Tus derechos",
+    lp_privacy_section_5_body:
+      "Puedes solicitar acceso, corrección o eliminación de tus datos en cualquier momento. Solo contáctanos y responderemos rápidamente.",
+    lp_privacy_contact: "¿Tienes preguntas sobre tu privacidad? Ponte en contacto con",
+
+    lp_terms_back_to_home: "← Volver al inicio",
+    lp_terms_title: "Términos de servicio",
+    lp_terms_last_updated: "Última actualización: 22 de mayo de 2026",
+    lp_terms_section_1_title: "1. Bienvenido a Continuum",
+    lp_terms_section_1_body:
+      "Continuum es una app personal de conocimiento diseñada para ayudarte a capturar, conectar y comprender tus notas, personas, proyectos e ideas con el tiempo. Al usar Continuum, aceptas estos Términos de servicio.",
+    lp_terms_section_2_title: "2. Tu contenido",
+    lp_terms_section_2_body:
+      "Eres dueño de todo el contenido que creas en Continuum: tus notas, entidades, relaciones y grafo de conocimiento. Solo almacenamos y procesamos tus datos para proporcionar el servicio, generar insights y mantener todo funcionando.",
+    lp_terms_section_3_title: "3. Uso aceptable",
+    lp_terms_section_3_body:
+      "No puedes usar Continuum para actividades ilegales, abusivas o dañinas. Nos reservamos el derecho de suspender o terminar cuentas que violen estos términos.",
+    lp_terms_section_4_title: "4. Cambios en el servicio",
+    lp_terms_section_4_body:
+      "Estamos mejorando Continuum constantemente. Podemos agregar, modificar o eliminar funciones. Te comunicaremos los cambios importantes.",
+    lp_terms_section_5_title: "5. Terminación",
+    lp_terms_section_5_body:
+      "Puedes dejar de usar Continuum en cualquier momento. También podemos suspender o terminar tu acceso si incumples estos términos.",
+    lp_terms_contact: "Si tienes preguntas sobre estos Términos, no dudes en contactarnos en",
   },
 
   pt: {
@@ -232,6 +346,63 @@ export const dict: Module = {
     lp_footer_terms: "Termos e condições",
     lp_footer_privacy: "Privacidade",
     lp_footer_rights: "Todos os direitos reservados.",
+
+    lp_about_back_to_home: "← Voltar ao início",
+    lp_about_eyebrow: "Sobre",
+    lp_about_title: "Sobre o Continuum",
+    lp_about_subtitle: "Seu segundo cérebro, sem atrito.",
+    lp_about_section_1_title: "O que é o Continuum?",
+    lp_about_section_1_body:
+      "O Continuum é uma plataforma moderna de gestão de conhecimento criada para ajudar você a capturar, conectar e redescobrir ideias na velocidade do pensamento. As notas se conectam entre si por meio de menções e tópicos, formando um grafo vivo de tudo o que importa para você.",
+    lp_about_section_2_title: "Nossa filosofia",
+    lp_about_section_2_body:
+      "Sem bagunça de pastas nem hierarquia rígida: só fluxo. As notas e entidades mais relevantes voltam automaticamente com base no jeito real de usar o app, para o seu conhecimento trabalhar por você.",
+    lp_about_section_3_title: "Construído para durar",
+    lp_about_section_3_body:
+      "Sincronização nativa em todos os dispositivos, suporte offline completo e um design que não atrapalha. O Continuum cresce junto com o seu jeito de pensar.",
+    lp_about_support_cta: "Visitar o centro de suporte →",
+    lp_about_pricing_cta: "Ver planos →",
+    lp_about_contact: "Fale conosco em",
+
+    lp_privacy_back_to_home: "← Voltar ao início",
+    lp_privacy_title: "Política de privacidade",
+    lp_privacy_last_updated: "Última atualização: 22 de maio de 2026",
+    lp_privacy_section_1_title: "1. Nossa filosofia",
+    lp_privacy_section_1_body:
+      "No Continuum, respeitamos profundamente suas informações pessoais. Suas notas e conhecimento são seus — existimos para ajudá-lo a organizar sua vida e seus pensamentos, não para explorar seus dados.",
+    lp_privacy_section_2_title: "2. Informações que coletamos",
+    lp_privacy_section_2_body:
+      "Coletamos as informações que você nos fornece ao usar o app: suas notas, entidades, relacionamentos, dados de rastreamento de tempo e informações técnicas necessárias para operar o serviço.",
+    lp_privacy_section_3_title: "3. Como usamos seus dados",
+    lp_privacy_section_3_body:
+      "Usamos seus dados para: • Fornecer e manter seu espaço de trabalho • Gerar insights e conexões pessoais • Melhorar o desempenho e a segurança do app",
+    lp_privacy_section_4_title: "4. Compartilhamento de dados",
+    lp_privacy_section_4_body:
+      "Não vendemos seus dados pessoais. Compartilhamos informações apenas com provedores confiáveis (como hospedagem e analytics) quando necessário, sob acordos rigorosos de confidencialidade.",
+    lp_privacy_section_5_title: "5. Seus direitos",
+    lp_privacy_section_5_body:
+      "Você pode solicitar acesso, correção ou exclusão dos seus dados a qualquer momento. Basta nos contatar e responderemos rapidamente.",
+    lp_privacy_contact: "Tem perguntas sobre sua privacidade? Fale com",
+
+    lp_terms_back_to_home: "← Voltar ao início",
+    lp_terms_title: "Termos de serviço",
+    lp_terms_last_updated: "Última atualização: 22 de maio de 2026",
+    lp_terms_section_1_title: "1. Bem-vindo ao Continuum",
+    lp_terms_section_1_body:
+      "O Continuum é um app pessoal de conhecimento projetado para ajudá-lo a capturar, conectar e entender suas notas, pessoas, projetos e ideias ao longo do tempo. Ao usar o Continuum, você concorda com estes Termos de serviço.",
+    lp_terms_section_2_title: "2. Seu conteúdo",
+    lp_terms_section_2_body:
+      "Você é dono de todo o conteúdo que cria no Continuum — suas notas, entidades, relacionamentos e grafo de conhecimento. Só armazenamos e processamos seus dados para fornecer o serviço, gerar insights e manter tudo funcionando.",
+    lp_terms_section_3_title: "3. Uso aceitável",
+    lp_terms_section_3_body:
+      "Você não pode usar o Continuum para atividades ilegais, abusivas ou prejudiciais. Reservamo-nos o direito de suspender ou encerrar contas que violem estes termos.",
+    lp_terms_section_4_title: "4. Alterações no serviço",
+    lp_terms_section_4_body:
+      "Estamos melhorando o Continuum constantemente. Podemos adicionar, modificar ou remover recursos. Mudanças significativas serão comunicadas a você.",
+    lp_terms_section_5_title: "5. Encerramento",
+    lp_terms_section_5_body:
+      "Você pode parar de usar o Continuum a qualquer momento. Também podemos suspender ou encerrar seu acesso se você violar estes termos.",
+    lp_terms_contact: "Se tiver alguma dúvida sobre estes Termos, entre em contato conosco em",
   },
 
   fr: {
@@ -308,5 +479,62 @@ export const dict: Module = {
     lp_footer_terms: "Conditions générales",
     lp_footer_privacy: "Confidentialité",
     lp_footer_rights: "Tous droits réservés.",
+
+    lp_about_back_to_home: "← Retour à l'accueil",
+    lp_about_eyebrow: "À propos",
+    lp_about_title: "À propos de Continuum",
+    lp_about_subtitle: "Votre second cerveau, sans friction.",
+    lp_about_section_1_title: "Qu'est-ce que Continuum ?",
+    lp_about_section_1_body:
+      "Continuum est une plateforme moderne de gestion des connaissances conçue pour vous aider à capturer, relier et redécouvrir vos idées à la vitesse de la pensée. Les notes se lient entre elles grâce aux mentions et aux sujets, pour construire un graphe vivant de tout ce qui vous importe.",
+    lp_about_section_2_title: "Notre philosophie",
+    lp_about_section_2_body:
+      "Pas de désordre de dossiers ni d'hiérarchie rigide : juste du flux. Vos notes et entités les plus pertinentes remontent automatiquement selon la façon dont vous les utilisez réellement, pour que votre connaissance travaille pour vous.",
+    lp_about_section_3_title: "Conçu pour durer",
+    lp_about_section_3_body:
+      "Synchronisation native sur tous vos appareils, prise en charge hors ligne complète et une interface qui reste discrète. Continuum est là pour grandir avec votre façon de penser.",
+    lp_about_support_cta: "Visiter le centre d'assistance →",
+    lp_about_pricing_cta: "Voir les tarifs →",
+    lp_about_contact: "Contactez-nous à",
+
+    lp_privacy_back_to_home: "← Retour à l'accueil",
+    lp_privacy_title: "Politique de confidentialité",
+    lp_privacy_last_updated: "Dernière mise à jour : 22 mai 2026",
+    lp_privacy_section_1_title: "1. Notre philosophie",
+    lp_privacy_section_1_body:
+      "Chez Continuum, nous respectons profondément vos informations personnelles. Vos notes et votre savoir vous appartiennent — nous existons pour vous aider à organiser votre vie et vos idées, pas pour exploiter vos données.",
+    lp_privacy_section_2_title: "2. Informations collectées",
+    lp_privacy_section_2_body:
+      "Nous collectons les informations que vous nous fournissez en utilisant l'application : vos notes, entités, relations, données de suivi du temps et informations techniques nécessaires au fonctionnement du service.",
+    lp_privacy_section_3_title: "3. Comment nous utilisons vos données",
+    lp_privacy_section_3_body:
+      "Nous utilisons vos données pour : • Fournir et maintenir votre espace de travail • Générer des insights et des connexions personnelles • Améliorer les performances et la sécurité de l'app",
+    lp_privacy_section_4_title: "4. Partage des données",
+    lp_privacy_section_4_body:
+      "Nous ne vendons pas vos données personnelles. Nous ne partageons des informations qu'avec des prestataires de confiance (hébergement, analytics, etc.) si nécessaire, dans le cadre d'accords stricts de confidentialité.",
+    lp_privacy_section_5_title: "5. Vos droits",
+    lp_privacy_section_5_body:
+      "Vous pouvez demander l'accès, la correction ou la suppression de vos données à tout moment. Contactez-nous simplement et nous répondrons rapidement.",
+    lp_privacy_contact: "Des questions sur votre vie privée ? Contactez",
+
+    lp_terms_back_to_home: "← Retour à l'accueil",
+    lp_terms_title: "Conditions d'utilisation",
+    lp_terms_last_updated: "Dernière mise à jour : 22 mai 2026",
+    lp_terms_section_1_title: "1. Bienvenue sur Continuum",
+    lp_terms_section_1_body:
+      "Continuum est une application personnelle de connaissance conçue pour vous aider à capturer, relier et comprendre vos notes, personnes, projets et idées au fil du temps. En utilisant Continuum, vous acceptez ces Conditions d'utilisation.",
+    lp_terms_section_2_title: "2. Votre contenu",
+    lp_terms_section_2_body:
+      "Vous êtes propriétaire de tout le contenu que vous créez dans Continuum — vos notes, entités, relations et graphe de connaissances. Nous stockons et traitons vos données uniquement pour fournir le service, générer des insights et garder tout fonctionnel.",
+    lp_terms_section_3_title: "3. Utilisation acceptable",
+    lp_terms_section_3_body:
+      "Vous ne pouvez pas utiliser Continuum pour des activités illégales, abusives ou nuisibles. Nous nous réservons le droit de suspendre ou de supprimer des comptes qui violent ces conditions.",
+    lp_terms_section_4_title: "4. Modifications du service",
+    lp_terms_section_4_body:
+      "Nous améliorons Continuum en permanence. Nous pouvons ajouter, modifier ou retirer des fonctionnalités. Les changements importants vous seront communiqués.",
+    lp_terms_section_5_title: "5. Résiliation",
+    lp_terms_section_5_body:
+      "Vous pouvez cesser d'utiliser Continuum à tout moment. Nous pouvons également suspendre ou résilier votre accès si vous enfreignez ces conditions.",
+    lp_terms_contact: "Si vous avez des questions sur ces Conditions, n'hésitez pas à nous contacter à",
   },
 };
