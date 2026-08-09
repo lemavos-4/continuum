@@ -316,7 +316,6 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         VaultImage,
         VaultPdf,
         VaultAudio,
-        VaultVideo,
         TaskList,
         TaskItem.configure({ nested: true }),
         HeadingFold.configure({
@@ -583,7 +582,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,video/*,application/pdf,audio/*"
+          accept="image/*,application/pdf,audio/*"
           className="hidden"
           onChange={handleFileUpload}
         />
