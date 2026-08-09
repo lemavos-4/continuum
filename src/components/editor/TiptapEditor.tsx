@@ -39,7 +39,6 @@ import { SlashCommands } from "./SlashCommands";
 import { VaultImage } from "./VaultImage";
 import { VaultPdf } from "./VaultPdf";
 import { VaultAudio } from "./VaultAudio";
-import { VaultVideo } from "./VaultVideo";
 import { AutoPair } from "./extensions/AutoPair";
 import { EditorShortcuts } from "./extensions/EditorShortcuts";
 import { HeadingFold } from "./extensions/HeadingFold";
@@ -59,9 +58,6 @@ const isPdfFile = (file: File) => file.type === "application/pdf" || PDF_EXT_RE.
 const AUDIO_MIME_RE = /^audio\//i;
 const AUDIO_EXT_RE = /\.(mp3|m4a|wav|ogg|aac)$/i;
 const isAudioFile = (file: File) => AUDIO_MIME_RE.test(file.type) || AUDIO_EXT_RE.test(file.name);
-const VIDEO_MIME_RE = /^video\//i;
-const VIDEO_EXT_RE = /\.(mp4|webm|mov|m4v|ogv)$/i;
-const isVideoFile = (file: File) => VIDEO_MIME_RE.test(file.type) || VIDEO_EXT_RE.test(file.name);
 
 const lowlight = createLowlight(common);
 
@@ -320,7 +316,6 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         VaultImage,
         VaultPdf,
         VaultAudio,
-        VaultVideo,
         TaskList,
         TaskItem.configure({ nested: true }),
         HeadingFold.configure({
@@ -382,7 +377,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
           const items = event.clipboardData?.items;
           if (!items) return false;
           for (const item of items) {
-            if (item.type.startsWith("image/") || item.type === "application/pdf" || item.type.startsWith("audio/") || item.type.startsWith("video/")) {
+            if (item.type.startsWith("image/") || item.type === "application/pdf" || item.type.startsWith("audio/")) {
               const file = item.getAsFile();
               if (file && uploadFileRef.current) {
                 uploadFileRef.current(file);
@@ -422,11 +417,6 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         } else if (isPdfFile(file)) {
           editor.chain().focus().insertContent([
             { type: "vaultPdf", attrs: { vaultId: vaultFile.id, fileName: vaultFile.fileName } },
-            { type: "paragraph" },
-          ]).run();
-        } else if (isVideoFile(file)) {
-          editor.chain().focus().insertContent([
-            { type: "vaultVideo", attrs: { vaultId: vaultFile.id, fileName: vaultFile.fileName } },
             { type: "paragraph" },
           ]).run();
         } else if (isAudioFile(file)) {
@@ -557,7 +547,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
       const open = (ev: Event) => {
         const accept = (ev as CustomEvent)?.detail?.accept as string | undefined;
         if (fileInputRef.current) {
-          fileInputRef.current.accept = accept || "image/*,video/*,application/pdf,audio/*";
+          fileInputRef.current.accept = accept || "image/*,application/pdf,audio/*";
         }
         fileInputRef.current?.click();
       };
@@ -592,7 +582,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,video/*,application/pdf,audio/*"
+          accept="image/*,application/pdf,audio/*"
           className="hidden"
           onChange={handleFileUpload}
         />
@@ -653,8 +643,8 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(
               />
             </BubbleMenu>
 
-            {inTable && (
-              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex max-w-[94vw] items-center gap-1 overflow-x-auto rounded-xl border border-white/10 bg-black/90 px-2 py-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
+            {inTable && editable && (
+              <div className="fixed bottom-28 sm:bottom-6 left-1/2 -translate-x-1/2 z-[70] flex max-w-[94vw] items-center gap-1 overflow-x-auto rounded-xl border border-white/10 bg-black/90 px-2 py-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
                 <span className="px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Table</span>
                 <TableBtn onClick={() => editor.chain().focus().addColumnBefore().run()}>← Col</TableBtn>
                 <TableBtn onClick={() => editor.chain().focus().addColumnAfter().run()}>Col →</TableBtn>

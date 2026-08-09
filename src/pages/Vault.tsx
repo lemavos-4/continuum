@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FileText, Image as ImageIcon, File as FileGeneric,
-  Loader2, HardDrive, Trash2, Music, ExternalLink, Play, Edit,
+  Loader2, HardDrive, Trash2, Music, ExternalLink, Edit,
 } from "@/lib/heroicons";
 import type { VaultFile } from "@/types";
 import { ensureWallpaperLoaded, getWallpaperFileIdSync } from "@/lib/note-wallpaper";
@@ -28,13 +28,12 @@ import { getPlanLimits, isUnlimited } from "@/lib/plan";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { resolveVaultBlob, invalidateVaultBlob } from "@/lib/vault-blob";
 
-type Category = "images" | "video" | "audio" | "pdf" | "other";
+type Category = "images" | "audio" | "pdf" | "other";
 
 function categoryOf(file: VaultFile): Category {
   const t = (file.contentType || "").toLowerCase();
   const n = (file.fileName || "").toLowerCase();
   if (t.startsWith("image/") || /\.(png|jpe?g|webp|gif|svg)$/.test(n)) return "images";
-  if (t.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogv|avi|mkv)$/.test(n)) return "video";
   if (t.startsWith("audio/") || /\.(mp3|m4a|wav|ogg|aac)$/.test(n)) return "audio";
   if (t === "application/pdf" || /\.pdf$/.test(n)) return "pdf";
   return "other";
@@ -114,44 +113,6 @@ function ImageThumb({ file, name, onDelete, onRename, onOpen }: {
         onRename={onRename}
         className="absolute top-1.5 right-1.5 flex items-center rounded-sm bg-black/50 opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100"
       />
-    </Card>
-  );
-}
-
-function VideoCard({ file, name, onDelete, onRename, onOpen }: {
-  file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void; onOpen: (f: VaultFile) => void;
-}) {
-  const { url, error } = useBlobUrl(file.id);
-  const { t } = useLanguage();
-  return (
-    <Card variant="subtle" className="group relative flex flex-col overflow-hidden border-white/5 bg-black/10 p-0 transition-colors hover:border-white/20">
-      <button
-        type="button"
-        onClick={() => onOpen(file)}
-        className="relative flex aspect-video w-full items-center justify-center bg-black/50"
-      >
-        {error ? (
-          <span className="text-[11px] font-mono text-red-400/60">{t("gr_vault_error_generic")}</span>
-        ) : url ? (
-          <>
-            <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover opacity-70 transition-opacity group-hover:opacity-100" />
-            <span className="absolute inset-0 flex items-center justify-center">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/60">
-                <Play className="h-4 w-4 text-white" />
-              </span>
-            </span>
-          </>
-        ) : (
-          <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-        )}
-      </button>
-      <div className="flex items-center justify-between gap-2 p-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-serif text-white/80 group-hover:text-white">{name}</p>
-          <p className="mt-0.5 text-[10px] font-mono text-white/30">{formatSize(file.size)}</p>
-        </div>
-        <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
-      </div>
     </Card>
   );
 }
@@ -312,7 +273,7 @@ export default function Vault() {
     const visible = q
       ? files.filter((f) => nameOf(f).toLowerCase().includes(q) || (f.fileName || "").toLowerCase().includes(q))
       : files;
-    const g: Record<Category, VaultFile[]> = { images: [], video: [], audio: [], pdf: [], other: [] };
+    const g: Record<Category, VaultFile[]> = { images: [], audio: [], pdf: [], other: [] };
     for (const f of visible) g[categoryOf(f)].push(f);
     return g;
   }, [files, search, names]);
@@ -415,7 +376,6 @@ export default function Vault() {
                   onChange={(v) => setCategory(v as Category)}
                   options={[
                     { value: "images", label: `${t("gr_vault_tab_photos")} · ${grouped.images.length}` },
-                    { value: "video", label: `${t("gr_vault_tab_video") || "Video"} · ${grouped.video.length}` },
                     { value: "audio", label: `${t("gr_vault_tab_audio")} · ${grouped.audio.length}` },
                     { value: "pdf", label: `${t("gr_vault_tab_pdf")} · ${grouped.pdf.length}` },
                     { value: "other", label: `${t("gr_vault_tab_other")} · ${grouped.other.length}` },
@@ -430,18 +390,6 @@ export default function Vault() {
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {grouped.images.map((f) => (
                       <ImageThumb key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setMediaPreview} />
-                    ))}
-                  </div>
-                )
-              )}
-
-              {category === "video" && (
-                grouped.video.length === 0 ? (
-                  <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_video") || "No videos yet."}</p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                    {grouped.video.map((f) => (
-                      <VideoCard key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} onOpen={setMediaPreview} />
                     ))}
                   </div>
                 )
@@ -527,7 +475,7 @@ export default function Vault() {
         </DialogContent>
       </Dialog>
 
-      {/* MEDIA PLAYER — images and videos */}
+      {/* MEDIA PLAYER — images */}
       <Dialog open={!!mediaPreview} onOpenChange={(open) => !open && setMediaPreview(null)}>
         <DialogContent
           hideClose
@@ -549,7 +497,8 @@ export default function Vault() {
       {/* RENAME DIALOG — extension is preserved silently */}
       <Dialog open={!!renameTarget} onOpenChange={(open) => !open && setRenameTarget(null)}>
         <DialogContent className="max-w-sm rounded-sm border border-white/10 bg-black">
-          <p className="font-serif text-xl text-white">{t("gr_vault_rename_title") || "Rename file"}</p>
+          <p className="font-serif text-xl text-white">{t("gr_vault_rename_title")}</p>
+          <p className="mt-1 text-[11px] text-white/40">{t("gr_vault_rename_hint")}</p>
           <Input
             autoFocus
             value={renameValue}
@@ -562,7 +511,7 @@ export default function Vault() {
               {t("gr_vault_cancel")}
             </Button>
             <Button size="sm" onClick={() => void submitRename()} disabled={!renameValue.trim()} className="rounded-sm bg-white text-xs font-medium text-black hover:bg-white/90">
-              {t("gr_vault_save") || "Save"}
+              {t("gr_vault_save")}
             </Button>
           </div>
         </DialogContent>
@@ -573,12 +522,7 @@ export default function Vault() {
 
 function MediaViewerBody({ file, name }: { file: VaultFile; name: string }) {
   const { url, error } = useBlobUrl(file.id);
-  const isVideo = categoryOf(file) === "video";
   if (error) return <p className="font-mono text-xs text-red-400/70">{name}</p>;
   if (!url) return <Loader2 className="h-5 w-5 animate-spin text-white/30" />;
-  return isVideo ? (
-    <video src={url} controls autoPlay playsInline className="max-h-full max-w-full rounded-sm border border-white/10 bg-black" />
-  ) : (
-    <img src={url} alt={name} className="max-h-full max-w-full rounded-sm object-contain" />
-  );
+  return <img src={url} alt={name} className="max-h-full max-w-full rounded-sm object-contain" />;
 }

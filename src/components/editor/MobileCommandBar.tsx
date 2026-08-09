@@ -17,11 +17,8 @@ import {
   Italic,
   Strikethrough,
   Link as LinkIcon,
-  Image as ImageIcon,
   Table as TableIcon,
   Upload,
-  Play,
-  File as FileIcon,
   Trash2,
 } from "@/lib/heroicons";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -71,9 +68,7 @@ const COMMANDS: Cmd[] = [
       e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     },
   },
-  { key: "photo", label: "ed_cmd_image", icon: ImageIcon, run: () => requestUpload("image/*") },
-  { key: "video", label: "ed_cmd_video", icon: Play, run: () => requestUpload("video/*") },
-  { key: "file", label: "ed_cmd_file", icon: FileIcon, run: () => requestUpload("application/pdf,audio/*,image/*,video/*") },
+  { key: "upload", label: "ed_cmd_upload", icon: Upload, run: () => requestUpload("image/*,application/pdf,audio/*") },
   { key: "table", label: "ed_cmd_table", icon: TableIcon, run: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
 ];
 
@@ -191,6 +186,8 @@ export function MobileCommandBar({ editor }: Props) {
   };
 
   if (!isMobile || !editor) return null;
+  // Never surface editing controls while the note is in view mode.
+  if (!editor.isEditable) return null;
   if (!kbOpen && !inTable) return null;
 
   return (

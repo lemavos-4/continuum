@@ -41,6 +41,7 @@ import {
 } from "@/lib/note-wallpaper";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getNoteFoldsSync, loadNoteFolds, saveNoteFolds } from "@/lib/note-folds";
+import { getEditorReadOnlySync, loadEditorReadOnly, saveEditorReadOnly } from "@/lib/editor-mode";
 
 interface NoteData {
   id: string;
@@ -80,8 +81,12 @@ export default function NoteEditor() {
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "creating">("idle");
   const [showBacklinks, setShowBacklinks] = useState(false);
-  // Notes open in view mode by default.
-  const [readOnly, setReadOnly] = useState(true);
+  // The last mode the user left the editor in (view or edit) is restored.
+  const [readOnly, setReadOnly] = useState<boolean>(() => getEditorReadOnlySync());
+
+  useEffect(() => {
+    void loadEditorReadOnly().then((v) => setReadOnly(v));
+  }, []);
 
   // ── Wallpaper (global to all notes, persisted in localStorage) ──────────
   const [wallpaper, setWallpaper] = useState<NoteWallpaperSettings>(() => loadWallpaperSettings());
@@ -504,7 +509,10 @@ export default function NoteEditor() {
                 className={`h-8 w-8 transition-colors ${readOnly ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={() => {
                   if (!readOnly) flushSave();
-                  setReadOnly((v) => !v);
+                  setReadOnly((v) => {
+                    saveEditorReadOnly(!v);
+                    return !v;
+                  });
                 }}
                 title={readOnly ? t("ed_edit_mode") : t("ed_view_mode")}
                 aria-pressed={readOnly}
