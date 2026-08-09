@@ -41,6 +41,7 @@ import {
 } from "@/lib/note-wallpaper";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getNoteFoldsSync, loadNoteFolds, saveNoteFolds } from "@/lib/note-folds";
+import { getEditorReadOnlySync, loadEditorReadOnly, saveEditorReadOnly } from "@/lib/editor-mode";
 
 interface NoteData {
   id: string;

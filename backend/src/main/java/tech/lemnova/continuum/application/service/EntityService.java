@@ -272,7 +272,12 @@ public class EntityService {
         Page<Entity> all = entityRepo.findByUserId(userId, pageable);
         List<Entity> filtered = all.getContent().stream()
                 .filter(e -> {
-                    LocalDate created = e.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+                    if (e.getCreatedAt() == null) return true;
+                    // Resolve the creation day in the CALLER's timezone, otherwise entities
+                    // created "today" for the user look like tomorrow in UTC and get dropped.
+                    LocalDate created = e.getCreatedAt()
+                            .atZone(tech.lemnova.continuum.infra.web.RequestZone.get())
+                            .toLocalDate();
                     return (effectiveStart == null || !created.isBefore(effectiveStart)) &&
                            !created.isAfter(effectiveEnd);
                 })
