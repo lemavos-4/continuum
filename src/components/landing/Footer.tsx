@@ -3,33 +3,36 @@
  * Design: Void Cartography — minimal, dark, clean grid
  */
 import AppLogo from "./AppLogo";
-
-const columns = [
-  {
-    title: "Product",
-    links: [
-      { label: "Pricing", href: "#/pricing" },
-      { label: "About", href: "#/about" },
-      { label: "Support", href: "#/support" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { label: "Terms and Conditions", href: "#/terms" },
-      { label: "Privacy", href: "#/privacy" },
-    ],
-  },
-  {
-    title: "Contact",
-    links: [
-      { label: "contact@continuum.onl", href: "mailto:contact@continuum.onl" },
-      { label: "feedback@continuum.onl", href: "mailto:feedback@continuum.onl" },
-    ],
-  },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Footer() {
+  const { t } = useLanguage();
+
+  const columns = [
+    {
+      title: t("lp_footer_product"),
+      links: [
+        { label: t("lp_footer_pricing"), href: "#/pricing" },
+        { label: t("lp_footer_about"), href: "#/about" },
+        { label: t("lp_footer_support"), href: "#/support" },
+      ],
+    },
+    {
+      title: t("lp_footer_legal"),
+      links: [
+        { label: t("lp_footer_terms"), href: "#/terms" },
+        { label: t("lp_footer_privacy"), href: "#/privacy" },
+      ],
+    },
+    {
+      title: t("lp_footer_contact"),
+      links: [
+        { label: "contact@continuum.onl", href: "mailto:contact@continuum.onl" },
+        { label: "feedback@continuum.onl", href: "mailto:feedback@continuum.onl" },
+      ],
+    },
+  ];
+
   return (
     <footer className="relative border-t border-white/[0.06] bg-black">
       {/* Background */}
@@ -54,8 +57,7 @@ export default function Footer() {
               </span>
             </a>
             <p className="font-body text-sm leading-[1.75] text-[#888888]">
-              A modern knowledge management platform designed to help you organize,
-              connect, and discover your ideas at the speed of thought.
+              {t("lp_footer_tagline")}
             </p>
           </div>
 
@@ -81,7 +83,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-white/[0.05]">
           <p className="font-body text-xs text-[#888888]">
-            © {new Date().getFullYear()} Continuum. All rights reserved.
+            © {new Date().getFullYear()} Continuum. {t("lp_footer_rights")}
           </p>
         </div>
       </div>

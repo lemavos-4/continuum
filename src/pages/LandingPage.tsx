@@ -1,101 +1,131 @@
 /*
  * CONTINUUM — Landing Page
  * Powered by the ScrollGlobe scroll-driven story.
- * Minimal copy, generous space, screenshot slots for the real product.
+ * Copy is localized automatically from the visitor's browser language.
  */
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import AuthDialog from "@/components/auth/AuthDialog";
-import InstallPrompt from "@/components/pwa/InstallPrompt";
 import PwaInstallListener from "@/components/pwa/PwaInstallListener";
 import { ScrollGlobe } from "@/components/ui/landing-page";
+import { useLanguage } from "@/contexts/LanguageContext";
 import landingNotes from "@/assets/landing-notes.jpg";
 import landingEditor from "@/assets/landing-editor.jpg";
 import landingGraph from "@/assets/landing-graph.jpg";
 import landingInsights from "@/assets/landing-insights.jpg";
 
+const SITE_URL = "https://continuum.onl/";
+
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
-  const [authTab, setAuthTab] = useState<"login" | "register">("login"); // Hidden: kept for future use
-  const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
-  const openAuth = () => {
-    setAuthOpen(true);
-  };
+  const openAuth = () => setAuthOpen(true);
 
-  // Hidden: old openAuth function kept for future use
-  const openAuthOld = (tab: "login" | "register") => {
-    setAuthTab(tab);
-    setAuthOpen(true);
-  };
+  const faqs = useMemo(
+    () => [
+      { q: t("lp_faq_q1"), a: t("lp_faq_a1") },
+      { q: t("lp_faq_q2"), a: t("lp_faq_a2") },
+      { q: t("lp_faq_q3"), a: t("lp_faq_a3") },
+      { q: t("lp_faq_q4"), a: t("lp_faq_a4") },
+    ],
+    [t],
+  );
+
+  // Localized head metadata + FAQ structured data for search engines.
+  useEffect(() => {
+    document.title = t("lp_metaTitle");
+
+    const setMeta = (attr: "name" | "property", key: string, content: string) => {
+      let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+
+    setMeta("name", "description", t("lp_metaDescription"));
+    setMeta("property", "og:title", t("lp_metaTitle"));
+    setMeta("property", "og:description", t("lp_metaDescription"));
+    setMeta("property", "og:locale", language === "en" ? "en_US" : language === "pt" ? "pt_BR" : language === "es" ? "es_ES" : "fr_FR");
+    setMeta("name", "twitter:title", t("lp_metaTitle"));
+    setMeta("name", "twitter:description", t("lp_metaDescription"));
+
+    const id = "continuum-faq-jsonld";
+    document.getElementById(id)?.remove();
+    const script = document.createElement("script");
+    script.id = id;
+    script.type = "application/ld+json";
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      inLanguage: language,
+      url: SITE_URL,
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.getElementById(id)?.remove();
+    };
+  }, [t, language, faqs]);
 
   const sections = [
     {
       id: "hero",
-      badge: "Continuum",
-      title: "Your second brain,",
-      subtitle: "without the friction.",
-      description:
-        "Native sync across devices. Zero folder mess. Intelligent resurfacing that brings the right note back when you need it.",
+      badge: t("lp_hero_badge"),
+      title: t("lp_hero_title"),
+      subtitle: t("lp_hero_subtitle"),
+      description: t("lp_hero_description"),
       align: "left" as const,
       actions: [
-        { label: "Start for free", variant: "primary" as const, onClick: () => openAuth() },
+        { label: t("lp_hero_cta"), variant: "primary" as const, onClick: () => openAuth() },
       ],
     },
     {
       id: "connect",
-      badge: "Connections",
-      title: "Notes that link themselves.",
-      description:
-        "Mention people, projects, or topics with @ and #. Every connection strengthens your graph. No folders, no rigid hierarchy — just pure flow.",
+      badge: t("lp_connect_badge"),
+      title: t("lp_connect_title"),
+      description: t("lp_connect_description"),
       align: "center" as const,
       screenshots: [
-        { src: landingNotes, alt: "Notes list", caption: "Every thought, one tap away." },
-        { src: landingEditor, alt: "Editor with mentions", caption: "Mentions become living links." },
+        { src: landingNotes, alt: t("lp_connect_shot1_alt"), caption: t("lp_connect_shot1_caption") },
+        { src: landingEditor, alt: t("lp_connect_shot2_alt"), caption: t("lp_connect_shot2_caption") },
       ],
     },
     {
       id: "discover",
-      badge: "Discovery",
-      title: "Ideas resurface",
-      subtitle: "when you need them.",
-      description:
-        "Our score system ranks notes and entities based on your actual usage. Forgotten insights come back automatically. Your knowledge works for you, not against you.",
+      badge: t("lp_discover_badge"),
+      title: t("lp_discover_title"),
+      subtitle: t("lp_discover_subtitle"),
+      description: t("lp_discover_description"),
       align: "left" as const,
       features: [
-        {
-          title: "Intelligent Score System",
-          description:
-            "Notes and entities earn relevance based on how you interact with them. The most important stuff always floats to the top — no manual tagging needed.",
-        },
-        {
-          title: "Native Free Sync",
-          description:
-            "Your entire knowledge graph stays in sync across every device. No plugins, no paid hosting, no manual configuration. It just works.",
-        },
-        {
-          title: "Entity Tracking",
-          description:
-            "Every entity carries real metrics: mentions, time invested, and connections. Understand what actually matters in your thinking.",
-        },
+        { title: t("lp_discover_f1_title"), description: t("lp_discover_f1_desc") },
+        { title: t("lp_discover_f2_title"), description: t("lp_discover_f2_desc") },
+        { title: t("lp_discover_f3_title"), description: t("lp_discover_f3_desc") },
       ],
       screenshots: [
-        { src: landingGraph, alt: "Knowledge graph view", caption: "Your second brain, visualized." },
-        { src: landingInsights, alt: "Insights dashboard", caption: "What matters resurfaces automatically." },
+        { src: landingGraph, alt: t("lp_discover_shot1_alt"), caption: t("lp_discover_shot1_caption") },
+        { src: landingInsights, alt: t("lp_discover_shot2_alt"), caption: t("lp_discover_shot2_caption") },
       ],
     },
     {
       id: "future",
-      badge: "Get started",
-      title: "Your second brain,",
-      subtitle: "without the friction.",
-      description:
-        "Native sync across devices. Zero folder mess. Intelligent resurfacing that brings the right note back when you need it.",
+      badge: t("lp_future_badge"),
+      title: t("lp_future_title"),
+      subtitle: t("lp_future_subtitle"),
+      description: t("lp_future_description"),
       align: "center" as const,
       actions: [
-        { label: "Start for free", variant: "primary" as const, onClick: () => openAuth() },
+        { label: t("lp_hero_cta"), variant: "primary" as const, onClick: () => openAuth() },
       ],
     },
   ];
@@ -105,6 +135,28 @@ export default function LandingPage() {
       <Navbar onAuthOpen={() => openAuth()} />
       <main>
         <ScrollGlobe sections={sections} className="bg-black" />
+
+        {/* FAQ — keyword-rich, crawlable content */}
+        <section id="faq" className="relative border-t border-white/[0.06] py-20 lg:py-28">
+          <div className="container relative z-10 max-w-3xl lg:mx-0 lg:pl-8 xl:pl-12">
+            <p className="label-caps mb-4 text-[#888888]">{t("lp_faq_label")}</p>
+            <h2
+              className="font-serif text-3xl sm:text-4xl lg:text-5xl leading-tight tracking-tight mb-10"
+            >
+              {t("lp_faq_title")}
+            </h2>
+            <dl className="space-y-8">
+              {faqs.map((f) => (
+                <div key={f.q} className="border-t border-white/[0.06] pt-6">
+                  <dt className="font-body text-base sm:text-lg text-white mb-2">{f.q}</dt>
+                  <dd className="font-body text-sm sm:text-base leading-[1.75] text-[#888888]">
+                    {f.a}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
       </main>
       <Footer />
       <PwaInstallListener />

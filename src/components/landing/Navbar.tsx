@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppLogo from "./AppLogo";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface NavbarProps {
   onAuthOpen?: () => void;
@@ -15,6 +17,11 @@ interface NavbarProps {
 export default function Navbar({ onAuthOpen }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const compactLoginLabel = t("lp_nav_signIn")
+    .replace(/\s+(with|com|con|avec)\s+(google|Google)?/i, "")
+    .trim();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -33,11 +40,11 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           : "bg-transparent"
       }`}
     >
-      <div className="container mx-auto flex items-center justify-between h-14 px-6 md:px-8">
+      <div className="container mx-auto flex items-center h-14 px-6 md:px-8">
         {/* Logo mais sutil */}
-        <a href="/" className="flex items-center gap-2 opactiy-85 hover:opacity-100 transition-opacity duration-300">
+        <a href="/" className="flex items-center gap-2 shrink-0 opactiy-85 hover:opacity-100 transition-opacity duration-300">
           <div className="opacity-70 group-hover:opacity-100 transition-opacity">
-            <AppLogo />
+            <AppLogo className="w-5 h-5 object-contain" />
           </div>
           <span
             className="text-white/80 font-medium tracking-wide text-[0.95rem]"
@@ -47,17 +54,19 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           </span>
         </a>
 
-        {/* Botão de Login via Google */}
-        <div className="flex items-center">
+        <div className="flex flex-1 min-w-0" />
+
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => {
               if (onAuthOpen) onAuthOpen();
               else navigate("/login");
             }}
-            className="text-white/60 hover:text-white/100 text-xs font-medium tracking-wide transition-colors duration-300 py-2 px-3"
+            className="shrink-0 text-white/60 hover:text-white/100 text-[11px] sm:text-xs font-medium tracking-wide transition-colors duration-300 py-2 px-2 whitespace-nowrap"
           >
-            Sign in with Google
+            {compactLoginLabel}
           </button>
+          <LanguageSelector compact />
         </div>
       </div>
     </motion.header>

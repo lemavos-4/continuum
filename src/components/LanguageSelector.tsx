@@ -18,12 +18,15 @@ export function LanguageSelector({ compact = false }: Props) {
   if (compact) {
     return (
       <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-        <SelectTrigger className="h-8 w-[130px] text-xs">
-          <SelectValue />
+        <SelectTrigger
+          aria-label={t("common_chooseLanguage")}
+          className="h-7 w-7 border-0 bg-transparent px-0 py-0 text-white/70 shadow-none transition-colors hover:bg-white/[0.05] hover:text-white focus:ring-0 focus:ring-offset-0 data-[state=open]:bg-white/[0.08]"
+        >
+          <GlobeAltIcon className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-2xl">
           {AVAILABLE_LANGUAGES.map((l) => (
-            <SelectItem key={l.code} value={l.code} className="text-xs">
+            <SelectItem key={l.code} value={l.code} className="text-xs text-white/80 focus:bg-white/10 focus:text-white">
               {l.nativeLabel}
             </SelectItem>
           ))}

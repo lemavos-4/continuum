@@ -171,25 +171,31 @@ export function ScrollGlobe({ sections, globeConfig = defaultGlobeConfig, classN
             {section.badge && (
               <p className="label-caps mb-4">{section.badge}</p>
             )}
-            <h1
-              className={cn(
-                "font-serif mb-6 sm:mb-8 leading-[1.05] tracking-tight",
-                index === 0
-                  ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
-                  : "text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl",
-              )}
-            >
-              {section.subtitle ? (
-                <span className="space-y-2 block">
-                  <span className="block">{section.title}</span>
-                  <span className="block text-white/60 text-[0.6em] tracking-wider italic">
-                    {section.subtitle}
-                  </span>
-                </span>
-              ) : (
-                <span>{section.title}</span>
-              )}
-            </h1>
+            {(() => {
+              const Heading = (index === 0 ? "h1" : "h2") as "h1" | "h2";
+              return (
+                <Heading
+                  className={cn(
+                    "font-serif mb-6 sm:mb-8 leading-[1.05] tracking-tight",
+                    index === 0
+                      ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
+                      : "text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl",
+                  )}
+                >
+                  {section.subtitle ? (
+                    <span className="space-y-2 block">
+                      <span className="block">{section.title}</span>
+                      <span className="block text-white/60 text-[0.6em] tracking-wider italic">
+                        {section.subtitle}
+                      </span>
+                    </span>
+                  ) : (
+                    <span>{section.title}</span>
+                  )}
+                </Heading>
+              );
+            })()}
+
 
             <p
               className={cn(

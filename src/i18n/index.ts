@@ -14,6 +14,7 @@ import * as dashboard from "./dashboard";
 import * as auth from "./auth";
 import * as lists from "./lists";
 import * as pwa from "./pwa";
+import * as landing from "./landing";
 
 const modules: Module[] = [
   insights.dict,
@@ -27,7 +28,9 @@ const modules: Module[] = [
   auth.dict,
   lists.dict,
   pwa.dict,
+  landing.dict,
 ];
+
 
 
 export function mergeModules(lang: Language): LangDict {
