@@ -411,7 +411,9 @@ export const foldersApi = {
 
 export const entitiesApi = {
   list: (params?: { page?: number; size?: number }) =>
-    api.get("/api/entities", { params }).then((response) => {
+    // The backend pages at 20 by default, which silently hid most entities in
+    // the list pages — ask for a large page unless the caller says otherwise.
+    api.get("/api/entities", { params: { page: 0, size: 500, ...(params || {}) } }).then((response) => {
       if (Array.isArray(response.data)) return response;
       const pageData = response.data as Record<string, unknown> | null;
       if (pageData && Array.isArray(pageData.content)) {
