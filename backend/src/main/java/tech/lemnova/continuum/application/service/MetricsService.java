@@ -417,8 +417,7 @@ public class MetricsService {
                 .min(LocalDate::compareTo)
                 .orElse(null);
 
-        if (startDate == null) return List.of();
-        if (startDate.isAfter(today)) startDate = today;
+        if (startDate == null || startDate.isAfter(today)) startDate = today;
 
         int notesSoFar = 0, linkedNotesSoFar = 0, entitiesSoFar = 0;
         Deque<LocalDate> recentActiveDays = new ArrayDeque<>();
