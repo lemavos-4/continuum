@@ -21,6 +21,9 @@ import tech.lemnova.continuum.domain.user.UserRepository;
 import tech.lemnova.continuum.infra.persistence.EntityRepository;
 import tech.lemnova.continuum.infra.persistence.NoteRepository;
 import tech.lemnova.continuum.infra.persistence.UserScoreSnapshotRepository;
+import tech.lemnova.continuum.infra.repository.TimeEntryRepository;
+import tech.lemnova.continuum.controller.dto.metrics.ScoreInsights;
+import tech.lemnova.continuum.domain.timetracking.TimeEntry;
 import tech.lemnova.continuum.infra.vault.VaultDataService;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -41,6 +44,7 @@ public class MetricsService {
     private final PlanConfiguration planConfig;
     private final EntityService entityService;
     private final UserScoreSnapshotRepository scoreSnapshotRepo;
+    private final TimeEntryRepository timeEntryRepo;
 
     public MetricsService(UserRepository userRepo,
                           NoteRepository noteRepo,
@@ -48,7 +52,8 @@ public class MetricsService {
                           VaultDataService vaultData,
                           PlanConfiguration planConfig,
                           EntityService entityService,
-                          UserScoreSnapshotRepository scoreSnapshotRepo) {
+                          UserScoreSnapshotRepository scoreSnapshotRepo,
+                          TimeEntryRepository timeEntryRepo) {
         this.userRepo   = userRepo;
         this.noteRepo   = noteRepo;
         this.entityRepo = entityRepo;
@@ -56,6 +61,7 @@ public class MetricsService {
         this.planConfig = planConfig;
         this.entityService = entityService;
         this.scoreSnapshotRepo = scoreSnapshotRepo;
+        this.timeEntryRepo = timeEntryRepo;
     }
 
     public EntityTimeline getEntityTimeline(String userId, String entityId) {
