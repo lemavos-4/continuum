@@ -2,6 +2,7 @@ package tech.lemnova.continuum.infra.notification;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -19,13 +20,9 @@ public class DiscordNotificationService {
     private final String webhookUrl;
     private final HttpClient httpClient;
 
-    public DiscordNotificationService(DiscordNotificationProperties properties) {
-        this(properties.getWebhookUrl(), HttpClient.newHttpClient());
-    }
-
-    DiscordNotificationService(String webhookUrl, HttpClient httpClient) {
+    public DiscordNotificationService(@Value("${discord.webhook-url:${DISCORD_WEBHOOK_URL:}}") String webhookUrl) {
         this.webhookUrl = webhookUrl == null ? "" : webhookUrl.trim();
-        this.httpClient = httpClient;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     public void notifyNewUser(String nome, String email) {
