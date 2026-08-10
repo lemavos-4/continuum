@@ -19,6 +19,7 @@ import tech.lemnova.continuum.domain.token.TokenBlacklist;
 import tech.lemnova.continuum.domain.token.TokenBlacklistRepository;
 import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
+import tech.lemnova.continuum.infra.notification.DiscordNotificationService;
 import tech.lemnova.continuum.infra.security.JwtService;
 import tech.lemnova.continuum.infra.security.RefreshTokenService;
 import tech.lemnova.continuum.infra.vault.VaultStorageService;
@@ -26,8 +27,6 @@ import tech.lemnova.continuum.infra.vault.VaultStorageService;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
-import java.util.Date;
-import java.util.UUID;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +42,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final VaultStorageService vaultStorage;
+    private final DiscordNotificationService discordNotificationService;
     private final PlanConfiguration planConfig;
 
     public AuthService(UserRepository users,
@@ -52,6 +52,7 @@ public class AuthService {
                        JwtService jwtService,
                        RefreshTokenService refreshTokenService,
                        VaultStorageService vaultStorage,
+                       DiscordNotificationService discordNotificationService,
                        PlanConfiguration planConfig) {
         this.users = users;
         this.subscriptions = subscriptions;
@@ -60,6 +61,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.vaultStorage = vaultStorage;
+        this.discordNotificationService = discordNotificationService;
         this.planConfig = planConfig;
     }
 
@@ -92,6 +94,7 @@ public class AuthService {
             user = users.save(user);
             createFreeSubscription(user.getId());
             initVaultAsync(vaultId);
+            notifyDiscordNewUser(user);
         } else {
             boolean changed = false;
             if (user.getGoogleId() == null) {
@@ -124,6 +127,14 @@ public class AuthService {
             }
         }
         return user;
+    }
+
+    private void notifyDiscordNewUser(User user) {
+        try {
+            discordNotificationService.notifyNewUser(user.getUsername(), user.getEmail());
+        } catch (Exception e) {
+            log.warn("Erro ao disparar notificação Discord para novo usuário {} <{}>: {}", user.getUsername(), user.getEmail(), e.getMessage());
+        }
     }
 
     @Transactional

@@ -12,6 +12,7 @@ import tech.lemnova.continuum.domain.subscription.SubscriptionRepository;
 import tech.lemnova.continuum.domain.token.TokenBlacklistRepository;
 import tech.lemnova.continuum.domain.user.User;
 import tech.lemnova.continuum.domain.user.UserRepository;
+import tech.lemnova.continuum.infra.notification.DiscordNotificationService;
 import tech.lemnova.continuum.infra.security.JwtService;
 import tech.lemnova.continuum.infra.vault.VaultStorageService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,6 +40,7 @@ class AuthServiceGoogleOAuth2Test {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
     @Mock private VaultStorageService vaultStorage;
+    @Mock private DiscordNotificationService discordNotificationService;
     @Mock private PlanConfiguration planConfig;
 
     @InjectMocks
