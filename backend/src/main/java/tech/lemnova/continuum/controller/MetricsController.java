@@ -7,6 +7,7 @@ import tech.lemnova.continuum.application.service.MetricsService;
 import tech.lemnova.continuum.controller.dto.metrics.DashboardMetrics;
 import tech.lemnova.continuum.controller.dto.metrics.EntityTimeline;
 import tech.lemnova.continuum.controller.dto.metrics.ScoreTimelineResponse.ScorePoint;
+import tech.lemnova.continuum.controller.dto.metrics.ScoreInsights;
 import tech.lemnova.continuum.infra.security.CustomUserDetails;
 
 import java.util.List;
@@ -35,6 +36,19 @@ public class MetricsController {
     public ResponseEntity<List<ScorePoint>> scoreTimeline(
             @AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.ok(metricsService.getUserScoreTimeline(user.getUserId()));
+    }
+
+    @GetMapping("/score/insights")
+    public ResponseEntity<ScoreInsights> scoreInsights(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(metricsService.getScoreInsights(user.getUserId()));
+    }
+
+    @GetMapping("/score/breakdown")
+    public ResponseEntity<ScoreInsights.Point> scoreBreakdown(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam String date) {
+        return ResponseEntity.ok(metricsService.buildScoreBreakdown(user.getUserId(), java.time.LocalDate.parse(date)));
     }
 }
 

@@ -56,6 +56,9 @@ class MetricsServiceTest {
     @Mock
     private UserScoreSnapshotRepository scoreSnapshotRepo;
 
+    @Mock
+    private tech.lemnova.continuum.infra.repository.TimeEntryRepository timeEntryRepo;
+
     @InjectMocks
     private MetricsService metricsService;
 
