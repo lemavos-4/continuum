@@ -444,6 +444,9 @@ export const metricsApi = {
   dashboard: () => api.get("/api/metrics/dashboard"),
   timeline: (entityId: string) => api.get(`/api/metrics/entities/${entityId}/timeline`),
   scoreTimeline: () => api.get("/api/metrics/score/timeline", { timeout: 15000 }),
+  scoreInsights: () => api.get("/api/metrics/score/insights", { timeout: 20000 }),
+  scoreBreakdown: (date: string) =>
+    api.get("/api/metrics/score/breakdown", { params: { date }, timeout: 15000 }),
   usage: (month: number, year: number) => api.get("/api/metrics/usage", { params: { month, year } }),
 };
 

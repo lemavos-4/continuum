@@ -15,6 +15,7 @@ import * as auth from "./auth";
 import * as lists from "./lists";
 import * as pwa from "./pwa";
 import * as landing from "./landing";
+import * as score from "./score";
 
 const modules: Module[] = [
   insights.dict,
@@ -29,6 +30,7 @@ const modules: Module[] = [
   lists.dict,
   pwa.dict,
   landing.dict,
+  score.dict,
 ];
 
 
