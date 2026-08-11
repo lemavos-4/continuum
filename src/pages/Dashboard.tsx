@@ -181,7 +181,7 @@ export default function Dashboard() {
       <Stagger className="px-4 sm:px-6 lg:px-12 py-6 sm:py-10 max-w-7xl mx-auto space-y-6" stagger={0.07}>
 
         {/* HEADER */}
-        <StaggerItem asChild={false}>
+        <StaggerItem>
         <header className="border-b border-white/10 pb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="mt-2 font-serif text-4xl sm:text-5xl tracking-tight text-white">
