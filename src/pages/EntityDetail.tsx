@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { ArrowLeft, Loader2, Edit, StickyNote, Network, Calendar, Tag, Clock } from "@/lib/heroicons";
 import {
   Accordion,
@@ -217,7 +218,20 @@ export default function EntityDetail() {
     } catch { toast({ title: t("ent_error_updating_description"), variant: "destructive" }); }
   };
 
-  if (loading) return <AppLayout><div className="flex justify-center items-center h-full"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div></AppLayout>;
+  if (loading)
+    return (
+      <AppLayout>
+        <div className="mx-auto w-full max-w-5xl animate-fade-in px-4 py-8 sm:px-6">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="mt-4 h-10 w-2/3 max-w-sm" />
+          <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={3} />
+          </div>
+          <SkeletonCard className="mt-4" lines={5} />
+        </div>
+      </AppLayout>
+    );
   if (!entity) return null;
 
   const isHabit = entity.type === "ACTIVITY";
