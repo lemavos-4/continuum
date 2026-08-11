@@ -226,7 +226,7 @@
   .skeleton-shimmer {
     position: relative;
     overflow: hidden;
-    background: hsl(var(--muted) / 0.55);
+    background: hsl(var(--foreground) / 0.07);
     animation: skeleton-pulse 1.9s ease-in-out infinite;
   }
   .skeleton-shimmer::after {
