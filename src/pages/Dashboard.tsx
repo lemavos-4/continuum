@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Plus } from "@/lib/heroicons";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 
 // --- TYPES & HELPERS ---
 const formatHours = (h: number) => {
@@ -40,15 +42,15 @@ const formatNoteDate = (timestamp?: number) => {
 const DashboardSkeleton = () => (
   <AppLayout>
     <div className="px-4 sm:px-6 lg:px-12 py-6 sm:py-10 max-w-7xl mx-auto space-y-6">
-      <div className="h-16 rounded-2xl bg-neutral-900/40 border border-white/5 animate-pulse" />
+      <Skeleton className="h-16 rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-2xl bg-neutral-900/20 border border-white/5 animate-pulse" />
+          <Skeleton key={i} className="h-24 rounded-2xl" style={{ animationDelay: `${i * 80}ms` }} />
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 h-[360px] rounded-2xl bg-neutral-900/20 border border-white/5 animate-pulse" />
-        <div className="lg:col-span-4 h-[360px] rounded-2xl bg-neutral-900/20 border border-white/5 animate-pulse" />
+        <Skeleton className="lg:col-span-8 h-[360px] rounded-2xl" />
+        <Skeleton className="lg:col-span-4 h-[360px] rounded-2xl" style={{ animationDelay: "120ms" }} />
       </div>
     </div>
   </AppLayout>
