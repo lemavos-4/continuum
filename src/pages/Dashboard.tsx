@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Plus } from "@/lib/heroicons";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 
 // --- TYPES & HELPERS ---
 const formatHours = (h: number) => {
@@ -40,15 +42,15 @@ const formatNoteDate = (timestamp?: number) => {
 const DashboardSkeleton = () => (
   <AppLayout>
     <div className="px-4 sm:px-6 lg:px-12 py-6 sm:py-10 max-w-7xl mx-auto space-y-6">
-      <div className="h-16 rounded-2xl bg-neutral-900/40 border border-white/5 animate-pulse" />
+      <Skeleton className="h-16 rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-2xl bg-neutral-900/20 border border-white/5 animate-pulse" />
+          <Skeleton key={i} className="h-24 rounded-2xl" style={{ animationDelay: `${i * 80}ms` }} />
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 h-[360px] rounded-2xl bg-neutral-900/20 border border-white/5 animate-pulse" />
-        <div className="lg:col-span-4 h-[360px] rounded-2xl bg-neutral-900/20 border border-white/5 animate-pulse" />
+        <Skeleton className="lg:col-span-8 h-[360px] rounded-2xl" />
+        <Skeleton className="lg:col-span-4 h-[360px] rounded-2xl" style={{ animationDelay: "120ms" }} />
       </div>
     </div>
   </AppLayout>
@@ -176,9 +178,10 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="px-4 sm:px-6 lg:px-12 py-6 sm:py-10 max-w-7xl mx-auto space-y-6">
-        
+      <Stagger className="px-4 sm:px-6 lg:px-12 py-6 sm:py-10 max-w-7xl mx-auto space-y-6" stagger={0.07}>
+
         {/* HEADER */}
+        <StaggerItem>
         <header className="border-b border-white/10 pb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="mt-2 font-serif text-4xl sm:text-5xl tracking-tight text-white">
@@ -193,9 +196,11 @@ export default function Dashboard() {
 
 
         </header>
+        </StaggerItem>
 
 
         {/* WEEKLY SUMMARY */}
+        <StaggerItem>
         <WeeklySummary
           notes={Array.isArray(notes) ? notes : []}
           totalNotes={totalNotes}
@@ -203,10 +208,11 @@ export default function Dashboard() {
           graphNodeCount={graphNodeCount}
           currentScore={currentScore}
         />
+        </StaggerItem>
 
 
         {/* CORPO DO DASHBOARD */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <StaggerItem className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* BLOCO 1: SCORE — evolução, explicabilidade e marcos */}
           <ScoreEvolutionCard
@@ -258,8 +264,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-        </section>
-      </div>
+        </StaggerItem>
+      </Stagger>
       <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} reason={t("db_notesLimitReason")} />
       
       {/* Onboarding popup after account creation */}

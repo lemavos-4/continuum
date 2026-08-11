@@ -11,6 +11,7 @@ import { useCreateNote } from "@/hooks/useCreateNote";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
 import {
   Plus,
   Search,
@@ -437,8 +438,10 @@ export default function Notes() {
   if (authLoading) {
     return (
       <AppLayout>
-        <div className="flex h-full items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+        <div className="mx-auto w-full max-w-5xl animate-fade-in px-4 py-8 sm:px-6">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="mt-4 h-9 w-56" />
+          <SkeletonList rows={7} className="mt-8" />
         </div>
       </AppLayout>
     );
@@ -703,9 +706,7 @@ export default function Notes() {
             {/* Content */}
 
             {loading ? (
-              <div className="flex justify-center py-24">
-                <Loader2 className="h-5 w-5 animate-spin text-white/30" />
-              </div>
+              <SkeletonList rows={8} className="py-6" />
             ) : grouped.length === 0 ? (
               <div className="py-24 text-center">
                 <p className="font-serif text-2xl italic text-white/40">

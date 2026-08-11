@@ -222,6 +222,42 @@
   }
   .font-mono { font-family: var(--font-mono-stack); }
 
+  /* --- Motion system: skeletons & loading ------------------------------- */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: hsl(var(--foreground) / 0.07);
+    animation: skeleton-pulse 1.9s ease-in-out infinite;
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--foreground) / 0.07) 45%,
+      hsl(var(--foreground) / 0.1) 55%,
+      transparent 100%
+    );
+    animation: skeleton-sweep 1.6s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.72; }
+  }
+
+  @keyframes skeleton-sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer::after { animation: none; }
+  }
+
   /* Hairline divider */
   .hairline { border-color: hsl(var(--border)); }
 

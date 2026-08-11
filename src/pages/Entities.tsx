@@ -5,6 +5,7 @@ import { entitiesApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateEntityDialog } from "@/components/CreateEntityDialog";
@@ -492,9 +493,7 @@ export default function Entities() {
             {/* Listagem Contínua */}
 
             {loading ? (
-              <div className="flex justify-center py-24">
-                <Loader2 className="h-5 w-5 animate-spin text-white/30" />
-              </div>
+              <SkeletonList rows={8} className="py-6" />
             ) : filteredAndSorted.length === 0 ? (
               <div className="py-24 text-center">
                 <p className="font-serif text-2xl italic text-white/40">
