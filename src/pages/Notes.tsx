@@ -11,6 +11,7 @@ import { useCreateNote } from "@/hooks/useCreateNote";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton, SkeletonList } from "@/components/ui/skeleton";
 import {
   Plus,
   Search,
