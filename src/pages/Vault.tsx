@@ -262,7 +262,11 @@ export default function Vault() {
     },
     { staleTime: STALE.list }
   );
-  const loading = filesQuery.loading;
+  const loading =
+    filesQuery.loading ||
+    (filesQuery.data !== undefined &&
+      files.length === 0 &&
+      filesQuery.data.some((file) => file.id !== wallpaperFileId));
 
   useEffect(() => {
     // The editor wallpaper is a system file: never listed, never counted.

@@ -248,7 +248,9 @@ export default function Notes() {
     },
     { staleTime: STALE.list }
   );
-  const loading = notesQuery.loading;
+  const loading =
+    notesQuery.loading ||
+    (notesQuery.data !== undefined && notes.length === 0 && notesQuery.data.length > 0);
 
   useEffect(() => {
     if (notesQuery.data) setNotes(notesQuery.data);

@@ -195,7 +195,9 @@ export default function Entities() {
     },
     { staleTime: STALE.list }
   );
-  const loading = entitiesQuery.loading;
+  const loading =
+    entitiesQuery.loading ||
+    (entitiesQuery.data !== undefined && entities.length === 0 && entitiesQuery.data.length > 0);
 
   useEffect(() => {
     if (entitiesQuery.data) setEntities(entitiesQuery.data);
