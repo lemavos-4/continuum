@@ -1,11 +1,12 @@
 import { queryClient } from "@/lib/query-client";
 import { qk, STALE } from "@/lib/queries";
-import { notesApi, entitiesApi, insightsApi } from "@/lib/api";
+import { notesApi, entitiesApi, insightsApi, vaultApi } from "@/lib/api";
+import type { VaultFile } from "@/types";
 import type { Entity } from "@/types";
 
 /**
- * Warms the main lists right after login/boot so opening Notes, Entities or
- * Insights paints instantly instead of fetching on navigation.
+ * Warms the main lists right after login/boot so opening a primary screen
+ * paints instantly instead of fetching on navigation.
  */
 export function prefetchPrimaryLists() {
   void queryClient.prefetchQuery({
@@ -52,5 +53,14 @@ export function prefetchPrimaryLists() {
       };
     },
     staleTime: STALE.insights,
+  });
+
+  void queryClient.prefetchQuery({
+    queryKey: qk.vaultFiles(),
+    queryFn: async () => {
+      const res = await vaultApi.list();
+      return Array.isArray(res.data) ? (res.data as VaultFile[]) : [];
+    },
+    staleTime: STALE.list,
   });
 }
