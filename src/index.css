@@ -80,8 +80,9 @@
     --destructive: 355 82% 66%;
     --destructive-foreground: 30 12% 4%;
 
-    --border: 0 0% 100% / 0.06;
-    --input: 0 0% 100% / 0.06;
+    /* Solid channels keep Tailwind opacity modifiers valid (border-border/10). */
+    --border: 0 0% 6%;
+    --input: 0 0% 6%;
     --ring: 45 25% 94% / 0.38;
 
     --radius: 0.5rem;
@@ -92,7 +93,7 @@
     --sidebar-primary-foreground: 30 12% 4%;
     --sidebar-accent: 0 0% 13%;
     --sidebar-accent-foreground: 45 12% 90%;
-    --sidebar-border: 0 0% 100% / 0.05;
+    --sidebar-border: 0 0% 5%;
     --sidebar-ring: 45 25% 94% / 0.38;
 
     --success: 154 66% 54%;
@@ -161,8 +162,8 @@
     --destructive: 355 70% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 45 10% 9% / 0.08;
-    --input: 45 10% 9% / 0.08;
+    --border: 40 5% 90%;
+    --input: 40 5% 90%;
     --ring: 45 10% 9% / 0.32;
 
     --sidebar-background: 40 25% 98%;
@@ -171,7 +172,7 @@
     --sidebar-primary-foreground: 40 25% 98%;
     --sidebar-accent: 40 12% 93%;
     --sidebar-accent-foreground: 45 10% 9%;
-    --sidebar-border: 45 10% 9% / 0.06;
+    --sidebar-border: 40 5% 92%;
     --sidebar-ring: 45 10% 9% / 0.32;
 
     --success: 154 60% 34%;
