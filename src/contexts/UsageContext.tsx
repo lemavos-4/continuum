@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { entitiesApi, notesApi, vaultApi } from "@/lib/api";
+import { queryClient } from "@/lib/query-client";
+import { qk, STALE } from "@/lib/queries";
 import type { EntityType, UserUsage } from "@/types";
 
 export type UsageDelta = Partial<Record<keyof UserUsage, number>>;
@@ -39,9 +41,21 @@ const normalizeUsage = (value: unknown): UserUsage => {
 
 async function buildFallbackUsage(): Promise<UserUsage> {
   const [notesRes, entitiesRes, vaultRes] = await Promise.allSettled([
-    notesApi.list(),
-    entitiesApi.list(),
-    vaultApi.list(),
+    queryClient.fetchQuery({
+      queryKey: qk.notes(),
+      queryFn: () => notesApi.list().then((response) => response.data),
+      staleTime: STALE.list,
+    }),
+    queryClient.fetchQuery({
+      queryKey: qk.entities(),
+      queryFn: () => entitiesApi.list().then((response) => response.data),
+      staleTime: STALE.list,
+    }),
+    queryClient.fetchQuery({
+      queryKey: qk.vaultFiles(),
+      queryFn: () => vaultApi.list().then((response) => response.data),
+      staleTime: STALE.list,
+    }),
   ]);
 
   const notes = notesRes.status === "fulfilled" && Array.isArray(notesRes.value.data)

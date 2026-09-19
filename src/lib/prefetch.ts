@@ -1,6 +1,6 @@
 import { queryClient } from "@/lib/query-client";
 import { qk, STALE } from "@/lib/queries";
-import { notesApi, entitiesApi, insightsApi, vaultApi } from "@/lib/api";
+import { notesApi, entitiesApi, insightsApi, vaultApi, graphApi, timeTrackingApi } from "@/lib/api";
 import type { VaultFile } from "@/types";
 import type { Entity } from "@/types";
 
@@ -9,14 +9,7 @@ import type { Entity } from "@/types";
  * paints instantly instead of fetching on navigation.
  */
 export function prefetchPrimaryLists() {
-  void queryClient.prefetchQuery({
-    queryKey: qk.notes(),
-    queryFn: async () => {
-      const res = await notesApi.list();
-      return Array.isArray(res.data) ? res.data : [];
-    },
-    staleTime: STALE.list,
-  });
+  void prefetchNotesAndContent().catch(() => {});
 
   void queryClient.prefetchQuery({
     queryKey: qk.noteTypes(),
@@ -63,4 +56,54 @@ export function prefetchPrimaryLists() {
     },
     staleTime: STALE.list,
   });
+
+  void queryClient.prefetchQuery({
+    queryKey: qk.graph(),
+    queryFn: async () => {
+      const [graphRes, entitiesRes] = await Promise.all([graphApi.data(), entitiesApi.list()]);
+      return {
+        graph: graphRes.data,
+        entities: Array.isArray(entitiesRes.data) ? entitiesRes.data : [],
+      };
+    },
+    staleTime: STALE.list,
+  });
+
+  void queryClient.prefetchQuery({
+    queryKey: ["timeTracking", "summaries"],
+    queryFn: () => timeTrackingApi.getAllSummaries().then((response) => response.data),
+    staleTime: 5_000,
+  });
+
+  for (const type of ["ACTIVITY", "PROJECT"] as const) {
+    void queryClient.prefetchQuery({
+      queryKey: qk.entities(type),
+      queryFn: async () => {
+        const response = await entitiesApi.list();
+        return (Array.isArray(response.data) ? response.data : []).filter((entity) => entity.type === type);
+      },
+      staleTime: STALE.list,
+    });
+  }
+}
+
+async function prefetchNotesAndContent() {
+  const notes = await queryClient.fetchQuery({
+    queryKey: qk.notes(),
+    queryFn: async () => {
+      const res = await notesApi.list();
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    staleTime: STALE.list,
+  });
+
+  await Promise.allSettled(
+    notes.map((note) =>
+      queryClient.prefetchQuery({
+        queryKey: qk.note(note.id),
+        queryFn: () => notesApi.get(note.id).then((response) => response.data),
+        staleTime: STALE.detail,
+      })
+    )
+  );
 }
