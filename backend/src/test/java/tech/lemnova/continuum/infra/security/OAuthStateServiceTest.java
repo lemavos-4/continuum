@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.infra.security;
+package onl.continuum.continuum.infra.security;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +16,7 @@ class OAuthStateServiceTest {
 
         assertThat(state.signedState()).isNotBlank();
         assertThat(state.nonce()).isNotBlank();
-        assertThat(state.redirectUri()).isEqualTo("http://localhost:5173/#/google-callback");
+        assertThat(state.redirectUri()).isEqualTo("http://localhost:5173/google-callback");
 
         OAuthStateService.OAuthState parsed = service.parseState(state.signedState());
 

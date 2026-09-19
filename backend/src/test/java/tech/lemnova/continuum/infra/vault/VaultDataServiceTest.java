@@ -1,11 +1,11 @@
-package tech.lemnova.continuum.infra.vault;
+package onl.continuum.continuum.infra.vault;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import tech.lemnova.continuum.domain.entity.Entity;
-import tech.lemnova.continuum.domain.note.NoteIndex;
+import onl.continuum.continuum.domain.entity.Entity;
+import onl.continuum.continuum.domain.note.NoteIndex;
 
 import java.util.List;
 import java.util.Optional;

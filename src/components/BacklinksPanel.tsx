@@ -22,30 +22,30 @@ function Section({ label, items, kind }: { label: string; items: BacklinkItem[];
   if (items.length === 0) return null;
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between border-b border-white/10 pb-2">
-        <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">{label}</p>
-        <p className="font-mono text-[10px] text-white/30 tabular-nums">{items.length}</p>
+      <div className="flex items-center justify-between border-b border-border/10 pb-2">
+        <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{label}</p>
+        <p className="font-mono text-[10px] text-muted-foreground tabular-nums">{items.length}</p>
       </div>
-      <ul className="divide-y divide-white/[0.05]">
+      <ul className="divide-y divide-border">
         {items.map((item) => (
           <li key={item.id}>
             <Link
               to={`/notes/${item.id}`}
-              className="group block py-3 transition-colors hover:bg-white/[0.02]"
+              className="group block py-3 transition-colors hover:bg-foreground/[0.02]"
             >
               <div className="flex items-start gap-2">
                 <span
                   aria-hidden
                   className={`mt-2 h-px w-3 shrink-0 transition-all ${
-                    kind === "linked" ? "bg-white/60 group-hover:w-5" : "bg-white/20 group-hover:w-5"
+                    kind === "linked" ? "bg-foreground/60 group-hover:w-5" : "bg-foreground/20 group-hover:w-5"
                   }`}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="font-serif text-sm text-white/90 group-hover:text-white">
+                  <p className="font-serif text-sm text-muted-foreground group-hover:text-foreground">
                     {item.title || t("ent_untitled")}
                   </p>
                   {item.snippet && (
-                    <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-white/40">
+                    <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted-foreground">
                       {item.snippet}
                     </p>
                   )}
@@ -82,9 +82,9 @@ export function BacklinksPanel({ noteId }: BacklinksPanelProps) {
   if (loading) {
     return (
       <div className="space-y-4 p-5">
-        <Skeleton className="h-3 w-20 bg-white/5" />
-        <Skeleton className="h-10 w-full bg-white/5" />
-        <Skeleton className="h-10 w-full bg-white/5" />
+        <Skeleton className="h-3 w-20 bg-foreground/5" />
+        <Skeleton className="h-10 w-full bg-foreground/5" />
+        <Skeleton className="h-10 w-full bg-foreground/5" />
       </div>
     );
   }
@@ -97,7 +97,7 @@ export function BacklinksPanel({ noteId }: BacklinksPanelProps) {
     <div className="space-y-8 p-5">
       {isEmpty ? (
         <div className="py-12 text-center">
-          <p className="font-serif text-base italic text-white/40">
+          <p className="font-serif text-base italic text-muted-foreground">
             {t("ent_nothing_references")}
           </p>
         </div>

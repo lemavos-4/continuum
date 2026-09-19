@@ -37,15 +37,15 @@ export default function ForgotPassword() {
       footer={
         <>
           {t("au_remember_it")}{" "}
-          <Link to="/login" className="text-white underline underline-offset-4 hover:opacity-80">
+          <Link to="/login" className="text-foreground underline underline-offset-4 hover:opacity-80">
             {t("au_sign_in")}
           </Link>
         </>
       }
     >
       {sent ? (
-        <div className="border border-white/10 rounded-md p-6 text-sm text-white/70 leading-relaxed">
-          {t("au_recovery_link_on_way")} <span className="text-white">{email}</span>. {t("au_if_not_arrive_check_spam")}
+        <div className="border border-border/10 rounded-md p-6 text-sm text-muted-foreground leading-relaxed">
+          {t("au_recovery_link_on_way")} <span className="text-foreground">{email}</span>. {t("au_if_not_arrive_check_spam")}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -58,7 +58,7 @@ export default function ForgotPassword() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full bg-transparent border-0 border-b border-white/15 focus:border-white pb-2 text-base outline-none transition-colors"
+              className="w-full bg-transparent border-0 border-b border-border/15 focus:border-border pb-2 text-base outline-none transition-colors"
             />
           </div>
 

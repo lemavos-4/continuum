@@ -69,7 +69,7 @@ export function TimeAnalyticsCalendar({ projectId, onDayClick }: TimeAnalyticsCa
     return (
       <Card className="p-8 text-center">
         <BarChart3 className="w-12 h-12 text-zinc-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-white mb-2">Analytics Premium</h3>
+        <h3 className="text-lg font-medium text-foreground mb-2">Analytics Premium</h3>
         <p className="text-sm text-zinc-500 mb-4">
           Upgrade your plan to access detailed time analytics and calendar view.
         </p>
@@ -83,7 +83,7 @@ export function TimeAnalyticsCalendar({ projectId, onDayClick }: TimeAnalyticsCa
       {/* Monthly Stats */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
             Monthly Summary
           </h3>
@@ -124,7 +124,7 @@ export function TimeAnalyticsCalendar({ projectId, onDayClick }: TimeAnalyticsCa
       <Card className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Calendar className="w-6 h-6" />
             {format(currentDate, 'MMMM yyyy')}
           </h2>
@@ -174,7 +174,7 @@ export function TimeAnalyticsCalendar({ projectId, onDayClick }: TimeAnalyticsCa
                 className={`
                   min-h-[80px] p-2 border border-zinc-200 dark:border-zinc-700 rounded-lg cursor-pointer
                   transition-all hover:shadow-md
-                  ${isCurrentMonth ? 'bg-white dark:bg-zinc-800' : 'bg-zinc-50 dark:bg-zinc-900 opacity-50'}
+                  ${isCurrentMonth ? 'bg-foreground dark:bg-zinc-800' : 'bg-zinc-50 dark:bg-zinc-900 opacity-50'}
                   ${isToday ? 'ring-2 ring-zinc-500' : ''}
                 `}
                 onClick={() => dayData && onDayClick?.(dayData)}
@@ -187,7 +187,7 @@ export function TimeAnalyticsCalendar({ projectId, onDayClick }: TimeAnalyticsCa
                   <Skeleton className="h-4 w-12" />
                 ) : dayData && dayData.totalSeconds > 0 ? (
                   <div className="space-y-1">
-                    <div className={`text-xs px-2 py-1 rounded text-center text-white font-medium ${getIntensityClass(dayData.totalSeconds)}`}>
+                    <div className={`text-xs px-2 py-1 rounded text-center text-foreground font-medium ${getIntensityClass(dayData.totalSeconds)}`}>
                       {formatDuration(dayData.totalSeconds)}
                     </div>
                     <div className="text-xs text-zinc-500 text-center">

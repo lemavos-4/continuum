@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.infra.persistence;
+package onl.continuum.continuum.infra.persistence;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-import tech.lemnova.continuum.domain.note.Note;
+import onl.continuum.continuum.domain.note.Note;
 
 import java.time.Instant;
 import java.util.List;

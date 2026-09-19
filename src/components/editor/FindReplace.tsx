@@ -79,7 +79,7 @@ export function FindReplace({ editor, open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed top-20 right-6 z-50 flex flex-col gap-1.5 rounded-xl border border-white/10 bg-black/95 backdrop-blur-xl shadow-2xl px-2.5 py-2 w-[340px]">
+    <div className="fixed top-20 right-6 z-50 flex flex-col gap-1.5 rounded-xl border border-border/10 bg-background/95 backdrop-blur-xl shadow-2xl px-2.5 py-2 w-[340px]">
       <div className="flex items-center gap-1.5">
         <input
           ref={inputRef}
@@ -95,19 +95,19 @@ export function FindReplace({ editor, open, onClose }: Props) {
             }
           }}
           placeholder={t("ed_find_placeholder")}
-          className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-primary"
+          className="flex-1 bg-foreground/5 border border-border/10 rounded-md px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         />
-        <span className="text-[10px] text-white/50 tabular-nums whitespace-nowrap">
+        <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
           {meta.total ? `${meta.current + 1}/${meta.total}` : "0/0"}
         </span>
-        <button onClick={() => next(true)} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title={t("ed_previous_title")}>↑</button>
-        <button onClick={() => next()} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title={t("ed_next_title")}>↓</button>
-        <button onClick={onClose} className="text-xs px-1.5 py-1 rounded hover:bg-white/10 text-white/70" title={t("ed_close_title")}>×</button>
+        <button onClick={() => next(true)} className="text-xs px-1.5 py-1 rounded hover:bg-foreground/10 text-muted-foreground" title={t("ed_previous_title")}>↑</button>
+        <button onClick={() => next()} className="text-xs px-1.5 py-1 rounded hover:bg-foreground/10 text-muted-foreground" title={t("ed_next_title")}>↓</button>
+        <button onClick={onClose} className="text-xs px-1.5 py-1 rounded hover:bg-foreground/10 text-muted-foreground" title={t("ed_close_title")}>×</button>
       </div>
       <div className="flex items-center gap-1 text-[10px]">
-        <button onClick={() => setCaseSensitive((v) => !v)} className={`px-1.5 py-0.5 rounded ${caseSensitive ? "bg-primary/30 text-primary" : "text-white/50 hover:bg-white/10"}`} title={t("ed_case_sensitive")}>Aa</button>
-        <button onClick={() => setRegex((v) => !v)} className={`px-1.5 py-0.5 rounded ${regex ? "bg-primary/30 text-primary" : "text-white/50 hover:bg-white/10"}`} title={t("ed_regex")}>.*</button>
-        <button onClick={() => setShowReplace((v) => !v)} className="px-1.5 py-0.5 rounded text-white/50 hover:bg-white/10 ml-auto">
+        <button onClick={() => setCaseSensitive((v) => !v)} className={`px-1.5 py-0.5 rounded ${caseSensitive ? "bg-primary/30 text-primary" : "text-muted-foreground hover:bg-foreground/10"}`} title={t("ed_case_sensitive")}>Aa</button>
+        <button onClick={() => setRegex((v) => !v)} className={`px-1.5 py-0.5 rounded ${regex ? "bg-primary/30 text-primary" : "text-muted-foreground hover:bg-foreground/10"}`} title={t("ed_regex")}>.*</button>
+        <button onClick={() => setShowReplace((v) => !v)} className="px-1.5 py-0.5 rounded text-muted-foreground hover:bg-foreground/10 ml-auto">
           {showReplace ? t("ed_replace_hide") : t("ed_replace_show")}
         </button>
       </div>
@@ -117,7 +117,7 @@ export function FindReplace({ editor, open, onClose }: Props) {
             value={replace}
             onChange={(e) => setReplace(e.target.value)}
             placeholder={t("ed_replace_placeholder")}
-            className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-primary"
+            className="flex-1 bg-foreground/5 border border-border/10 rounded-md px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button onClick={replaceAll} className="text-[10px] px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30">{t("ed_replace_all")}</button>
         </div>

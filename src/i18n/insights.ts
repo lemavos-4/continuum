@@ -43,6 +43,8 @@ export const dict: Module = {
     ins_badge_worth_revisiting: "Worth Revisiting",
     ins_badge_forgotten_gem: "Forgotten Gem",
     ins_badge_key_entity: "Key Entity",
+    ins_badge_hot_help: "This item has been mentioned and edited a lot recently — it is active in your knowledge base right now.",
+    ins_badge_forgotten_help: "This item is well connected but you have not touched it in a while. Worth revisiting.",
   },
   es: {
     ins_title: "Perspectivas",
@@ -86,6 +88,8 @@ export const dict: Module = {
     ins_badge_worth_revisiting: "Vale la Pena Revisar",
     ins_badge_forgotten_gem: "Joya Olvidada",
     ins_badge_key_entity: "Entidad Clave",
+    ins_badge_hot_help: "Este elemento se ha mencionado y editado mucho recientemente: está activo en tu base de conocimiento.",
+    ins_badge_forgotten_help: "Está bien conectado pero no lo has tocado en un tiempo. Vale la pena revisarlo.",
   },
   pt: {
     ins_title: "Insights",
@@ -129,6 +133,8 @@ export const dict: Module = {
     ins_badge_worth_revisiting: "Vale a Pena Revisitar",
     ins_badge_forgotten_gem: "Joia Esquecida",
     ins_badge_key_entity: "Entidade-Chave",
+    ins_badge_hot_help: "Este item foi mencionado e editado muito recentemente — está ativo na sua base de conhecimento agora.",
+    ins_badge_forgotten_help: "Está bem conectado, mas você não mexe nele há um tempo. Vale a pena revisitar.",
   },
   fr: {
     ins_title: "Aperçus",
@@ -172,5 +178,7 @@ export const dict: Module = {
     ins_badge_worth_revisiting: "À Revoir",
     ins_badge_forgotten_gem: "Perle Oubliée",
     ins_badge_key_entity: "Entité Clé",
+    ins_badge_hot_help: "Cet élément a été beaucoup mentionné et modifié récemment — il est actif dans votre base de connaissances.",
+    ins_badge_forgotten_help: "Il est bien connecté mais vous n'y avez pas touché depuis un moment. À revoir.",
   },
 };

@@ -36,11 +36,11 @@ function fmtHM(s: number) {
 }
 
 const LEVEL_BG = [
-  'bg-white/[0.05]',
-  'bg-white/20',
-  'bg-white/40',
-  'bg-white/65',
-  'bg-white/90',
+  'bg-foreground/[0.05]',
+  'bg-foreground/20',
+  'bg-foreground/40',
+  'bg-foreground/65',
+  'bg-foreground/90',
 ];
 
 interface HoverCell {
@@ -214,13 +214,13 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6 relative">
+    <div className="rounded-xl border border-border/10 bg-foreground/[0.02] p-4 sm:p-6 relative">
       <div className="flex items-baseline justify-between gap-3 mb-4 flex-wrap">
-        <h3 className="text-xs uppercase tracking-widest text-white/50 font-mono">
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-mono">
           {t('tm_activity_heatmap')}
         </h3>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] text-white/40 font-mono">
+          <span className="text-[10px] text-muted-foreground font-mono">
             {t('tm_active_days_summary', { count: activeDays, time: fmtHM(totalSeconds) })}
           </span>
           {editingGoal ? (
@@ -239,9 +239,9 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
                   }
                 }}
                 autoFocus
-                className="w-14 px-1.5 py-0.5 text-[10px] font-mono bg-white/[0.04] border border-white/15 rounded text-white text-right focus:outline-none focus:border-white/30"
+                className="w-14 px-1.5 py-0.5 text-[10px] font-mono bg-foreground/[0.04] border border-border/15 rounded text-foreground text-right focus:outline-none focus:border-border/30"
               />
-              <span className="text-[10px] text-white/40 font-mono">{t('tm_min_per_day')}</span>
+              <span className="text-[10px] text-muted-foreground font-mono">{t('tm_min_per_day')}</span>
             </span>
           ) : (
             <button
@@ -249,7 +249,7 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
                 setGoalDraft(String(goalMinutes));
                 setEditingGoal(true);
               }}
-              className="text-[10px] font-mono text-white/50 hover:text-white border border-white/10 hover:border-white/25 rounded px-1.5 py-0.5 transition"
+              className="text-[10px] font-mono text-muted-foreground hover:text-foreground border border-border/10 hover:border-border/25 rounded px-1.5 py-0.5 transition"
               title={t('tm_set_daily_goal')}
             >
               {t('tm_goal_label', { time: fmtHM(goalSeconds) })}
@@ -261,7 +261,7 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
                 setEntryError(null);
                 setAdding((v) => !v);
               }}
-              className="text-[10px] font-mono text-white/50 hover:text-white border border-white/10 hover:border-white/25 rounded px-1.5 py-0.5 transition"
+              className="text-[10px] font-mono text-muted-foreground hover:text-foreground border border-border/10 hover:border-border/25 rounded px-1.5 py-0.5 transition"
               title={t('tm_add_manual_entry_title')}
             >
               {adding ? t('tm_cancel_short') : t('tm_add_entry_short')}
@@ -271,9 +271,9 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
       </div>
 
       {adding && entityId && (
-        <div className="mb-4 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+        <div className="mb-4 rounded-lg border border-border/10 bg-foreground/[0.02] p-2.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2 py-1 text-[11px] font-mono text-white/60 border border-white/10 rounded">
+            <span className="px-2 py-1 text-[11px] font-mono text-muted-foreground border border-border/10 rounded">
               {t('tm_today_label', { date: dateKey(new Date()) })}
             </span>
             <input
@@ -282,13 +282,13 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
               value={entryMin}
               onChange={(e) => setEntryMin(e.target.value)}
               placeholder="minutes"
-              className="w-20 px-2 py-1 text-[11px] font-mono bg-white/[0.04] border border-white/15 rounded text-white text-right focus:outline-none focus:border-white/30"
+              className="w-20 px-2 py-1 text-[11px] font-mono bg-foreground/[0.04] border border-border/15 rounded text-foreground text-right focus:outline-none focus:border-border/30"
             />
-            <span className="text-[10px] font-mono text-white/40">{t('tm_min')}</span>
+            <span className="text-[10px] font-mono text-muted-foreground">{t('tm_min')}</span>
             <button
               onClick={submitEntry}
               disabled={isAdding}
-              className="ml-auto px-2.5 py-1 text-[11px] font-mono bg-white text-black rounded hover:bg-white/90 transition disabled:opacity-50"
+              className="ml-auto px-2.5 py-1 text-[11px] font-mono bg-foreground text-background rounded hover:bg-foreground/90 transition disabled:opacity-50"
             >
               {isAdding ? '...' : t('tm_add')}
             </button>
@@ -306,10 +306,10 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
           {yearBlocks.map((block) => (
             <div key={block.year}>
               <div className="mb-2 flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
                   {block.year}
                 </span>
-                <span className="h-px flex-1 bg-white/[0.06]" />
+                <span className="h-px flex-1 bg-foreground/[0.06]" />
               </div>
               <div className="overflow-x-auto -mx-1 px-1">
                 <div className="flex gap-[4px] min-w-fit">
@@ -338,8 +338,8 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
                             className={`w-[14px] h-[14px] sm:w-[13px] sm:h-[13px] rounded-[3px] ${
                               isFuture ? 'bg-transparent' : LEVEL_BG[lvl]
                             } border ${
-                              isToday ? 'border-white/60' : 'border-white/[0.04]'
-                            } ${isFuture ? '' : 'hover:ring-1 hover:ring-white/40 active:scale-110'} transition-transform`}
+                              isToday ? 'border-border/60' : 'border-border/[0.04]'
+                            } ${isFuture ? '' : 'hover:ring-1 hover:ring-ring active:scale-110'} transition-transform`}
                           />
                         );
                       })}
@@ -357,18 +357,18 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
             const left = Math.max(margin + W / 2, Math.min(vw - margin - W / 2, hover.x));
             return (
               <div
-                className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-md border border-white/15 bg-black/95 px-2.5 py-1.5 shadow-xl backdrop-blur"
+                className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-md border border-border/15 bg-background/95 px-2.5 py-1.5 shadow-xl backdrop-blur"
                 style={{ left, top: hover.y - 6, width: W }}
               >
-                <p className="text-[10px] font-mono uppercase tracking-wider text-white/50">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                   {hover.key}
                   {hover.key === todayKey && ` ${t('tm_today_suffix')}`}
                 </p>
-                <p className="text-xs font-mono text-white mt-0.5">
+                <p className="text-xs font-mono text-foreground mt-0.5">
                   {fmtHM(hover.seconds)} · {t('tm_entry_count', { count: hover.count, word: hover.count === 1 ? t('tm_entry_singular') : t('tm_entry_plural') })}
                 </p>
                 {goalSeconds > 0 && (
-                  <p className="text-[10px] font-mono text-white/40 mt-0.5">
+                  <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
                     {t('tm_percent_of_goal', { pct: Math.min(999, Math.round((hover.seconds / goalSeconds) * 100)) })}
                   </p>
                 )}
@@ -376,7 +376,7 @@ export function TimeHeatmap({ entityId, weeks = 52 }: Props) {
             );
           })()}
 
-          <div className="mt-3 flex items-center gap-1.5 text-[10px] text-white/40 font-mono">
+          <div className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <span>{t('tm_less')}</span>
             {LEVEL_BG.map((c, i) => (
               <span key={i} className={`w-[10px] h-[10px] rounded-[2px] ${c}`} />

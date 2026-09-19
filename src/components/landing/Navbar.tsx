@@ -1,7 +1,7 @@
 /*
  * CONTINUUM — Navbar
  * Design: Void Cartography — minimal, dark, transparent-to-solid on scroll
- * Font: Logo uses Playfair Display.
+ * Font: Logo uses Inter Bold.
  */
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -48,7 +48,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           </div>
           <span
             className="text-white/80 font-medium tracking-wide text-[0.95rem]"
-            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+            style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700 }}
           >
             Continuum
           </span>

@@ -62,7 +62,6 @@ interface NavItem {
 }
 
 const primaryNav: NavItem[] = [
-  { to: "/", label: "nav_dashboard", icon: Squares2x2, iconSolid: Squares2x2Solid, end: true },
   { to: "/notes", label: "nav_notes", icon: StickyNote, iconSolid: StickyNoteSolid },
   { to: "/entities", label: "nav_entities", icon: Tag, iconSolid: TagSolid },
   { to: "/vault", label: "nav_vault", icon: Lock, iconSolid: LockSolid },
@@ -213,7 +212,7 @@ export function SessionNavBar() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate("/settings")}
                 className="flex h-9 items-center gap-2 rounded-md px-2 text-sidebar-foreground"
               >
                 <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sidebar-primary text-[10px] font-bold text-sidebar-primary-foreground">

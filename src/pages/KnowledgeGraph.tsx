@@ -6,12 +6,12 @@ import {
   Loader2,
   ZoomIn,
   ZoomOut,
-  Brain,
   Search,
   Settings,
   Eye,
   EyeOff,
   X,
+  ArrowLeft,
 } from "@/lib/heroicons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ import { SideInspector } from "@/components/SideInspector";
 import { useEntityStore } from "@/contexts/EntityContext";
 import type { Entity, EntityType } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { queryClient } from "@/lib/query-client";
+import { qk, STALE } from "@/lib/queries";
 
 interface GraphNode {
   id: string;
@@ -123,6 +125,43 @@ function quadForce(q: QuadNode, n: GraphNode, theta: number, repulsion: number) 
     return;
   }
   for (const c of q.children) if (c) quadForce(c, n, theta, repulsion);
+}
+
+// ── Switch simples para o menu de opções (liga/desliga claro, sem libs extras) ──
+function OptionSwitch({
+  id,
+  checked,
+  onChange,
+  label,
+}: {
+  id: string;
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      id={id}
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className="flex w-full items-center justify-between gap-3 rounded-2xl px-2 py-2.5 text-left transition-colors hover:bg-muted/60"
+    >
+      <span className="text-sm text-foreground">{label}</span>
+      <span
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+          checked ? "bg-foreground/85" : "bg-muted"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
+            checked ? "translate-x-4" : "translate-x-1"
+          }`}
+        />
+      </span>
+    </button>
+  );
 }
 
 export default function KnowledgeGraph() {
@@ -372,6 +411,13 @@ export default function KnowledgeGraph() {
     ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
+    // Vinheta radial sutil para dar profundidade ao fundo preto
+    const vignette = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.75);
+    vignette.addColorStop(0, "hsla(0,0%,100%,0.035)");
+    vignette.addColorStop(1, "hsla(0,0%,0%,0)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
+
     ctx.translate(panRef.current.x, panRef.current.y);
     ctx.scale(zoomRef.current, zoomRef.current);
 
@@ -400,14 +446,14 @@ export default function KnowledgeGraph() {
         const isHoveredEdge = hovered && (hovered.id === e.source || hovered.id === e.target);
         
         if (hasSelection && !isHighlighted) {
-          ctx.strokeStyle = "hsla(0,0%,100%,0.02)";
-          ctx.lineWidth = 0.5 / z;
+          ctx.strokeStyle = "hsla(0,0%,100%,0.05)";
+          ctx.lineWidth = 0.6 / z;
         } else if (isHighlighted || isHoveredEdge) {
-          ctx.strokeStyle = "hsla(0,0%,100%,0.6)";
-          ctx.lineWidth = 1.8 / z;
+          ctx.strokeStyle = "hsla(0,0%,100%,0.75)";
+          ctx.lineWidth = 2 / z;
         } else {
-          ctx.strokeStyle = "hsla(0,0%,100%,0.15)";
-          ctx.lineWidth = Math.min(1.5, 0.8 + (a.degree + b.degree) * 0.02) / z;
+          ctx.strokeStyle = "hsla(0,0%,100%,0.28)";
+          ctx.lineWidth = Math.min(1.6, 0.9 + (a.degree + b.degree) * 0.02) / z;
         }
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
@@ -449,6 +495,16 @@ export default function KnowledgeGraph() {
       ctx.fillStyle = color;
       ctx.fill();
 
+      // Highlight sutil para dar volume (efeito de esfera)
+      if (!dimmed) {
+        ctx.globalAlpha = nodeAlpha * 0.45;
+        ctx.beginPath();
+        ctx.arc(n.x - drawRadius * 0.32, n.y - drawRadius * 0.32, drawRadius * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = "hsla(0,0%,100%,0.35)";
+        ctx.fill();
+        ctx.globalAlpha = nodeAlpha;
+      }
+
       // Borda indicativa
       if (isSelected || matchesSearch) {
         ctx.strokeStyle = HIGHLIGHT_COLOR;
@@ -469,13 +525,24 @@ export default function KnowledgeGraph() {
         ctx.font = `${isSelected || isHovered ? "500" : "400"} ${fontSize}px Inter, sans-serif`;
         ctx.textAlign = "center";
         
-        // Fundo sutil para o texto facilitar a leitura nas linhas
+        // Fundo sutil e arredondado para o texto facilitar a leitura nas linhas
         const text = n.label.length > 25 ? n.label.slice(0, 24) + "…" : n.label;
         const textY = n.y + drawRadius + fontSize + 3;
-        
-        ctx.fillStyle = "hsla(0,0%,0%,0.5)";
         const textWidth = ctx.measureText(text).width;
-        ctx.fillRect(n.x - textWidth/2 - 2, textY - fontSize, textWidth + 4, fontSize + 2);
+        const padX = 5, padY = 2;
+        const chipX = n.x - textWidth / 2 - padX;
+        const chipY = textY - fontSize - padY + 1;
+        const chipW = textWidth + padX * 2;
+        const chipH = fontSize + padY * 2;
+
+        ctx.fillStyle = "hsla(0,0%,4%,0.65)";
+        ctx.beginPath();
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(chipX, chipY, chipW, chipH, 6);
+        } else {
+          ctx.rect(chipX, chipY, chipW, chipH);
+        }
+        ctx.fill();
 
         ctx.fillStyle = isSelected || isHovered || matchesSearch
           ? "hsl(0,0%,100%)"
@@ -513,9 +580,16 @@ export default function KnowledgeGraph() {
   const loadGraph = useCallback(async () => {
     setLoading(true);
     try {
-      const [graphRes, entitiesRes] = await Promise.all([graphApi.data(), entitiesApi.list()]);
-      const data = graphRes.data;
-      const entities = Array.isArray(entitiesRes.data) ? entitiesRes.data : [];
+      const cached = await queryClient.fetchQuery({
+        queryKey: qk.graph(),
+        queryFn: async () => {
+          const [graphRes, entitiesRes] = await Promise.all([graphApi.data(), entitiesApi.list()]);
+          return { graph: graphRes.data, entities: Array.isArray(entitiesRes.data) ? entitiesRes.data : [] };
+        },
+        staleTime: STALE.list,
+      });
+      const data = cached.graph;
+      const entities = cached.entities as Entity[];
       setAllEntities(entities);
 
       const rawNodes = Array.isArray(data?.nodes) ? data.nodes : [];
@@ -646,29 +720,21 @@ export default function KnowledgeGraph() {
     setSelectedNode(node);
     const entity = allEntities.find(e => e.id === node.id);
     
-    // Calcular score baseado em degree e recência
-    const baseScore = Math.min(100, node.degree * 5 + 20);
-    const recencyBonus = node.recent ? 15 : 0;
-    const score = Math.round(baseScore + recencyBonus);
-    
-    // Se encontrar a entidade, abre o inspector com os dados completos + score
+    // Use the same entity data as the entity detail page; graph-only metadata
+    // is kept separate so the inspector can refresh the canonical entity.
     if (entity) {
       openInspector({
         ...entity,
-        graphScore: score,
-        graphDegree: node.degree,
       } as any);
     } else {
-      // Criar uma entidade com informações adicionais do grafo
+      // Nodes can briefly exist before the entity list finishes resolving.
       openInspector({
         id: node.id,
         title: node.label,
         type: (node.type as EntityType) || "TOPIC",
-        createdAt: node.createdAt || new Date().toISOString(),
+        createdAt: node.createdAt || "",
         ownerId: "",
-        description: t("gr_node_desc", { count: node.degree, plural: node.degree === 1 ? "" : "s", type: typeLabel(node.type) }),
-        graphScore: score,
-        graphDegree: node.degree,
+        description: "",
       } as any);
     }
     
@@ -926,67 +992,76 @@ export default function KnowledgeGraph() {
       <div className="flex flex-col" style={{ height: "calc(100vh - 3.5rem)" }}>
         <div className="relative flex flex-col flex-1">
           {!empty && (
-            <>
+            <div className="absolute right-4 top-4 z-30 flex flex-col items-center gap-1 rounded-2xl border border-border bg-card/70 p-1.5 backdrop-blur-md">
+              <Button
+                type="button"
+                variant="canvasIcon"
+                size="icon"
+                onClick={() => navigate(-1)}
+                className="border-0 bg-transparent hover:bg-muted"
+                aria-label={t("gr_back")}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+
+              <div className="my-0.5 h-px w-6 bg-border" />
+
+              <Button
+                type="button"
+                variant="canvasIcon"
+                size="icon"
+                onClick={() => handleZoom(1)}
+                className="border-0 bg-transparent hover:bg-muted"
+                aria-label={t("gr_zoom_in")}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="canvasIcon"
+                size="icon"
+                onClick={() => handleZoom(-1)}
+                className="border-0 bg-transparent hover:bg-muted"
+                aria-label={t("gr_zoom_out")}
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="canvasIcon"
+                size="icon"
+                onClick={() => setFocusMode(f => !f)}
+                className={`border-0 bg-transparent hover:bg-muted ${focusMode ? "bg-muted text-foreground" : ""}`}
+                aria-label={t("gr_toggle_focus")}
+                title={t("gr_focus_mode")}
+              >
+                {focusMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+
+              <div className="my-0.5 h-px w-6 bg-border" />
+
               <Button
                 type="button"
                 variant="canvasIcon"
                 size="icon"
                 onClick={() => setOptionsOpen(true)}
-                className="absolute right-4 top-4 z-30 hidden rounded-md border-0 bg-white/5 hover:bg-white/10 sm:grid"
+                className="border-0 bg-transparent hover:bg-muted"
                 aria-label={t("gr_open_options")}
               >
-                <Settings className="h-5 w-5" />
+                <Settings className="h-4 w-4" />
               </Button>
-
-              <div className="absolute right-4 top-16 z-30 flex flex-col items-end gap-2">
-                <div className="flex flex-col items-center gap-0.5">
-                  <Button
-                    type="button"
-                    variant="canvasIcon"
-                    size="icon"
-                    onClick={() => handleZoom(1)}
-                    aria-label={t("gr_zoom_in")}
-                  >
-                    <ZoomIn className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="canvasIcon"
-                    size="icon"
-                    onClick={() => handleZoom(-1)}
-                    aria-label={t("gr_zoom_out")}
-                  >
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="canvasIcon"
-                    size="icon"
-                    onClick={() => setFocusMode(f => !f)}
-                    className={focusMode ? "border-white/60 bg-white/15" : ""}
-                    aria-label={t("gr_toggle_focus")}
-                    title={t("gr_focus_mode")}
-                  >
-                    {focusMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="canvasIcon"
-                    size="icon"
-                    onClick={() => setOptionsOpen(true)}
-                    className="sm:hidden"
-                    aria-label={t("gr_open_options")}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           {optionsOpen && (
-            <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/50 px-4 py-6 sm:p-6">
-              <Card className="w-full max-w-md rounded-3xl border-white/10 bg-black/95 p-5 shadow-2xl shadow-black/40">
+            <div
+              className="fixed inset-0 z-50 flex justify-end bg-background/70 animate-in fade-in duration-200"
+              onClick={() => setOptionsOpen(false)}
+            >
+              <Card
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-full w-full flex-col overflow-y-auto rounded-none border-0 border-l border-border bg-background/95 p-5 shadow-2xl shadow-black/40 animate-in slide-in-from-right duration-200 sm:w-96 sm:rounded-l-3xl"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{t("gr_options_title")}</p>
@@ -997,14 +1072,14 @@ export default function KnowledgeGraph() {
                     variant="canvasIcon"
                     size="icon"
                     onClick={() => setOptionsOpen(false)}
-                    className="h-9 w-9 border-0 bg-white/5 hover:bg-white/10"
+                    className="h-9 w-9 border-0 bg-muted/60 hover:bg-muted"
                     aria-label={t("gr_close_options")}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
 
-                <div className="mt-4 space-y-4">
+                <div className="mt-4 flex-1 space-y-4">
                   <div>
                     <label className="block text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">{t("gr_search_nodes_label")}</label>
                     <div className="mt-2 relative">
@@ -1018,16 +1093,7 @@ export default function KnowledgeGraph() {
                     </div>
                   </div>
 
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => { handleShowAll(); setOptionsOpen(false); }}>
-                      {t("gr_show_all")}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full" onClick={handleReset}>
-                      {t("gr_reset_view")}
-                    </Button>
-                  </div>
-
-                  <Card variant="subtle" className="rounded-3xl border-white/10 bg-background/90 p-3">
+                  <Card variant="subtle" className="rounded-3xl border-border bg-card p-3">
                     <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">{t("gr_type_filters")}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Badge
@@ -1053,8 +1119,7 @@ export default function KnowledgeGraph() {
                       })}
                     </div>
                   </Card>
-
-                  <Card variant="subtle" className="rounded-3xl border-white/10 bg-background/90 p-3">
+                  <Card variant="subtle" className="rounded-3xl border-border bg-card p-3">
                     <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">{t("gr_time_range")}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {(["all", "7d", "30d"] as const).map(tf => (
@@ -1070,49 +1135,50 @@ export default function KnowledgeGraph() {
                     </div>
                   </Card>
 
-                  <Card variant="subtle" className="rounded-3xl border-white/10 bg-background/90 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">{t("gr_display_options")}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Badge
-                        variant="chip"
-                        onClick={() => setShowEdges(prev => !prev)}
-                        className={chipActiveClass(showEdges)}
-                      >
-                        {showEdges ? <Eye className="inline h-3 w-3 mr-1" /> : <EyeOff className="inline h-3 w-3 mr-1" />}
-                        {showEdges ? t("gr_edges_on") : t("gr_edges_off")}
-                      </Badge>
-                      <Badge
-                        variant="chip"
-                        onClick={() => setShowLabels(prev => !prev)}
-                        className={chipActiveClass(showLabels)}
-                      >
-                        {showLabels ? <Eye className="inline h-3 w-3 mr-1" /> : <EyeOff className="inline h-3 w-3 mr-1" />}
-                        {showLabels ? t("gr_labels_on") : t("gr_labels_off")}
-                      </Badge>
-                      <Badge
-                        variant="chip"
-                        onClick={() => setLegendOpen(open => !open)}
-                        className={chipActiveClass(legendOpen)}
-                      >
-                        {legendOpen ? <Eye className="inline h-3 w-3 mr-1" /> : <EyeOff className="inline h-3 w-3 mr-1" />}
-                        {legendOpen ? t("gr_legend_on") : t("gr_legend_off")}
-                      </Badge>
-                      <Badge
-                        variant="chip"
-                        onClick={() => setClusterByPeriod(prev => !prev)}
-                        className={chipActiveClass(clusterByPeriod)}
-                      >
-                        {clusterByPeriod ? t("gr_period_clusters_on") : t("gr_period_clusters_off")}
-                      </Badge>
-                      <Badge
-                        variant="chip"
-                        onClick={() => setFocusMode(prev => !prev)}
-                        className={chipActiveClass(focusMode)}
-                      >
-                        {focusMode ? t("gr_focus_on") : t("gr_focus_off")}
-                      </Badge>
+                  <Card variant="subtle" className="rounded-3xl border-border bg-card p-1">
+                    <p className="px-2 pt-2 text-[11px] uppercase tracking-[0.24em] text-muted-foreground">{t("gr_display_options")}</p>
+                    <div className="mt-1 divide-y divide-border px-1 pb-1">
+                      <OptionSwitch
+                        id="opt-edges"
+                        checked={showEdges}
+                        onChange={() => setShowEdges(v => !v)}
+                        label={showEdges ? t("gr_edges_on") : t("gr_edges_off")}
+                      />
+                      <OptionSwitch
+                        id="opt-labels"
+                        checked={showLabels}
+                        onChange={() => setShowLabels(v => !v)}
+                        label={showLabels ? t("gr_labels_on") : t("gr_labels_off")}
+                      />
+                      <OptionSwitch
+                        id="opt-legend"
+                        checked={legendOpen}
+                        onChange={() => setLegendOpen(v => !v)}
+                        label={legendOpen ? t("gr_legend_on") : t("gr_legend_off")}
+                      />
+                      <OptionSwitch
+                        id="opt-cluster"
+                        checked={clusterByPeriod}
+                        onChange={() => setClusterByPeriod(v => !v)}
+                        label={clusterByPeriod ? t("gr_period_clusters_on") : t("gr_period_clusters_off")}
+                      />
+                      <OptionSwitch
+                        id="opt-focus"
+                        checked={focusMode}
+                        onChange={() => setFocusMode(v => !v)}
+                        label={focusMode ? t("gr_focus_on") : t("gr_focus_off")}
+                      />
                     </div>
                   </Card>
+                </div>
+
+                <div className="mt-4 grid gap-2 border-t border-border pt-4 sm:grid-cols-2">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => { handleShowAll(); setOptionsOpen(false); }}>
+                    {t("gr_show_all")}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-full" onClick={handleReset}>
+                    {t("gr_reset_view")}
+                  </Button>
                 </div>
               </Card>
             </div>
@@ -1163,13 +1229,13 @@ export default function KnowledgeGraph() {
             )}
 
             {legendOpen && (
-              <Card className="absolute left-4 top-4 z-20 rounded-3xl border-white/10 bg-black/80 p-4 text-sm text-white shadow-lg shadow-black/30">
+              <Card className="absolute left-4 top-4 z-20 rounded-3xl border border-border bg-card/85 p-4 text-sm text-foreground backdrop-blur-md shadow-lg shadow-black/30">
                 <p className="mb-3 text-xs uppercase tracking-[0.24em] text-muted-foreground">{t("gr_legend")}</p>
                 <div className="grid gap-2">
                   {availableTypes.map(({ label, color, type }) => (
                     <div key={type} className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-                      <span className="text-sm text-white">{label}</span>
+                      <span className="text-sm text-foreground">{label}</span>
                     </div>
                   ))}
                 </div>
@@ -1178,13 +1244,13 @@ export default function KnowledgeGraph() {
 
             {hoveredNode && tooltipPos && !selectedNode && (
               <Card
-                className="absolute z-20 pointer-events-none rounded-md border-white/10 bg-black/90 px-2.5 py-1.5 shadow-lg"
+                className="absolute z-20 pointer-events-none rounded-md border border-border bg-card/95 px-2.5 py-1.5 shadow-lg"
                 style={{
                   left: Math.min(tooltipPos.x + 12, (containerRef.current?.clientWidth || 300) - 180),
                   top: Math.max(8, tooltipPos.y - 40),
                 }}
               >
-                <p className="text-xs font-medium text-white truncate max-w-[160px]">{hoveredNode.label}</p>
+                <p className="text-xs font-medium text-foreground truncate max-w-[160px]">{hoveredNode.label}</p>
                 <p className="text-[10px] text-muted-foreground">
                   {typeLabel(hoveredNode.type)} · {t("gr_link_count", { count: hoveredNode.degree, plural: hoveredNode.degree === 1 ? "" : "s" })}
                 </p>

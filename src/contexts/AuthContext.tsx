@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authApi } from "@/lib/api";
+import { resetAllCaches } from "@/lib/query-client";
 import type { Plan, User as AppUser } from "@/types";
 
 // Lê em tempo de execução, não de build
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("auth_user");
+      void resetAllCaches();
       setUser(null);
     };
     window.addEventListener("auth:logout", onLogout);
@@ -150,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("auth_user");
+    await resetAllCaches();
     setUser(null);
   };
 

@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.service;
+package onl.continuum.continuum.application.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,21 +7,21 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import tech.lemnova.continuum.controller.dto.note.NoteCreateRequest;
-import tech.lemnova.continuum.controller.dto.note.NoteUpdateRequest;
-import tech.lemnova.continuum.domain.entity.Entity;
-import tech.lemnova.continuum.domain.note.Note;
+import onl.continuum.continuum.controller.dto.note.NoteCreateRequest;
+import onl.continuum.continuum.controller.dto.note.NoteUpdateRequest;
+import onl.continuum.continuum.domain.entity.Entity;
+import onl.continuum.continuum.domain.note.Note;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import tech.lemnova.continuum.domain.plan.PlanConfiguration;
-import tech.lemnova.continuum.domain.user.User;
-import tech.lemnova.continuum.domain.user.UserRepository;
-import tech.lemnova.continuum.infra.persistence.EntityRepository;
-import tech.lemnova.continuum.infra.persistence.NoteRepository;
-import tech.lemnova.continuum.infra.persistence.NoteLinkRepository;
-import tech.lemnova.continuum.infra.security.CustomUserDetails;
-import tech.lemnova.continuum.infra.vault.VaultStorageService;
-import tech.lemnova.continuum.application.service.TiptapParserService;
+import onl.continuum.continuum.domain.plan.PlanConfiguration;
+import onl.continuum.continuum.domain.user.User;
+import onl.continuum.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.infra.persistence.EntityRepository;
+import onl.continuum.continuum.infra.persistence.NoteRepository;
+import onl.continuum.continuum.infra.persistence.NoteLinkRepository;
+import onl.continuum.continuum.infra.security.CustomUserDetails;
+import onl.continuum.continuum.infra.vault.VaultStorageService;
+import onl.continuum.continuum.application.service.TiptapParserService;
 
 import java.time.Instant;
 import java.util.List;
@@ -88,7 +88,7 @@ public class NoteServiceUnitTest {
         when(noteRepo.save(any(Note.class))).thenReturn(savedNote);
         when(entityRepo.findByUserId("user1")).thenReturn(List.of());
 
-        var result = noteService.create(new tech.lemnova.continuum.controller.dto.note.NoteCreateRequest("Test", contentNode, "", "note"));
+        var result = noteService.create(new onl.continuum.continuum.controller.dto.note.NoteCreateRequest("Test", contentNode, "", "note"));
 
         assertThat(result).isNotNull();
         assertThat(result.id()).isEqualTo("n1");

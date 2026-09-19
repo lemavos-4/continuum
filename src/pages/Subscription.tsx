@@ -56,7 +56,7 @@ export default function Subscription() {
   // Returning from Stripe Checkout: force a sync with Stripe instead of trusting
   // the webhook to have already landed (removes the checkout/webhook race).
   useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.split("?")[1] || window.location.search);
+    const params = new URLSearchParams(window.location.search);
     if (params.get("status") !== "success") return;
 
     let cancelled = false;
@@ -143,36 +143,36 @@ export default function Subscription() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-2xl flex-col px-5 py-8 sm:px-8 sm:py-14">
         {/* HEADER */}
         <header className="mb-8 sm:mb-12">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">
             {t("bill_plans_billing")}
           </p>
-          <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
             {t("bill_subscription")}
           </h1>
-          <p className="mt-3 text-sm text-white/50">
+          <p className="mt-3 text-sm text-muted-foreground">
             {t("bill_one_tier")}
           </p>
         </header>
 
         {/* POST-CHECKOUT SYNC */}
         {syncing && (
-          <div className="mb-6 border-t border-white/10 pt-5 text-[11px] uppercase tracking-[0.24em] text-white/40">
-            <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white/60 align-middle" />
+          <div className="mb-6 border-t border-border/10 pt-5 text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+            <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/60 align-middle" />
             Confirming your payment with Stripe…
           </div>
         )}
 
         {/* CURRENT STATUS */}
         {!loading && sub && (
-          <div className="mb-8 flex items-baseline gap-6 border-t border-white/10 pt-5 sm:mb-10">
+          <div className="mb-8 flex items-baseline gap-6 border-t border-border/10 pt-5 sm:mb-10">
             <div className="flex items-baseline gap-2">
-              <span className="text-[10px] uppercase tracking-[0.28em] text-white/30">
+              <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
                 {t("bill_current")}
               </span>
-              <span className="text-sm text-white/90">
+              <span className="text-sm text-muted-foreground">
                 {isPro ? "VISION" : "FREE"}
               </span>
-              <span className="text-xs text-white/30">· {sub.status.toLowerCase()}</span>
+              <span className="text-xs text-muted-foreground">· {sub.status.toLowerCase()}</span>
             </div>
             
             {isPro && (
@@ -181,7 +181,7 @@ export default function Subscription() {
                 size="sm"
                 onClick={handlePortal}
                 disabled={portalLoading}
-                className="text-white/40 hover:text-white/70"
+                className="text-muted-foreground hover:text-muted-foreground"
               >
                 {portalLoading ? t("bill_opening") : t("bill_manage_billing")}
               </Button>
@@ -200,50 +200,50 @@ export default function Subscription() {
           {/* subtle top gradient */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/40 to-transparent"
           />
 
           <CardHeader className="pt-8 sm:pt-12">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">
+                <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">
                   Continuum
                 </p>
-                <h2 className="mt-2 font-serif text-4xl tracking-tight text-white sm:text-5xl">
+                <h2 className="mt-2 font-serif text-4xl tracking-tight text-foreground sm:text-5xl">
                   VISION
                 </h2>
               </div>
               <div className="text-right">
-                <p className="font-serif text-3xl text-white sm:text-4xl">$7.90</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/40">
+                <p className="font-serif text-3xl text-foreground sm:text-4xl">$7.90</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
                   {t("bill_per_month")}
                 </p>
               </div>
             </div>
 
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-white/55">
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
               {t("bill_vision_tagline")}
             </p>
           </CardHeader>
 
           <CardContent className="space-y-8">
-            <ul className="space-y-3 border-t border-white/10 pt-6">
+            <ul className="space-y-3 border-t border-border/10 pt-6">
               {VISION_BENEFITS.map((b, i) => (
                 <motion.li
                   key={b}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: 0.15 + i * 0.05, ease: "easeOut" }}
-                  className="flex items-start gap-3 text-sm text-white/75"
+                  className="flex items-start gap-3 text-sm text-muted-foreground"
                 >
-                  <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/40" />
+                  <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span>{b}</span>
                 </motion.li>
               ))}
             </ul>
 
             {visionLimits && (
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/10 pt-6 text-xs sm:grid-cols-4">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border/10 pt-6 text-xs sm:grid-cols-4">
                 {[
                   { k: t("bill_notes"), v: formatLimit(visionLimits.maxNotes ?? -1) },
                   { k: t("bill_entities"), v: formatLimit(visionLimits.maxEntities ?? -1) },
@@ -251,10 +251,10 @@ export default function Subscription() {
                   { k: t("bill_history"), v: formatLimit(((visionLimits as any)?.maxHistoryDays ?? visionLimits?.historyDays) ?? -1, "d") },
                 ].map((row) => (
                   <div key={row.k}>
-                    <dt className="text-[10px] uppercase tracking-[0.22em] text-white/30">
+                    <dt className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                       {row.k}
                     </dt>
-                    <dd className="mt-1 font-serif text-lg tabular-nums text-white/85">
+                    <dd className="mt-1 font-serif text-lg tabular-nums text-muted-foreground">
                       {row.v}
                     </dd>
                   </div>
@@ -265,7 +265,7 @@ export default function Subscription() {
 
           <CardFooter className="flex-col items-stretch gap-3 pt-0">
             {isPro ? (
-              <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-white/10 text-[11px] uppercase tracking-[0.28em] text-white/40">
+              <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-border/10 text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
                 {t("bill_active")}
               </div>
             ) : (
@@ -288,7 +288,7 @@ export default function Subscription() {
               </Button>
             )}
 
-            <p className="text-center text-[10px] uppercase tracking-[0.22em] text-white/30">
+            <p className="text-center text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
               {t("bill_cancel_secure")}
             </p>
           </CardFooter>

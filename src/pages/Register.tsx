@@ -12,10 +12,10 @@ export default function Register() {
   }, [loginWithGoogle]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-sm text-white/70">{t("au_redirecting_google")}</p>
+        <p className="text-sm text-muted-foreground">{t("au_redirecting_google")}</p>
       </div>
     </div>
   );

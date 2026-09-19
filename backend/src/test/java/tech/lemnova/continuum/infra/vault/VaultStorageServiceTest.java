@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.infra.vault;
+package onl.continuum.continuum.infra.vault;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

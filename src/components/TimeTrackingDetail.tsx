@@ -148,7 +148,7 @@ export function TimeTrackingDetail() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-display font-semibold text-white">
+          <h1 className="text-3xl font-display font-semibold text-foreground">
             {entity.title}
           </h1>
           <p className="text-sm text-zinc-500">
@@ -225,7 +225,7 @@ export function TimeTrackingDetail() {
                 type="date"
                 value={manualDate}
                 onChange={(e) => setManualDate(e.target.value)}
-                className="w-full px-3 py-2 bg-zinc-950 border border-white/10 rounded-lg text-white"
+                className="w-full px-3 py-2 bg-zinc-950 border border-border/10 rounded-lg text-foreground"
               />
             </div>
 
@@ -236,7 +236,7 @@ export function TimeTrackingDetail() {
                 value={manualDuration}
                 onChange={(e) => setManualDuration(e.target.value)}
                 placeholder="01:30:00"
-                className="w-full px-3 py-2 bg-zinc-950 border border-white/10 rounded-lg text-white font-mono"
+                className="w-full px-3 py-2 bg-zinc-950 border border-border/10 rounded-lg text-foreground font-mono"
               />
               <p className="text-xs text-zinc-500 mt-1">{t('tm_format_hms')}</p>
             </div>
@@ -250,7 +250,7 @@ export function TimeTrackingDetail() {
 
       {/* History */}
       <Card className="p-6">
-        <h2 className="text-lg font-medium text-white mb-4">{t('tm_history')}</h2>
+        <h2 className="text-lg font-medium text-foreground mb-4">{t('tm_history')}</h2>
         
         {breakdownLoading ? (
           <div className="space-y-2">
@@ -270,7 +270,7 @@ export function TimeTrackingDetail() {
                 className="flex justify-between items-center p-3 bg-zinc-950/50 rounded-lg hover:bg-zinc-950/75 transition-colors group"
               >
                 <div className="flex-1">
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-foreground">
                     {format(new Date(date), 'EEEE, MMM d')}
                   </p>
                   <p className="text-xs text-zinc-500">

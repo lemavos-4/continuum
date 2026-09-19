@@ -46,19 +46,19 @@ export function ActivityCompletionCalendar({
   const now = today(getLocalTimeZone());
 
   return (
-    <div className="w-full border border-white/5 bg-white/[0.01] rounded-sm p-3 sm:p-4 md:p-5">
+    <div className="w-full border border-border/5 bg-foreground/[0.01] rounded-sm p-3 sm:p-4 md:p-5">
       <Cal aria-label={t("tm_activity_calendar_label")} className="w-full">
         <header className="flex items-center gap-1 pb-2 sm:pb-3">
           <RACButton
             slot="previous"
-            className="flex size-8 items-center justify-center rounded-sm text-white/40 outline-none transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-8 items-center justify-center rounded-sm text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground"
           >
             <ChevronLeftIcon className="h-4 w-4" />
           </RACButton>
-          <Heading className="grow text-center font-mono text-[11px] uppercase tracking-[0.28em] text-white/70" />
+          <Heading className="grow text-center font-mono text-[11px] uppercase tracking-[0.28em] text-muted-foreground" />
           <RACButton
             slot="next"
-            className="flex size-8 items-center justify-center rounded-sm text-white/40 outline-none transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-8 items-center justify-center rounded-sm text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground"
           >
             <ChevronRightIcon className="h-4 w-4" />
           </RACButton>
@@ -67,7 +67,7 @@ export function ActivityCompletionCalendar({
         <CalendarGrid className="w-full [&_table]:w-full [&_table]:border-collapse">
           <CalendarGridHeader>
             {(day) => (
-              <CalendarHeaderCell className="pb-1.5 font-mono text-[9px] sm:text-[9px] md:text-[10px] uppercase tracking-widest text-white/30">
+              <CalendarHeaderCell className="pb-1.5 font-mono text-[9px] sm:text-[9px] md:text-[10px] uppercase tracking-widest text-muted-foreground">
                 {day}
               </CalendarHeaderCell>
             )}
@@ -82,11 +82,11 @@ export function ActivityCompletionCalendar({
                   date={date}
                   className={cn(
                     "relative mx-auto flex aspect-square w-full max-w-9 sm:max-w-10 md:max-w-11 items-center justify-center rounded-sm border text-[11px] outline-none transition-colors",
-                    "data-[outside-month]:opacity-30 data-[focus-visible]:ring-1 data-[focus-visible]:ring-white/40",
+                    "data-[outside-month]:opacity-30 data-[focus-visible]:ring-1 data-[focus-visible]:ring-ring",
                     isCompleted
-                      ? "border-white/30 bg-white/15 text-white"
-                      : "border-white/5 bg-transparent text-white/60 hover:bg-white/5 hover:text-white",
-                    isToday && !isCompleted && "border-white/40 text-white",
+                      ? "border-border/30 bg-foreground/15 text-foreground"
+                      : "border-border/5 bg-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
+                    isToday && !isCompleted && "border-border/40 text-foreground",
                   )}
                 />
               );
@@ -95,9 +95,9 @@ export function ActivityCompletionCalendar({
         </CalendarGrid>
       </Cal>
 
-      <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
-        <div className="font-mono text-[11px] uppercase tracking-widest text-white/40">
-          <span className="text-white/70">{trackingDates.length}</span> {t("tm_tracked_word")}
+      <div className="mt-3 flex items-center justify-between border-t border-border/5 pt-3">
+        <div className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <span className="text-muted-foreground">{trackingDates.length}</span> {t("tm_tracked_word")}
         </div>
         <Button
           size="sm"

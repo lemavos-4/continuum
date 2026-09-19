@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { importApi } from "@/lib/api";
 import { ArrowPathIcon, ArrowUpTrayIcon, CheckCircleIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 
@@ -85,6 +86,7 @@ interface Props {
 
 export default function MarkdownImportDialog({ open, onOpenChange, onImported }: Props) {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,16 +120,16 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
       const skipped = all.length - files.length;
       if (files.length === 0) {
         toast({
-          title: "No Markdown files found",
-          description: "Only .md files are supported. Other formats (images, audio, PDFs) are ignored.",
+          title: t("import_noMdTitle"),
+          description: t("import_noMdDesc"),
           variant: "destructive",
         });
         return;
       }
       if (skipped > 0) {
         toast({
-          title: `${skipped} file${skipped === 1 ? "" : "s"} ignored`,
-          description: "Only .md files are imported. Other formats were skipped.",
+          title: t(skipped === 1 ? "import_skippedTitle_one" : "import_skippedTitle", { n: skipped }),
+          description: t("import_skippedDesc"),
         });
       }
       setBusy(true);
@@ -138,8 +140,8 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         const data = res.data as PreviewResponse;
         if (data.files.length === 0) {
           toast({
-            title: "No importable notes",
-            description: "Only valid UTF-8 .md files with content can be imported.",
+            title: t("import_noImportableTitle"),
+            description: t("import_noImportableDesc"),
             variant: "destructive",
           });
           return;
@@ -150,7 +152,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
           initial[c.key] = {
             // Auto-accept anything the AI or wiki-links/frontmatter surfaced.
             // LOW = pure capitalisation heuristic → user opts in manually.
-            accept: (c.confidence === "HIGH" || c.confidence === "MEDIUM") && !c.existing,
+            accept: c.existing || c.confidence === "HIGH" || c.confidence === "MEDIUM",
             type: c.suggestedType,
             name: c.name,
           };
@@ -159,8 +161,8 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         setStep("review");
       } catch (e: any) {
         toast({
-          title: "Import failed",
-          description: e?.response?.data?.message || e?.message || "Could not parse files",
+          title: t("import_failedTitle"),
+          description: e?.response?.data?.message || e?.message || t("import_parseFailedDesc"),
           variant: "destructive",
         });
       } finally {
@@ -168,7 +170,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         setProgress(0);
       }
     },
-    [toast]
+    [toast, t]
   );
 
   const handleCommit = useCallback(async () => {
@@ -202,22 +204,46 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
       onImported?.();
     } catch (e: any) {
       toast({
-        title: "Import failed",
-        description: e?.response?.data?.message || e?.message || "Could not commit import",
+        title: t("import_failedTitle"),
+        description: e?.response?.data?.message || e?.message || t("import_commitFailedDesc"),
         variant: "destructive",
       });
     } finally {
       setBusy(false);
     }
-  }, [preview, decisions, customEntities, onImported, toast]);
+  }, [preview, decisions, customEntities, onImported, toast, t]);
+
+  const handleRelink = useCallback(async () => {
+    setBusy(true);
+    try {
+      const res = await importApi.relinkEntities();
+      const data = res.data as { notesUpdated: number; connectionsCreated: number };
+      toast({
+        title: t("import_relinkDoneTitle"),
+        description: t("import_relinkDoneDesc", {
+          n: data.connectionsCreated,
+          notes: data.notesUpdated,
+        }),
+      });
+      onImported?.();
+    } catch (e: any) {
+      toast({
+        title: t("import_failedTitle"),
+        description: e?.response?.data?.message || e?.message || t("import_commitFailedDesc"),
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }, [onImported, toast, t]);
 
   const addCustomEntity = useCallback(() => {
     const name = customDraftName.trim();
     if (!name) return;
     if (BLOCKED_EXTENSION_BEFORE_MD.test(name) || name.includes("/") || name.includes("\\")) {
       toast({
-        title: "Invalid entity name",
-        description: "Files, paths and extensions are not valid entities.",
+        title: t("import_invalidNameTitle"),
+        description: t("import_invalidNameDesc"),
         variant: "destructive",
       });
       return;
@@ -225,8 +251,8 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
     const matches = preview?.files.filter((file) => textContainsEntity(tiptapPlainText(file.content), name)).length ?? 0;
     if (matches === 0) {
       toast({
-        title: "Entity not found",
-        description: "This name was not found in the notes selected for import.",
+        title: t("import_notFoundTitle"),
+        description: t("import_notFoundDesc"),
         variant: "destructive",
       });
       return;
@@ -236,7 +262,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
       s.some((c) => c.name.toLowerCase() === key) ? s : [...s, { name, type: customDraftType, matches }]
     );
     setCustomDraftName("");
-  }, [customDraftName, customDraftType, preview, toast]);
+  }, [customDraftName, customDraftType, preview, toast, t]);
 
   const acceptedCount = useMemo(
     () => Object.values(decisions).filter((d) => d.accept).length,
@@ -251,14 +277,14 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
         onOpenChange(v);
       }}
     >
-      <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] sm:max-h-[85vh] bg-black/95 border border-white/10 text-white p-0 overflow-hidden rounded-sm flex flex-col">
-        <DialogHeader className="p-4 sm:p-6 border-b border-white/10 text-left">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-white/40">Onboarding</p>
-          <DialogTitle className="font-serif text-xl sm:text-2xl tracking-tight text-white mt-2">
-            Import Markdown
+      <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] sm:max-h-[85vh] p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="space-y-0 p-4 sm:p-6 border-b border-border text-left">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{t("import_eyebrow")}</p>
+          <DialogTitle className="font-serif text-xl sm:text-2xl tracking-tight text-foreground mt-2">
+            {t("profile_importMd")}
           </DialogTitle>
-          <p className="text-xs text-white/50 mt-1 leading-relaxed">
-            Upload .md files or a whole folder. Other formats are ignored. We detect people, projects and topics — you confirm what becomes an entity.
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+            {t("import_headerDesc")}
           </p>
         </DialogHeader>
 
@@ -271,29 +297,29 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   e.preventDefault();
                   handleFiles(e.dataTransfer.files);
                 }}
-                className="border border-dashed border-white/15 rounded-sm p-6 sm:p-10 text-center hover:border-white/30 transition-colors"
+                className="border border-dashed border-border rounded-sm p-6 sm:p-10 text-center hover:border-foreground/25 transition-colors"
               >
-                <ArrowUpTrayIcon className="w-8 h-8 mx-auto text-white/40" />
-                <p className="text-sm text-white/70 mt-3">Drop .md files here</p>
-                <p className="text-xs text-white/40 mt-1">or pick from your device</p>
+                <ArrowUpTrayIcon className="w-8 h-8 mx-auto text-muted-foreground" />
+                <p className="text-sm text-foreground/80 mt-3">{t("import_dropHere")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("import_orPick")}</p>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 mt-5">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => inputRef.current?.click()}
                     disabled={busy}
-                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5 w-full sm:w-auto"
+                    className="w-full sm:w-auto"
                   >
-                    Select files
+                    {t("import_selectFiles")}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => folderInputRef.current?.click()}
                     disabled={busy}
-                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5 w-full sm:w-auto"
+                    className="w-full sm:w-auto"
                   >
-                    Select folder
+                    {t("import_selectFolder")}
                   </Button>
                 </div>
                 <input
@@ -318,48 +344,48 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
               </div>
               {busy && (
                 <div className="space-y-2">
-                  <p className="text-xs text-white/50">Parsing files…</p>
-                  <Progress value={progress} className="h-[2px] bg-white/5 rounded-none" />
+                  <p className="text-xs text-muted-foreground">{t("import_parsing")}</p>
+                  <Progress value={progress} className="h-[2px] bg-accent rounded-none" />
                 </div>
               )}
-              <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 pt-2">
-                Limits: 200 files · 2 MB each · 25 MB total
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 pt-2">
+                {t("import_limits")}
               </p>
             </div>
           )}
 
           {step === "review" && preview && (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <Stat label="Files" value={preview.files.length} />
-                <Stat label="Candidates" value={preview.candidates.length} />
-                <Stat label="Accepted" value={acceptedCount} />
-              </div>
+              <dl className="grid grid-cols-3 gap-3 text-xs sm:gap-4">
+                <Stat label={t("import_stat_files")} value={preview.files.length} />
+                <Stat label={t("import_stat_candidates")} value={preview.candidates.length} />
+                <Stat label={t("import_stat_accepted")} value={acceptedCount} />
+              </dl>
 
-              <section>
-                <h3 className="text-[10px] uppercase tracking-[0.32em] text-white/40 mb-3">Files</h3>
+              <section className="border-t border-border pt-5">
+                <h3 className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-3">{t("import_stat_files")}</h3>
                 <ul className="space-y-1 max-h-40 overflow-y-auto pr-2">
                   {preview.files.map((f) => (
-                    <li key={f.filename} className="flex items-center gap-2 text-xs text-white/70 py-1 border-b border-white/[0.04]">
-                      <DocumentTextIcon className="w-3.5 h-3.5 text-white/30" />
+                    <li key={f.filename} className="flex items-center gap-2 text-xs text-foreground/80 py-1 border-b border-border">
+                      <DocumentTextIcon className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="truncate flex-1">{f.title}</span>
-                      <span className="text-white/30 tabular-nums">{f.wordCount} w</span>
+                      <span className="text-muted-foreground tabular-nums">{f.wordCount} w</span>
                     </li>
                   ))}
                 </ul>
                 {preview.skipped && preview.skipped.length > 0 && (
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mt-2">
-                    {preview.skipped.length} skipped (duplicates or empty)
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 mt-2">
+                    {t(preview.skipped.length === 1 ? "import_skippedCount_one" : "import_skippedCount", { n: preview.skipped.length })}
                   </p>
                 )}
               </section>
 
-              <section>
-                <h3 className="text-[10px] uppercase tracking-[0.32em] text-white/40 mb-3">
-                  Add your own entities
+              <section className="border-t border-border pt-5">
+                <h3 className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-3">
+                  {t("import_addOwnTitle")}
                 </h3>
-                <p className="text-[11px] text-white/40 mb-3 leading-relaxed">
-                  Type a name we missed. We'll scan every note for it and link it wherever it appears.
+                <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
+                  {t("import_addOwnDesc")}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -372,17 +398,17 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                         addCustomEntity();
                       }
                     }}
-                    placeholder="e.g. Amanda, Project Continuum..."
-                    className="flex-1 min-w-0 bg-transparent border border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none rounded-sm px-3 py-2"
+                    placeholder={t("import_addOwnPlaceholder")}
+                    className="flex-1 min-w-0 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground/40 focus:outline-none rounded-sm px-3 py-2"
                   />
                   <select
                     value={customDraftType}
                     onChange={(e) => setCustomDraftType(e.target.value as EntityType)}
-                    className="bg-transparent border border-white/10 text-xs text-white/80 rounded-sm px-2 py-2 focus:outline-none focus:border-white/30"
+                    className="bg-transparent border border-border text-xs text-foreground/80 rounded-sm px-2 py-2 focus:outline-none focus:border-foreground/30"
                   >
-                    {TYPES.map((t) => (
-                      <option key={t} value={t} className="bg-black">
-                        {t}
+                    {TYPES.map((opt) => (
+                      <option key={opt} value={opt} className="bg-[hsl(var(--popup-background))] text-[hsl(var(--popup-foreground))]">
+                        {opt}
                       </option>
                     ))}
                   </select>
@@ -391,9 +417,8 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     variant="outline"
                     onClick={addCustomEntity}
                     disabled={busy || !customDraftName.trim()}
-                    className="border-white/15 bg-transparent text-white/80 hover:bg-white/5"
                   >
-                    Add
+                    {t("import_addBtn")}
                   </Button>
                 </div>
                 {customEntities.length > 0 && (
@@ -401,22 +426,22 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     {customEntities.map((c, i) => (
                       <li
                         key={`${c.name}-${i}`}
-                        className="flex items-center gap-2 border border-white/10 bg-white/[0.03] rounded-sm pl-2 pr-1 py-1"
+                        className="flex items-center gap-2 border border-border bg-accent/60 rounded-sm pl-2 pr-1 py-1"
                       >
-                        <span className="text-xs text-white/90">{c.name}</span>
-                        <span className="text-[9px] uppercase tracking-[0.2em] text-white/40">
+                        <span className="text-xs text-foreground/90">{c.name}</span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
                           {c.type}
                         </span>
-                        <span className="text-[9px] uppercase tracking-[0.2em] text-white/30">
-                          {c.matches} {c.matches === 1 ? "note" : "notes"}
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80">
+                          {t(c.matches === 1 ? "import_matchesCount_one" : "import_matchesCount", { n: c.matches })}
                         </span>
                         <button
                           type="button"
-                          aria-label={`Remove ${c.name}`}
+                          aria-label={t("import_removeEntity", { name: c.name })}
                           onClick={() =>
                             setCustomEntities((s) => s.filter((_, idx) => idx !== i))
                           }
-                          className="text-white/40 hover:text-white px-1"
+                          className="text-muted-foreground hover:text-foreground px-1"
                         >
                           ×
                         </button>
@@ -426,18 +451,18 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 )}
               </section>
 
-              <section>
-                <h3 className="text-[10px] uppercase tracking-[0.32em] text-white/40 mb-3">
-                  Detected entities — confirm or change type
+              <section className="border-t border-border pt-5">
+                <h3 className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-3">
+                  {t("import_detectedTitle")}
                 </h3>
                 {preview.candidates.length === 0 ? (
-                  <p className="text-xs text-white/40">No candidates detected. Notes will still be imported.</p>
+                  <p className="text-xs text-muted-foreground">{t("import_noCandidates")}</p>
                 ) : (
                   <ul className="space-y-1 max-h-72 overflow-y-auto pr-2">
                     {preview.candidates.map((c) => {
                       const d = decisions[c.key] ?? { accept: false, type: c.suggestedType, name: c.name };
                       return (
-                        <li key={c.key} className="py-2 border-b border-white/[0.04]">
+                        <li key={c.key} className="py-2 border-b border-border">
                           <div className="flex items-center gap-2 sm:gap-3">
                             <input
                               type="checkbox"
@@ -445,7 +470,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                               onChange={(e) =>
                                 setDecisions((s) => ({ ...s, [c.key]: { ...d, accept: e.target.checked } }))
                               }
-                              className="w-4 h-4 accent-white/80 shrink-0"
+                              className="w-4 h-4 accent-foreground shrink-0"
                               disabled={c.existing}
                             />
                             <input
@@ -454,10 +479,10 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                               onChange={(e) =>
                                 setDecisions((s) => ({ ...s, [c.key]: { ...d, name: e.target.value } }))
                               }
-                              className="flex-1 min-w-0 bg-transparent border-b border-white/10 text-sm text-white/90 focus:border-white/40 focus:outline-none px-0 py-1"
+                              className="flex-1 min-w-0 bg-transparent border-b border-border text-sm text-foreground focus:border-foreground/40 focus:outline-none px-0 py-1"
                             />
-                            <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 tabular-nums shrink-0">
-                              {c.existing ? "exists" : `${c.occurrences}×`}
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums shrink-0">
+                              {c.existing ? t("import_exists") : `${c.occurrences}×`}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-2 pl-6">
@@ -466,23 +491,23 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                               onChange={(e) =>
                                 setDecisions((s) => ({ ...s, [c.key]: { ...d, type: e.target.value as EntityType } }))
                               }
-                              className="bg-transparent border border-white/10 text-xs text-white/80 rounded-sm px-2 py-1 focus:outline-none focus:border-white/30"
+                              className="bg-transparent border border-border text-xs text-foreground/80 rounded-sm px-2 py-1 focus:outline-none focus:border-foreground/30"
                             >
-                              {TYPES.map((t) => (
-                                <option key={t} value={t} className="bg-black">
-                                  {t}
+                              {TYPES.map((opt) => (
+                                <option key={opt} value={opt} className="bg-[hsl(var(--popup-background))] text-[hsl(var(--popup-foreground))]">
+                                  {opt}
                                 </option>
                               ))}
                             </select>
                             {c.confidence && (
                               <span
                                 className={
-                                  "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-sm border " +
+                                  "cx-badge " +
                                   (c.confidence === "HIGH"
-                                    ? "text-emerald-300/80 border-emerald-300/20 bg-emerald-300/5"
+                                    ? "cx-badge-success"
                                     : c.confidence === "MEDIUM"
-                                    ? "text-sky-300/80 border-sky-300/20 bg-sky-300/5"
-                                    : "text-white/40 border-white/10 bg-white/[0.02]")
+                                    ? "cx-badge-info"
+                                    : "cx-badge-neutral")
                                 }
                               >
                                 {c.confidence}
@@ -497,33 +522,34 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
               </section>
 
               {preview.errors.length > 0 && (
-                <div className="text-xs text-amber-300/70 border border-amber-300/20 bg-amber-300/5 p-3 rounded-sm">
+                <div className="text-xs text-warning border border-warning/20 bg-warning/5 p-3 rounded-sm">
                   {preview.errors.slice(0, 5).map((e) => (
                     <div key={e}>{e}</div>
                   ))}
                 </div>
               )}
 
-              {busy && <Progress value={progress} className="h-[2px] bg-white/5 rounded-none" />}
+              {busy && <Progress value={progress} className="h-[2px] bg-accent rounded-none" />}
 
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 sticky bottom-0 bg-black/95 -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 sticky bottom-0 bg-[hsl(var(--popup-background))] -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={reset}
                   disabled={busy}
-                  className="text-white/60 hover:text-white w-full sm:w-auto"
+                  className="w-full sm:w-auto"
                 >
-                  Back
+                  {t("common_back")}
                 </Button>
                 <Button
+                  variant="white"
                   size="sm"
                   onClick={handleCommit}
                   disabled={busy}
-                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
+                  className="w-full sm:w-auto"
                 >
                   {busy && <ArrowPathIcon className="w-3.5 h-3.5 mr-2 animate-spin" />}
-                  Import {preview.files.length} {preview.files.length === 1 ? "file" : "files"}
+                  {t(preview.files.length === 1 ? "import_commitBtn_one" : "import_commitBtn", { n: preview.files.length })}
                 </Button>
               </div>
             </div>
@@ -532,35 +558,46 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
           {step === "result" && result && (
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <CheckCircleIcon className="w-8 h-8 text-emerald-400/80" />
+                <CheckCircleIcon className="w-8 h-8 text-success" />
                 <div>
-                  <p className="font-serif text-xl text-white">Import complete</p>
-                  <p className="text-xs text-white/50">Your knowledge graph just grew.</p>
+                  <p className="font-serif text-xl text-foreground">{t("import_completeTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("import_completeDesc")}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
-                <Stat label="Notes" value={result.notesCreated} />
-                <Stat label="New entities" value={result.entitiesCreated} />
-                <Stat label="Reused" value={result.entitiesReused} />
-                <Stat label="Links" value={result.linksCreated} />
-              </div>
+              <dl className="grid grid-cols-2 gap-3 border-t border-border pt-5 text-xs sm:grid-cols-4 sm:gap-4">
+                <Stat label={t("import_stat_notes")} value={result.notesCreated} />
+                <Stat label={t("import_stat_newEntities")} value={result.entitiesCreated} />
+                <Stat label={t("import_stat_reused")} value={result.entitiesReused} />
+                <Stat label={t("import_stat_links")} value={result.linksCreated} />
+              </dl>
               {result.errors.length > 0 && (
-                <div className="text-xs text-amber-300/70 border border-amber-300/20 bg-amber-300/5 p-3 rounded-sm max-h-32 overflow-y-auto">
+                <div className="text-xs text-warning border border-warning/20 bg-warning/5 p-3 rounded-sm max-h-32 overflow-y-auto">
                   {result.errors.map((e) => (
                     <div key={e}>{e}</div>
                   ))}
                 </div>
               )}
-              <div className="flex justify-end">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRelink}
+                  disabled={busy}
+                  className="w-full sm:w-auto"
+                >
+                  {busy && <ArrowPathIcon className="w-3.5 h-3.5 mr-2 animate-spin" />}
+                  {t("import_relinkBtn")}
+                </Button>
+                <Button
+                  variant="white"
                   size="sm"
                   onClick={() => {
                     reset();
                     onOpenChange(false);
                   }}
-                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto"
+                  className="w-full sm:w-auto"
                 >
-                  Done
+                  {t("import_doneBtn")}
                 </Button>
               </div>
             </div>
@@ -573,9 +610,9 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border border-white/5 bg-white/[0.02] p-3 sm:p-4 rounded-sm">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-white/30">{label}</p>
-      <p className="text-xl sm:text-2xl font-serif text-white mt-1 tabular-nums">{value}</p>
+    <div>
+      <dt className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{label}</dt>
+      <dd className="mt-1 font-serif text-lg sm:text-xl text-foreground/90 tabular-nums">{value}</dd>
     </div>
   );
 }

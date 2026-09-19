@@ -41,13 +41,13 @@ export function StatusBar({ editor }: Props) {
   }, [editor]);
 
   return (
-    <div className="flex items-center gap-3 text-[10px] text-white/40 px-3 py-1.5 border-t border-white/5 bg-black/40 backdrop-blur tabular-nums">
+    <div className="flex items-center gap-3 text-[10px] text-muted-foreground px-3 py-1.5 border-t border-border/5 bg-background/40 backdrop-blur tabular-nums">
       <span>{t("ed_words", { count: stats.words })}</span>
-      <span className="text-white/20">·</span>
+      <span className="text-muted-foreground">·</span>
       <span>{t("ed_chars", { count: stats.chars })}</span>
-      <span className="text-white/20">·</span>
+      <span className="text-muted-foreground">·</span>
       <span>{t("ed_line_col", { line: stats.line, col: stats.col })}</span>
-      <span className="text-white/20 ml-auto">·</span>
+      <span className="text-muted-foreground ml-auto">·</span>
       <span>{t("ed_min_read", { count: stats.readMin })}</span>
     </div>
   );

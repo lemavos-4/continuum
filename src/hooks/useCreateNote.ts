@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { notesApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/queries";
 
 interface UseCreateNoteOptions {
   /** Called when the plan limit is reached (e.g. open the upgrade modal). */
@@ -19,6 +21,7 @@ export function useCreateNote(options: UseCreateNoteOptions = {}) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { canCreateNote, refresh, applyUsageDelta } = usePlanGate();
+  const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const inFlight = useRef(false);
 
@@ -37,6 +40,8 @@ export function useCreateNote(options: UseCreateNoteOptions = {}) {
     try {
       const { data } = await notesApi.create("Untitled", "");
       if (!data?.id) throw new Error("Invalid response from server");
+      queryClient.setQueryData(qk.note(data.id), data);
+      void queryClient.invalidateQueries({ queryKey: qk.notes() });
       void refresh();
       navigate(`/notes/${data.id}`);
     } catch (err: any) {
@@ -54,7 +59,7 @@ export function useCreateNote(options: UseCreateNoteOptions = {}) {
       inFlight.current = false;
       setCreating(false);
     }
-  }, [canCreateNote, applyUsageDelta, refresh, navigate, toast, options]);
+  }, [canCreateNote, applyUsageDelta, refresh, navigate, toast, options, queryClient]);
 
   return { createNote, creating, canCreateNote };
 }

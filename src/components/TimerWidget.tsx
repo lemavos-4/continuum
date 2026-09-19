@@ -24,7 +24,7 @@ function FlipDigit({ value }: { value: string }) {
   }, [value, prevValue]);
 
   return (
-    <div className="relative w-20 h-28 sm:w-28 sm:h-40 lg:w-32 lg:h-48 font-mono font-bold text-white select-none [perspective:1000px]">
+    <div className="relative w-20 h-28 sm:w-28 sm:h-40 lg:w-32 lg:h-48 font-mono font-bold text-foreground select-none [perspective:1000px]">
       
       <style>{`
         .backface-hidden {
@@ -66,7 +66,7 @@ function FlipDigit({ value }: { value: string }) {
       </div>
 
       {/* FRISO CENTRAL */}
-      <div className="absolute top-[calc(50%-1px)] left-0 w-full h-[2px] bg-black/80 z-10 shadow-[0_1px_0px_rgba(255,255,255,0.08)]"></div>
+      <div className="absolute top-[calc(50%-1px)] left-0 w-full h-[2px] bg-background/80 z-10 shadow-[0_1px_0px_rgba(255,255,255,0.08)]"></div>
     </div>
   );
 }
@@ -269,34 +269,34 @@ export function TimerWidget({
   }
 
   return (
-    <div className="border border-white/5 bg-white/[0.01] rounded-sm p-5 text-white">
+    <div className="border border-border/5 bg-foreground/[0.01] rounded-sm p-5 text-foreground">
       {/* Header — Activity aesthetic */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.32em] text-white/30 font-mono">{t("tm_timer")}</p>
-          <h3 className="mt-1 font-serif text-xl text-white truncate">{entityName}</h3>
+          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground font-mono">{t("tm_timer")}</p>
+          <h3 className="mt-1 font-serif text-xl text-foreground truncate">{entityName}</h3>
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           {isRunning ? (isPaused ? t("tm_paused") : t("tm_running")) : t("tm_idle")}
         </span>
       </div>
 
       {/* Clock readout */}
-      <div className={`font-mono text-5xl sm:text-6xl text-center my-5 tracking-widest tabular-nums transition-colors ${isPaused ? 'text-white/50' : 'text-white'}`}>
+      <div className={`font-mono text-5xl sm:text-6xl text-center my-5 tracking-widest tabular-nums transition-colors ${isPaused ? 'text-muted-foreground' : 'text-foreground'}`}>
         {hrs}:{mins}:{secs}
       </div>
 
       {timerLoading && (
-        <p className="text-[10px] uppercase tracking-widest font-mono text-white/40 text-center mb-3">{t("tm_loading_timer")}</p>
+        <p className="text-[10px] uppercase tracking-widest font-mono text-muted-foreground text-center mb-3">{t("tm_loading_timer")}</p>
       )}
 
       {/* CONTROLS */}
-      <div className="grid grid-cols-3 gap-px bg-white/5 mb-3">
+      <div className="grid grid-cols-3 gap-px bg-foreground/5 mb-3">
         {!isRunning ? (
           <button
             onClick={handleStart}
             disabled={isStarting || timerLoading}
-            className="col-span-2 py-3 bg-black/40 hover:bg-white/[0.06] text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
+            className="col-span-2 py-3 bg-background/40 hover:bg-foreground/[0.06] text-foreground font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
           >
             {isStarting ? t("tm_starting") : t("tm_start")}
           </button>
@@ -305,14 +305,14 @@ export function TimerWidget({
             <button
               onClick={handlePauseToggle}
               disabled={timerLoading}
-              className="py-3 bg-black/40 hover:bg-white/[0.06] text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
+              className="py-3 bg-background/40 hover:bg-foreground/[0.06] text-foreground font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
             >
               {isPaused ? t("tm_resume") : t("tm_pause")}
             </button>
             <button
               onClick={handleStop}
               disabled={isStopping || timerLoading}
-              className="py-3 bg-black/40 hover:bg-white/[0.06] text-white/70 hover:text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
+              className="py-3 bg-background/40 hover:bg-foreground/[0.06] text-muted-foreground hover:text-foreground font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-50"
             >
               {isStopping ? '…' : t("tm_stop")}
             </button>
@@ -321,7 +321,7 @@ export function TimerWidget({
         <button
           onClick={handleRestart}
           disabled={!isRunning || timerLoading}
-          className="py-3 bg-black/40 hover:bg-white/[0.06] text-white/50 hover:text-white font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-30 disabled:cursor-not-allowed"
+          className="py-3 bg-background/40 hover:bg-foreground/[0.06] text-muted-foreground hover:text-foreground font-mono text-[11px] uppercase tracking-[0.28em] transition disabled:opacity-30 disabled:cursor-not-allowed"
         >
           {t("tm_restart")}
         </button>
@@ -329,13 +329,13 @@ export function TimerWidget({
 
       <button
         onClick={() => setIsFullscreen(true)}
-        className="w-full py-2.5 border border-white/5 bg-white/[0.01] hover:bg-white/[0.04] text-white/60 hover:text-white font-mono text-[10px] uppercase tracking-[0.32em] rounded-sm transition"
+        className="w-full py-2.5 border border-border/5 bg-foreground/[0.01] hover:bg-foreground/[0.04] text-muted-foreground hover:text-foreground font-mono text-[10px] uppercase tracking-[0.32em] rounded-sm transition"
       >
         {t("tm_flip_clock")}
       </button>
 
       {/* TODAY SECTION — Activity stat grid */}
-      <div className="mt-5 grid grid-cols-3 gap-px bg-white/5">
+      <div className="mt-5 grid grid-cols-3 gap-px bg-foreground/5">
         <SummaryStat label={t("tm_today")} value={formatSeconds(today.todaySeconds + (isRunning ? currentElapsed : 0))} />
         <SummaryStat label={t("tm_sessions")} value={today.todayEntriesCount} />
         <SummaryStat label={t("tm_avg")} value={formatSeconds(today.avgEntrySeconds)} />
@@ -354,7 +354,7 @@ export function TimerWidget({
         >
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-6 right-6 text-slate-600 hover:text-white text-2xl font-light w-12 h-12 flex items-center justify-center rounded-full border border-slate-800 hover:border-slate-600 transition bg-black hover:bg-slate-900 z-10"
+            className="absolute top-6 right-6 text-slate-600 hover:text-foreground text-2xl font-light w-12 h-12 flex items-center justify-center rounded-full border border-slate-800 hover:border-slate-600 transition bg-black hover:bg-slate-900 z-10"
           >
             ✕
           </button>
@@ -369,16 +369,16 @@ export function TimerWidget({
             <FlipDigit value={hrs[1]} />
 
             <div className={`flex flex-col gap-2 sm:gap-4 px-1 opacity-40 ${isPaused ? '' : 'animate-pulse'}`}>
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-foreground rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-foreground rounded-full"></span>
             </div>
 
             <FlipDigit value={mins[0]} />
             <FlipDigit value={mins[1]} />
 
             <div className={`flex flex-col gap-2 sm:gap-4 px-1 opacity-40 ${isPaused ? '' : 'animate-pulse'}`}>
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-foreground rounded-full"></span>
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-foreground rounded-full"></span>
             </div>
 
             <FlipDigit value={secs[0]} />
@@ -435,9 +435,9 @@ export function TimerWidget({
 
 function SummaryStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-black/40 p-3">
-      <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-white/30">{label}</p>
-      <p className="mt-1.5 font-serif text-lg text-white tabular-nums">{value}</p>
+    <div className="bg-background/40 p-3">
+      <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-muted-foreground">{label}</p>
+      <p className="mt-1.5 font-serif text-lg text-foreground tabular-nums">{value}</p>
     </div>
   );
 }

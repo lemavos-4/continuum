@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Loader2, Edit, StickyNote, Network, Calendar, Tag, Clock } from "@/lib/heroicons";
 import {
   Accordion,
@@ -24,6 +24,8 @@ import { TimerWidget } from "@/components/TimerWidget";
 import { TimeHeatmap } from "@/components/TimeHeatmap";
 import type { HeatmapData, EntityStats } from "@/types";
 import { useTimeTracking } from "@/hooks/useTimeTracking";
+import { queryClient } from "@/lib/query-client";
+import { qk, STALE } from "@/lib/queries";
 
 
 interface EntityData { id: string; title: string; type: string; description?: string; trackingDates?: string[]; createdAt: string; }
@@ -35,14 +37,16 @@ export default function EntityDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
-  const [entity, setEntity] = useState<EntityData | null>(null);
+  const [entity, setEntity] = useState<EntityData | null>(() => id ? queryClient.getQueryData<EntityData>(qk.entity(id)) ?? null : null);
   const [heatmap, setHeatmap] = useState<HeatmapData>({});
   const [stats, setStats] = useState<EntityStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !id || !queryClient.getQueryData(qk.entity(id)));
   const [editingTitle, setEditingTitle] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [editingDescription, setEditingDescription] = useState(false);
   const [newDescription, setNewDescription] = useState("");
+  const [editingType, setEditingType] = useState(false);
+  const [newType, setNewType] = useState("");
   const [relatedNotes, setRelatedNotes] = useState<RelatedNote[]>([]);
   const [relatedEntities, setRelatedEntities] = useState<EntityData[]>([]);
 
@@ -58,7 +62,11 @@ export default function EntityDetail() {
       setLoading(true);
 
       try {
-        const { data } = await entitiesApi.get(id);
+        const data = await queryClient.fetchQuery({
+          queryKey: qk.entity(id),
+          queryFn: () => entitiesApi.get(id).then((response) => response.data as EntityData),
+          staleTime: STALE.detail,
+        });
 
         if (cancelled) {
           return;
@@ -67,21 +75,24 @@ export default function EntityDetail() {
         setEntity(data);
 
         if (data?.type === "ACTIVITY") {
-          const [hRes, sRes] = await Promise.all([entitiesApi.heatmap(id), entitiesApi.stats(id)]);
+          const [heatmapData, statsData] = await Promise.all([
+            queryClient.fetchQuery({ queryKey: qk.entityHeatmap(id), queryFn: () => entitiesApi.heatmap(id).then((response) => response.data), staleTime: STALE.detail }),
+            queryClient.fetchQuery({ queryKey: qk.entityStats(id), queryFn: () => entitiesApi.stats(id).then((response) => response.data as EntityStats), staleTime: STALE.detail }),
+          ]);
 
           if (cancelled) {
             return;
           }
 
           // Try API heatmap first, fallback to trackingDates
-          const apiHeatmap = normalizeHeatmapData(hRes.data);
+          const apiHeatmap = normalizeHeatmapData(heatmapData);
           const trackingHeatmap = buildHeatmapFromTrackingDates(data.trackingDates || []);
           const finalHeatmap = Object.keys(apiHeatmap).length > 0 ? apiHeatmap : trackingHeatmap;
           
           setHeatmap(finalHeatmap);
           setStats({
-            ...sRes.data,
-            totalCompletions: Array.isArray(data.trackingDates) ? data.trackingDates.length : sRes.data?.totalCompletions,
+            ...statsData,
+            totalCompletions: Array.isArray(data.trackingDates) ? data.trackingDates.length : statsData?.totalCompletions,
           });
         } else {
           setHeatmap({});
@@ -89,18 +100,18 @@ export default function EntityDetail() {
         }
 
         // Load related notes and connections
-        const [notesRes, connectionsRes] = await Promise.all([
-          entitiesApi.getNotes(id),
-          entitiesApi.getConnections(id),
+        const [notesData, connectionsData] = await Promise.all([
+          queryClient.fetchQuery({ queryKey: qk.entityNotes(id), queryFn: () => entitiesApi.getNotes(id).then((response) => response.data), staleTime: STALE.detail }),
+          queryClient.fetchQuery({ queryKey: qk.entityConnections(id), queryFn: () => entitiesApi.getConnections(id).then((response) => response.data), staleTime: STALE.detail }),
         ]);
 
         if (cancelled) {
           return;
         }
 
-        setRelatedNotes(Array.isArray(notesRes.data) ? notesRes.data : []);
+        setRelatedNotes(Array.isArray(notesData) ? notesData : []);
         setRelatedEntities(
-          (Array.isArray(connectionsRes.data) ? connectionsRes.data : []).filter(
+          (Array.isArray(connectionsData) ? connectionsData : []).filter(
             (item: EntityData) => item.id !== id
           )
         );
@@ -203,6 +214,8 @@ export default function EntityDetail() {
     try {
       const { data } = await entitiesApi.update(id, { title: newTitle.trim() });
       setEntity(data);
+      queryClient.setQueryData(qk.entity(id), data);
+      void queryClient.invalidateQueries({ queryKey: ["entities", "list"] });
       setEditingTitle(false);
       toast({ title: t("ent_name_updated") });
     } catch { toast({ title: t("ent_error_updating"), variant: "destructive" }); }
@@ -213,9 +226,23 @@ export default function EntityDetail() {
     try {
       const { data } = await entitiesApi.update(id, { description: newDescription.trim() });
       setEntity(data);
+      queryClient.setQueryData(qk.entity(id), data);
+      void queryClient.invalidateQueries({ queryKey: ["entities", "list"] });
       setEditingDescription(false);
       toast({ title: t("ent_description_updated") });
     } catch { toast({ title: t("ent_error_updating_description"), variant: "destructive" }); }
+  };
+
+  const handleSaveType = async () => {
+    if (!id || !newType) return;
+    try {
+      const { data } = await entitiesApi.update(id, { type: newType });
+      setEntity(data);
+      queryClient.setQueryData(qk.entity(id), data);
+      void queryClient.invalidateQueries({ queryKey: ["entities", "list"] });
+      setEditingType(false);
+      toast({ title: t("ent_type_updated") ?? "Entity type updated" });
+    } catch { toast({ title: t("ent_error_updating"), variant: "destructive" }); }
   };
 
   if (loading)
@@ -225,10 +252,10 @@ export default function EntityDetail() {
           <Skeleton className="h-3 w-24" />
           <Skeleton className="mt-4 h-10 w-2/3 max-w-sm" />
           <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <SkeletonCard lines={3} />
-            <SkeletonCard lines={3} />
+            <Skeleton className="h-44 w-full" />
+            <Skeleton className="h-44 w-full" />
           </div>
-          <SkeletonCard className="mt-4" lines={5} />
+          <Skeleton className="mt-4 h-56 w-full" />
         </div>
       </AppLayout>
     );
@@ -242,6 +269,13 @@ export default function EntityDetail() {
 
   const typeLabelKey = `ent_type_${entity.type.toLowerCase()}`;
   const typeLabel = t(typeLabelKey) === typeLabelKey ? entity.type.charAt(0) + entity.type.slice(1).toLowerCase() : t(typeLabelKey);
+  const entityTypeOptions = [
+    { value: "TOPIC", label: t("ent_type_topic") },
+    { value: "PERSON", label: t("ent_type_person") },
+    { value: "ORGANIZATION", label: t("ent_type_organization") },
+    { value: "PROJECT", label: t("ent_type_project") },
+    { value: "ACTIVITY", label: t("ent_type_activity") },
+  ];
 
   return (
     <AppLayout>
@@ -339,7 +373,7 @@ export default function EntityDetail() {
         {/* Accordion sections */}
         <Accordion
           type="multiple"
-          defaultValue={["metadata", "notes", "entities"]}
+          defaultValue={["metadata"]}
           className="border-t border-border"
         >
           <AccordionItem value="metadata" className="border-b border-border">
@@ -348,51 +382,74 @@ export default function EntityDetail() {
             </AccordionTrigger>
             <AccordionContent>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-4">
-                <Card variant="subtle" className="p-3">
+                <Card variant="faint" className="p-3">
                   <div className="label-caps text-muted-foreground mb-1.5 inline-flex items-center gap-1.5">
                     <Calendar className="h-3 w-3" /> {t("ent_created")}
                   </div>
                   <div className="text-sm text-foreground">{new Date(entity.createdAt).toLocaleDateString("en-US")}</div>
                 </Card>
-                <Card variant="subtle" className="p-3">
+                <Card variant="faint" className="p-3">
                   <div className="label-caps text-muted-foreground mb-1.5 inline-flex items-center gap-1.5">
                     <Network className="h-3 w-3" /> {t("ent_connections")}
                   </div>
                   <div className="text-sm text-foreground">{relatedEntities.length}</div>
                 </Card>
-                <Card variant="subtle" className="p-3">
+                <Card variant="faint" className="p-3">
                   <div className="label-caps text-muted-foreground mb-1.5 inline-flex items-center gap-1.5">
                     <Tag className="h-3 w-3" /> {t("ent_type")}
                   </div>
-                  <div className="text-sm text-foreground">{typeLabel}</div>
+                  {editingType ? (
+                    <div className="flex flex-col gap-2">
+                      <select
+                        value={newType}
+                        onChange={(e) => setNewType(e.target.value)}
+                        className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                      >
+                        {entityTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleSaveType}>{t("ent_save")}</Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingType(false);
+                            setNewType(entity.type);
+                          }}
+                        >
+                          {t("ent_cancel")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm text-foreground">{typeLabel}</div>
+                      <Button
+                        variant="ghost"
+                        size="iconSm"
+                        onClick={() => {
+                          setEditingType(true);
+                          setNewType(entity.type);
+                        }}
+                        aria-label={t("ent_edit_type") ?? "Edit type"}
+                      >
+                        <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               </div>
             </AccordionContent>
           </AccordionItem>
 
-          {entity?.type === "PROJECT" && timeSummary && (
-            <AccordionItem value="time" className="border-b border-border">
-              <AccordionTrigger className="label-caps text-muted-foreground hover:text-foreground hover:no-underline py-4">
-                <span className="inline-flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> {t("ent_time_tracking_summary")}</span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid grid-cols-2 gap-3 pb-4 max-w-md">
-                  <Card variant="subtle" className="p-3">
-                    <p className="label-caps text-muted-foreground">{t("ent_total_time")}</p>
-                    <p className="mt-1.5 font-mono text-foreground">{timeSummary.formattedTotal}</p>
-                  </Card>
-                  <Card variant="subtle" className="p-3">
-                    <p className="label-caps text-muted-foreground">{t("ent_sessions")}</p>
-                    <p className="mt-1.5 text-foreground">{timeSummary.entriesCount}</p>
-                  </Card>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
           <AccordionItem value="notes" className="border-b border-border">
             <AccordionTrigger className="label-caps text-muted-foreground hover:text-foreground hover:no-underline py-4">
-              {t("ent_connected_notes")} <span className="ml-2 text-muted-foreground/60 normal-case tracking-normal">({relatedNotes.length})</span>
+              <span className="flex w-full items-center justify-between gap-3">
+                <span>{t("ent_connected_notes")}</span>
+                <span className="text-muted-foreground/60 normal-case tracking-normal">({relatedNotes.length})</span>
+              </span>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-1 pb-4">
@@ -422,7 +479,10 @@ export default function EntityDetail() {
 
           <AccordionItem value="entities" className="border-b border-border">
             <AccordionTrigger className="label-caps text-muted-foreground hover:text-foreground hover:no-underline py-4">
-              {t("ent_connected_entities")} <span className="ml-2 text-muted-foreground/60 normal-case tracking-normal">({relatedEntities.length})</span>
+              <span className="flex w-full items-center justify-between gap-3">
+                <span>{t("ent_connected_entities")}</span>
+                <span className="text-muted-foreground/60 normal-case tracking-normal">({relatedEntities.length})</span>
+              </span>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-1 pb-4">

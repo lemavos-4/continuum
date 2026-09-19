@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "node ./scripts/generate-build-version.js && npm exec vite build",
     "build-all": "npm install && npm run build",
-    "build:dev": "node ./scripts/generate-build-version.js && npm exec vite build --mode development",
+    "build:dev": "node ./scripts/generate-build-version.js && npm exec -- vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "vite preview",
@@ -15,6 +15,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/status-bar": "^8.0.3",
     "@heroicons/react": "^2.0.18",
     "@hookform/resolvers": "^3.10.0",
     "@internationalized/date": "^3.12.2",
@@ -48,7 +50,9 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@stripe/stripe-js": "^9.0.1",
+    "@tanstack/query-core": "^5.102.8",
     "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-query-persist-client": "^5.102.8",
     "@tiptap/core": "3.26.0",
     "@tiptap/extension-bubble-menu": "3.26.0",
     "@tiptap/extension-character-count": "3.26.0",

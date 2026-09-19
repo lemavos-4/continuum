@@ -27,19 +27,9 @@ export function sanitizeAuthRedirectUrl() {
   const currentUrl = new URL(window.location.href);
   const searchChanged = stripTokenKeys(currentUrl.searchParams);
 
-  const rawHash = window.location.hash.replace(/^#/, "");
-  const [hashPath = "", hashQuery = ""] = rawHash.split("?", 2);
-  const normalizedPath = hashPath.startsWith("/") ? hashPath : `/${hashPath}`;
-  const hashParams = new URLSearchParams(hashQuery);
-  const hashChanged = stripTokenKeys(hashParams);
-
-  const cleanedHash = hashChanged || hashParams.toString()
-    ? `${normalizedPath}${hashParams.toString() ? `?${hashParams.toString()}` : ""}`
-    : normalizedPath;
-
-  const nextUrl = `${currentUrl.origin}${currentUrl.pathname}${currentUrl.search}${cleanedHash ? `#${cleanedHash}` : ""}`;
-
-  if (searchChanged || hashChanged) {
+  if (searchChanged) {
+    const search = currentUrl.searchParams.toString();
+    const nextUrl = `${currentUrl.origin}${currentUrl.pathname}${search ? `?${search}` : ""}`;
     window.history.replaceState({}, document.title, nextUrl);
     return true;
   }
@@ -51,11 +41,7 @@ export function extractAuthTokensFromLocation() {
   if (typeof window === "undefined") return null;
 
   const searchParams = new URLSearchParams(window.location.search);
-  const rawHash = window.location.hash.replace(/^#/, "");
-  const [, hashQuery = ""] = rawHash.split("?", 2);
-  const hashParams = new URLSearchParams(hashQuery);
-
-  const getValue = (key: string) => searchParams.get(key) ?? hashParams.get(key);
+  const getValue = (key: string) => searchParams.get(key);
 
   return {
     accessToken: getValue("access_token") ?? getValue("token") ?? getValue("jwt") ?? getValue("login_token"),

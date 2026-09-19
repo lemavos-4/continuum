@@ -38,14 +38,14 @@ export function SidebarGroup({ title, icon: Icon, items, collapsed = false, acti
       type="button"
       className={cn(
         "group flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium transition-all duration-250 ease-out",
-        "text-slate-200 hover:text-white hover:bg-white/5",
-        open && "bg-white/7 text-white shadow-[0_12px_40px_rgba(255,255,255,0.08)]",
+        "text-slate-200 hover:text-foreground hover:bg-foreground/5",
+        open && "bg-foreground/7 text-foreground shadow-[0_12px_40px_rgba(255,255,255,0.08)]",
       )}
       onClick={() => setOpen((value) => !value)}
       aria-expanded={open}
     >
       <span className="flex items-center gap-3">
-        <Icon className="h-5 w-5 text-slate-300 transition-colors duration-200 group-hover:text-white" />
+        <Icon className="h-5 w-5 text-slate-300 transition-colors duration-200 group-hover:text-foreground" />
         {!collapsed && <span>{title}</span>}
       </span>
       {!collapsed && <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")} />}
@@ -95,7 +95,7 @@ export function SidebarGroup({ title, icon: Icon, items, collapsed = false, acti
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 28 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute left-full top-0 z-20 min-w-[16rem] rounded-xl border border-white/8 bg-black/90 p-3 shadow-[0_30px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+            className="absolute left-full top-0 z-20 min-w-[16rem] rounded-xl border border-border/8 bg-background/90 p-3 shadow-[0_30px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl"
           >
             <div className="space-y-2">
               {items.map((item) => (

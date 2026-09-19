@@ -85,7 +85,7 @@ export function CommandPalette() {
   }, [query, navigate, toast]);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
       <CommandInput
         placeholder={t("ed_search_placeholder")}
         value={query}

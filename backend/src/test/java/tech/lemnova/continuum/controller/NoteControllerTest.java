@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.controller;
+package onl.continuum.continuum.controller;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -16,11 +16,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.assertj.core.api.Assertions.*;
 
-import tech.lemnova.continuum.application.service.NoteService;
-import tech.lemnova.continuum.controller.dto.note.NoteCreateRequest;
-import tech.lemnova.continuum.controller.dto.note.NoteUpdateRequest;
-import tech.lemnova.continuum.controller.dto.note.NoteResponse;
-import tech.lemnova.continuum.infra.security.CustomUserDetails;
+import onl.continuum.continuum.application.service.NoteService;
+import onl.continuum.continuum.controller.dto.note.NoteCreateRequest;
+import onl.continuum.continuum.controller.dto.note.NoteUpdateRequest;
+import onl.continuum.continuum.controller.dto.note.NoteResponse;
+import onl.continuum.continuum.infra.security.CustomUserDetails;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

@@ -12,8 +12,7 @@ import {
 import AppLayout from "@/components/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { SkeletonList } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -21,10 +20,12 @@ import { FitText } from "@/components/ui/fit-text";
 import { ListRowContent } from "@/components/ui/list-row-content";
 import { EntityTypeIcon } from "@/components/ui/entity-type-icon";
 import { StickyNote } from "@/lib/heroicons";
-import { SummaryMetric, SummaryMetricRow } from "@/components/ui/summary-metric";
+import { ScoreEvolutionSection } from "@/components/insights/ScoreEvolutionSection";
 
 import { cn } from "@/lib/utils";
 import { insightsApi } from "@/lib/api";
+import { useCachedResource } from "@/hooks/useCachedResource";
+import { qk, STALE } from "@/lib/queries";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -58,6 +59,7 @@ interface InsightItem {
   kind: "note" | "entity";
   category: InsightCategory;
   score: number;
+  normalizedScore: number;
   badge: string;
   title: string;
   subtitle: string;
@@ -127,14 +129,14 @@ const translateBadge = (badge: string, t: (key: string, vars?: Record<string, an
 
 const badgeStyle = (badge: string) => {
   const b = badge?.toLowerCase() || "";
-  if (b.includes("hot")) return "bg-white/[0.06] text-white/90 border-white/20";
-  if (b.includes("forgotten") || b.includes("gem")) return "bg-white/[0.04] text-white/70 border-white/10";
-  return "bg-transparent text-white/50 border-white/10";
+  if (b.includes("hot")) return "bg-foreground/[0.06] text-muted-foreground border-border/20";
+  if (b.includes("forgotten") || b.includes("gem")) return "bg-foreground/[0.04] text-muted-foreground border-border/10";
+  return "bg-transparent text-muted-foreground border-border/10";
 };
 
 function StatChip({ children }: { children: ReactNode }) {
   return (
-    <Badge variant="outline" className="rounded-sm border-white/5 bg-white/[0.02] px-1.5 py-0.5 font-mono text-[10px] text-white/40">
+    <Badge variant="outline" className="rounded-sm border-border/5 bg-foreground/[0.02] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
       {children}
     </Badge>
   );
@@ -156,7 +158,7 @@ function NavItem({ label, count, active, onClick }: NavItemProps) {
       variant="ghost"
       className={cn(
         "group flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-[13px] normal-case transition-colors",
-        active ? "text-white" : "text-white/45 hover:text-white/80"
+        active ? "text-foreground" : "text-muted-foreground hover:text-muted-foreground"
       )}
       onClick={onClick}
     >
@@ -165,12 +167,12 @@ function NavItem({ label, count, active, onClick }: NavItemProps) {
           aria-hidden
           className={cn(
             "h-px w-3 transition-all",
-            active ? "bg-white w-5" : "bg-white/20 group-hover:bg-white/40"
+            active ? "bg-foreground w-5" : "bg-foreground/20 group-hover:bg-foreground/40"
           )}
         />
         {label}
       </span>
-      <span className={cn("font-mono text-[10px] tabular-nums", active ? "text-white/60" : "text-white/30")}>
+      <span className={cn("font-mono text-[10px] tabular-nums", active ? "text-muted-foreground" : "text-muted-foreground")}>
         {count}
       </span>
     </Button>
@@ -185,7 +187,7 @@ function InsightRow({ item }: { item: InsightItem }) {
     <li>
       <button
         onClick={item.onOpen}
-        className="group relative flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-white/[0.02]"
+        className="group relative flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-foreground/[0.02]"
       >
         <ListRowContent
           icon={
@@ -207,10 +209,13 @@ function InsightRow({ item }: { item: InsightItem }) {
           }
           trailing={
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={cn("rounded-sm px-1.5 py-0 text-[9px] font-mono tracking-wider uppercase", badgeStyle(item.badge))}>
-                {translateBadge(item.badge, t)}
+              <Badge
+                variant="outline"
+                className="rounded-sm border-border/10 bg-transparent px-1.5 py-0 font-mono text-[10px] text-muted-foreground"
+                aria-label={`Score ${item.score.toFixed(1)}`}
+              >
+                {item.score.toFixed(1)}
               </Badge>
-              <span className="hidden font-mono text-xs text-white/40 sm:inline">{item.score.toFixed(1)}</span>
             </div>
           }
         />
@@ -227,13 +232,36 @@ export default function Insights() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  
-  const [hotNotes, setHotNotes] = useState<NoteInsight[]>([]);
-  const [forgottenNotes, setForgottenNotes] = useState<NoteInsight[]>([]);
-  const [hotEntities, setHotEntities] = useState<EntityInsight[]>([]);
-  const [forgottenEntities, setForgottenEntities] = useState<EntityInsight[]>([]);
+  const insightsQuery = useCachedResource<{
+    hotNotes: NoteInsight[];
+    forgottenNotes: NoteInsight[];
+    hotEntities: EntityInsight[];
+    forgottenEntities: EntityInsight[];
+  }>(
+    qk.insights("all", 12),
+    async () => {
+      const [hn, fn, he, fe] = await Promise.all([
+        insightsApi.hotNotes(12),
+        insightsApi.forgottenNotes(12),
+        insightsApi.hotEntities(12),
+        insightsApi.forgottenEntities(12),
+      ]);
+      return {
+        hotNotes: hn.data || [],
+        forgottenNotes: fn.data || [],
+        hotEntities: he.data || [],
+        forgottenEntities: fe.data || [],
+      };
+    },
+    { staleTime: STALE.insights }
+  );
+
+  const loading = insightsQuery.loading;
+  const refreshing = insightsQuery.refreshing;
+  const hotNotes = insightsQuery.data?.hotNotes ?? [];
+  const forgottenNotes = insightsQuery.data?.forgottenNotes ?? [];
+  const hotEntities = insightsQuery.data?.hotEntities ?? [];
+  const forgottenEntities = insightsQuery.data?.forgottenEntities ?? [];
   
   const [view, setView] = useState<View>("all");
   const [search, setSearch] = useState("");
@@ -260,33 +288,9 @@ export default function Insights() {
   };
 
 
-  const load = async (silent = false) => {
-    if (!silent) setLoading(true);
-    else setRefreshing(true);
-
-    try {
-      const [hn, fn, he, fe] = await Promise.all([
-        insightsApi.hotNotes(12),
-        insightsApi.forgottenNotes(12),
-        insightsApi.hotEntities(12),
-        insightsApi.forgottenEntities(12),
-      ]);
-
-      setHotNotes(hn.data || []);
-      setForgottenNotes(fn.data || []);
-      setHotEntities(he.data || []);
-      setForgottenEntities(fe.data || []);
-    } catch {
-      toast({ title: t("ins_could_not_load"), variant: "destructive" });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+  const load = async (_silent = false) => {
+    await insightsQuery.refetch();
   };
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const insights = useMemo(() => {
     const items: InsightItem[] = [];
@@ -297,6 +301,7 @@ export default function Insights() {
         kind: "note",
         category: "hotNotes",
         score: item.score,
+        normalizedScore: item.score,
         badge: item.badge,
         title: item.note.title || t("ins_untitled"),
         subtitle: t("ins_note"),
@@ -311,6 +316,7 @@ export default function Insights() {
         kind: "entity",
         category: "hotEntities",
         score: item.score,
+        normalizedScore: item.score,
         badge: item.badge,
         title: item.entity.title || t("ins_untitled"),
         subtitle: item.entity.type || t("ins_atom"),
@@ -325,6 +331,7 @@ export default function Insights() {
         kind: "note",
         category: "worthRevisiting",
         score: item.score,
+        normalizedScore: item.score,
         badge: item.badge,
         title: item.note.title || t("ins_untitled"),
         subtitle: t("ins_note"),
@@ -339,6 +346,7 @@ export default function Insights() {
         kind: "entity",
         category: "forgottenGems",
         score: item.score,
+        normalizedScore: item.score,
         badge: item.badge,
         title: item.entity.title || t("ins_untitled"),
         subtitle: item.entity.type || t("ins_atom"),
@@ -347,7 +355,27 @@ export default function Insights() {
       });
     });
 
-    return items.sort((a, b) => b.score - a.score);
+    // Normalize within each category before mixing them in the "All" tab —
+    // notes and entities use different weight scales on the backend, so raw
+    // scores aren't comparable across categories. Min-max is monotonic inside
+    // each group, so individual tabs keep their existing order.
+    const byCategory = new Map<InsightCategory, InsightItem[]>();
+    items.forEach((item) => {
+      const arr = byCategory.get(item.category) ?? [];
+      arr.push(item);
+      byCategory.set(item.category, arr);
+    });
+    byCategory.forEach((group) => {
+      const scores = group.map((i) => i.score);
+      const min = Math.min(...scores);
+      const max = Math.max(...scores);
+      const range = max - min || 1;
+      group.forEach((item) => {
+        item.normalizedScore = (item.score - min) / range;
+      });
+    });
+
+    return items.sort((a, b) => b.normalizedScore - a.normalizedScore);
   }, [hotNotes, hotEntities, forgottenNotes, forgottenEntities, navigate]);
 
   const filteredInsights = useMemo(() => {
@@ -367,16 +395,14 @@ export default function Insights() {
     forgottenGems: forgottenEntities.length,
   };
 
-  const topScore = Math.max(0, ...insights.map((item) => item.score));
-
   const SidebarContent = (
     <div className="space-y-7">
       <div>
-        <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-white/30">{t("ins_index")}</p>
+        <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{t("ins_index")}</p>
         <NavItem label={t("ins_all_insights")} count={counts.all} active={view === "all"} onClick={() => { setView("all"); setFilterDrawerOpen(false); }} />
       </div>
       <div>
-        <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-white/30">{t("ins_signals")}</p>
+        <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{t("ins_signals")}</p>
         <div className="space-y-0.5">
           {categoryOrder.map((cat) => (
             <NavItem
@@ -400,13 +426,13 @@ export default function Insights() {
         {/* Edge swipe hint (mobile only) */}
         <div
           aria-hidden
-          className="pointer-events-none fixed left-0 top-1/2 z-20 hidden h-24 w-[3px] -translate-y-1/2 rounded-r bg-white/15"
+          className="pointer-events-none fixed left-0 top-1/2 z-20 hidden h-24 w-[3px] -translate-y-1/2 rounded-r bg-foreground/15"
         />
 
         {/* Menu Lateral Mobile */}
         <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
-          <SheetContent side="left" className="w-[280px] border-white/10 bg-black/95 p-6">
-            <p className="mb-6 font-serif text-2xl text-white">{t("ins_filters")}</p>
+          <SheetContent side="left" className="w-[280px] border-border/10 bg-background/95 p-6">
+            <p className="mb-6 font-serif text-2xl text-foreground">{t("ins_filters")}</p>
             {SidebarContent}
           </SheetContent>
         </Sheet>
@@ -419,38 +445,11 @@ export default function Insights() {
 
           {/* Conteúdo Principal */}
           <main className="min-w-0 flex-1">
-            <header className="mb-8 hidden lg:block">
-              <div className="flex items-end justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.32em] text-white/30">{t("ins_intelligence")}</p>
-                  <h1 className="mt-2 font-serif text-5xl tracking-tight text-white">{t("ins_title")}</h1>
-                  <p className="mt-2 text-sm text-white/50">
-                    {t("ins_subtitle")}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    onClick={() => load(true)}
-                    disabled={refreshing}
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <ArrowPathIcon className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
-                    {t("ins_refresh")}
-                  </Button>
-                </div>
-              </div>
-            </header>
+            {/* Evolução do score */}
+            <div className="-mx-6 mb-6 sm:-mx-2 lg:-mx-4 lg:mb-8">
+              <ScoreEvolutionSection />
+            </div>
 
-            {/* Métricas superiores — mesmo padrão do Dashboard */}
-            <SummaryMetricRow className="mb-6 lg:mb-8">
-              <SummaryMetric label={t("ins_signals_found")} value={String(counts.all)} />
-              <SummaryMetric label={t("ins_top_strength")} value={topScore.toFixed(1)} />
-              <SummaryMetric
-                label={t("ins_archived_gems")}
-                value={String(counts.worthRevisiting + counts.forgottenGems)}
-              />
-            </SummaryMetricRow>
 
 
             {/* Mobile: search + category chips */}
@@ -488,41 +487,45 @@ export default function Insights() {
             </div>
 
             {/* Input de Busca Sticky (desktop) */}
-            <div className="sticky top-14 z-10 -mx-4 hidden border-b border-white/10 bg-black/70 px-4 py-3 backdrop-blur-xl lg:block">
+            <div className="sticky top-14 z-10 -mx-4 hidden border-b border-border/10 bg-background/70 px-4 py-3 backdrop-blur-xl lg:block">
               <div className="relative">
-                <MagnifyingGlassIcon className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t("ins_search_placeholder")}
-                  className="w-full border-0 bg-transparent pl-6 text-sm text-white placeholder:italic placeholder:text-white/30 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="w-full border-0 bg-transparent pl-6 text-sm text-foreground placeholder:italic placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
             </div>
 
 
-            <div className="flex items-center justify-between border-b border-white/5 pb-3 pt-4 mb-4 text-[11px] text-white/40">
+            <div className="flex items-center justify-between border-b border-border/5 pb-3 pt-4 mb-4 text-[11px] text-muted-foreground">
               <div>
                 {filteredInsights.length === 1
                   ? t("ins_showing_signal", { count: filteredInsights.length })
                   : t("ins_showing_signals", { count: filteredInsights.length })}
               </div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-white/30">
+              <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                 {t("ins_sorted_by_score")}
               </div>
             </div>
 
             <div className="mt-2">
               {loading ? (
-                <SkeletonList rows={7} className="py-6" />
+                <div className="space-y-3 py-6">
+                  {Array.from({ length: 7 }).map((_, index) => (
+                    <Skeleton key={index} className="h-14 w-full" />
+                  ))}
+                </div>
               ) : filteredInsights.length === 0 ? (
                 <div className="py-24 text-center">
-                  <p className="font-serif text-2xl italic text-white/40">
+                  <p className="font-serif text-2xl italic text-muted-foreground">
                     {t("ins_no_matching")}
                   </p>
                 </div>
               ) : (
-                <ul className="divide-y divide-white/[0.06]">
+                <ul className="divide-y divide-border">
                   {filteredInsights.map((item) => (
                     <InsightRow key={`${item.kind}-${item.id}-${item.category}`} item={item} />
                   ))}

@@ -39,7 +39,7 @@ function VaultPdfView({ node }: NodeViewProps) {
           <iframe
             src={src}
             title={fileName}
-            className="w-full h-[600px] bg-white"
+            className="w-full h-[600px] bg-foreground"
             sandbox="allow-same-origin allow-scripts"
             referrerPolicy="no-referrer"
             loading="lazy"

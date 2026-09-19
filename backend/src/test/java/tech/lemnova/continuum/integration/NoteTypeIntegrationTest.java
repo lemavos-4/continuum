@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.integration;
+package onl.continuum.continuum.integration;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -10,8 +10,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.TestPropertySource;
 
-import tech.lemnova.continuum.domain.note.Note;
-import tech.lemnova.continuum.infra.persistence.NoteRepository;
+import onl.continuum.continuum.domain.note.Note;
+import onl.continuum.continuum.infra.persistence.NoteRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;

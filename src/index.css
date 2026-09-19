@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700');
 
 @tailwind base;
 @tailwind components;
@@ -51,7 +51,8 @@
     --dur-slow: 240ms;
 
     --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-serif-stack: 'Playfair Display', ui-serif, Georgia, Cambria, serif;
+    --font-serif-stack: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-weight-serif: 700;
     --font-mono-stack: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
     /* --- shadcn bridge (HSL) --- */
@@ -217,46 +218,29 @@
   .font-display,
   .font-serif {
     font-family: var(--font-serif-stack);
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -0.01em;
   }
   .font-mono { font-family: var(--font-mono-stack); }
 
   /* --- Motion system: skeletons & loading ------------------------------- */
+  /* Lightweight skeleton: single compositor-friendly opacity pulse.
+     (No gradient sweep pseudo-element — it forced constant repaints.) */
   .skeleton-shimmer {
-    position: relative;
-    overflow: hidden;
     background: hsl(var(--foreground) / 0.07);
     animation: skeleton-pulse 1.9s ease-in-out infinite;
-  }
-  .skeleton-shimmer::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    transform: translateX(-100%);
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      hsl(var(--foreground) / 0.07) 45%,
-      hsl(var(--foreground) / 0.1) 55%,
-      transparent 100%
-    );
-    animation: skeleton-sweep 1.6s ease-in-out infinite;
+    will-change: opacity;
   }
 
   @keyframes skeleton-pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.72; }
-  }
-
-  @keyframes skeleton-sweep {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(100%); }
+    50% { opacity: 0.6; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .skeleton-shimmer::after { animation: none; }
+    .skeleton-shimmer { animation: none; }
   }
+
 
   /* Hairline divider */
   .hairline { border-color: hsl(var(--border)); }
@@ -590,7 +574,7 @@
   @media (min-width: 1024px) { .container { padding-left: 3rem; padding-right: 3rem; max-width: 1280px; } }
 
   .markdown-content { @apply min-h-[60vh] max-w-none space-y-4 text-sm leading-7 text-foreground; }
-  .markdown-content h1, .markdown-content h2, .markdown-content h3 { @apply font-serif tracking-tight text-foreground; }
+  .markdown-content h1, .markdown-content h2, .markdown-content h3 { @apply tracking-tight text-foreground; font-family: var(--font-serif-stack); font-weight: 700; }
   .markdown-content h1 { @apply text-3xl; }
   .markdown-content h2 { @apply text-2xl; }
   .markdown-content h3 { @apply text-xl; }
@@ -613,9 +597,9 @@
   .ProseMirror ul[data-type="taskList"] { list-style: none; padding: 0; }
   .ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; }
   .ProseMirror ul[data-type="taskList"] li label input[type="checkbox"] { margin-top: 0.25rem; accent-color: #fff; }
-  .ProseMirror h1 { @apply text-3xl font-serif tracking-tight mb-4; }
-  .ProseMirror h2 { @apply text-2xl font-serif tracking-tight mb-3; }
-  .ProseMirror h3 { @apply text-xl font-serif tracking-tight mb-2; }
+  .ProseMirror h1 { @apply text-3xl tracking-tight mb-4; font-family: var(--font-serif-stack); font-weight: 700; }
+  .ProseMirror h2 { @apply text-2xl tracking-tight mb-3; font-family: var(--font-serif-stack); font-weight: 700; }
+  .ProseMirror h3 { @apply text-xl mb-2; font-family: var(--font-serif-stack); font-weight: 700; }
   .ProseMirror p { @apply mb-3 leading-relaxed; }
   .ProseMirror ul { @apply list-disc pl-5 mb-3 space-y-1; }
   .ProseMirror ol { @apply list-decimal pl-5 mb-3 space-y-1; }
@@ -667,11 +651,41 @@
 
 /* Continuum editor */
 @layer components {
-  .continuum-editor { @apply text-foreground leading-relaxed; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; }
+  :root {
+    --note-title-font-scale: 100;
+    --note-body-font-scale: 100;
+  }
+
+  .continuum-editor {
+    @apply text-foreground leading-relaxed;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: calc(16px * var(--note-body-font-scale) / 100) !important;
+    line-height: 1.7;
+  }
+  .continuum-editor,
+  .continuum-editor .ProseMirror {
+    font-size: calc(16px * var(--note-body-font-scale) / 100) !important;
+    line-height: 1.7;
+  }
+  .continuum-editor .ProseMirror > * {
+    font-size: inherit !important;
+  }
+  .continuum-editor .ProseMirror p,
+  .continuum-editor .ProseMirror li,
+  .continuum-editor .ProseMirror blockquote,
+  .continuum-editor .ProseMirror td,
+  .continuum-editor .ProseMirror th,
+  .continuum-editor .ProseMirror table,
+  .continuum-editor .ProseMirror code,
+  .continuum-editor .ProseMirror pre,
+  .continuum-editor .ProseMirror a,
+  .continuum-editor .ProseMirror span {
+    font-size: calc(1em * var(--note-body-font-scale) / 100) !important;
+  }
   .continuum-editor p { @apply my-2; }
-  .continuum-editor h1 { @apply text-3xl font-serif mt-8 mb-3 tracking-tight; }
-  .continuum-editor h2 { @apply text-2xl font-serif mt-7 mb-2 tracking-tight; }
-  .continuum-editor h3 { @apply text-xl font-serif mt-5 mb-2; }
+  .continuum-editor h1 { @apply text-3xl mt-8 mb-3 tracking-tight; font-family: var(--font-serif-stack); font-weight: 700; }
+  .continuum-editor h2 { @apply text-2xl mt-7 mb-2 tracking-tight; font-family: var(--font-serif-stack); font-weight: 700; }
+  .continuum-editor h3 { @apply text-xl mt-5 mb-2; font-family: var(--font-serif-stack); font-weight: 700; }
   .continuum-editor blockquote { @apply border-l-2 border-white/40 pl-4 italic text-muted-foreground my-3; }
   .continuum-editor ul { @apply list-disc pl-6 my-2; list-style-position: outside; }
   .continuum-editor ol { @apply list-decimal pl-6 my-2; list-style-position: outside; }
@@ -679,12 +693,20 @@
   .continuum-editor li > p { @apply my-0.5; }
   /* Task list — large, tactile checkboxes */
   .continuum-editor ul[data-type="taskList"] { @apply list-none pl-0 my-2; }
-  .continuum-editor ul[data-type="taskList"] li { @apply flex items-start gap-3 my-0.5 rounded-md transition-colors; }
+  .continuum-editor ul[data-type="taskList"] li { @apply flex items-start gap-2 my-0.5 rounded-md transition-colors; }
   .continuum-editor ul[data-type="taskList"] li > label {
     @apply relative flex shrink-0 items-center justify-center select-none cursor-pointer;
-    width: 1.75rem; height: 1.75rem; margin-left: -0.25rem;
+    width: 1.15rem; height: 1.15rem; margin: 0; margin-top: 0.28em;
   }
   .continuum-editor ul[data-type="taskList"] li > div { @apply flex-1 min-w-0; }
+  .continuum-editor ul[data-type="taskList"] li > div > p { @apply my-0; }
+  /* Nested task lists keep their own indentation */
+  .continuum-editor ul[data-type="taskList"] ul[data-type="taskList"] { @apply pl-5 my-0.5; }
+  /* Checkboxes stay interactive in read/view mode */
+  .continuum-editor.is-readonly ul[data-type="taskList"] li > label,
+  .continuum-editor.is-readonly ul[data-type="taskList"] input[type="checkbox"] {
+    pointer-events: auto; cursor: pointer;
+  }
   .continuum-editor ul[data-type="taskList"] input[type="checkbox"] {
     appearance: none; -webkit-appearance: none;
     width: 1.15rem; height: 1.15rem; margin: 0; cursor: pointer;

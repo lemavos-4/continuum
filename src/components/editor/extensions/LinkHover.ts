@@ -18,7 +18,7 @@ export const LinkHover = Extension.create({
       removePopover();
       popover = document.createElement("div");
       popover.className =
-        "fixed z-[100] px-2.5 py-1.5 rounded-md bg-black/90 backdrop-blur-xl border border-white/10 shadow-2xl text-[11px] text-neutral-200 max-w-[320px] truncate pointer-events-auto";
+        "fixed z-[100] px-2.5 py-1.5 rounded-md bg-background/90 backdrop-blur-xl border border-border/10 shadow-2xl text-[11px] text-neutral-200 max-w-[320px] truncate pointer-events-auto";
       popover.textContent = href;
       popover.style.left = `${anchor.getBoundingClientRect().left}px`;
       popover.style.top = `${anchor.getBoundingClientRect().bottom + 6}px`;

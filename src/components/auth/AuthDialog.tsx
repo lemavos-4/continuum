@@ -50,7 +50,7 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
 
             {/* Tabs - only in DEV_MODE */}
             {DEV_MODE && activeTab !== "forgot" && (
-              <div className="grid grid-cols-2 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] p-1">
+              <div className="grid grid-cols-2 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] p-1">
                 {(["login", "register"] as AuthTab[]).map((tab) => (
                   <button
                     key={tab}
@@ -59,8 +59,8 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
                     className={
                       "rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-all " +
                       (activeTab === tab
-                        ? "bg-white text-black shadow-sm"
-                        : "text-[hsl(var(--popup-muted))] hover:text-white")
+                        ? "bg-foreground text-background shadow-sm"
+                        : "text-[hsl(var(--popup-muted))] hover:text-foreground")
                     }
                   >
                     {tab === "login" ? t("au_sign_in") : t("au_register")}
@@ -76,9 +76,9 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
 
             {DEV_MODE && activeTab !== "forgot" && activeTab === "login" && (
               <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-[hsl(var(--popup-muted))]">
-                <span className="flex-1 h-px bg-white/10" />
+                <span className="flex-1 h-px bg-foreground/10" />
                 {t("au_or")}
-                <span className="flex-1 h-px bg-white/10" />
+                <span className="flex-1 h-px bg-foreground/10" />
               </div>
             )}
 
@@ -88,9 +88,9 @@ export default function AuthDialog({ open, onOpenChange, initialTab = "login" }:
             {/* Footer */}
             <p className="text-[10px] text-center text-[hsl(var(--popup-muted))] opacity-70 pt-1">
               {t("au_terms_agree_prefix")}{" "}
-              <a href="#/terms" className="underline underline-offset-2 hover:text-white">{t("au_terms")}</a>
+              <a href="/terms" className="underline underline-offset-2 hover:text-foreground">{t("au_terms")}</a>
               {" "}{t("au_and")}{" "}
-              <a href="#/privacy" className="underline underline-offset-2 hover:text-white">{t("au_privacy")}</a>.
+              <a href="/privacy" className="underline underline-offset-2 hover:text-foreground">{t("au_privacy")}</a>.
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ function GoogleOnlyForm({ onSuccess }: { onSuccess: () => void }) {
       type="button"
       onClick={handleGoogle}
       disabled={loading}
-      className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold transition hover:bg-white/90 disabled:opacity-60 flex items-center justify-center gap-2"
+      className="w-full h-11 rounded-xl bg-foreground text-background text-sm font-semibold transition hover:bg-foreground/90 disabled:opacity-60 flex items-center justify-center gap-2"
     >
       {loading ? (
         <>
@@ -199,7 +199,7 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
-          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.06]"
+          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border/35 focus:bg-foreground/[0.06]"
         />
       </div>
 
@@ -209,7 +209,7 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
           <button
             type="button"
             onClick={onForgot}
-            className="text-xs font-medium text-[hsl(var(--popup-muted))] hover:text-white hover:underline"
+            className="text-xs font-medium text-[hsl(var(--popup-muted))] hover:text-foreground hover:underline"
           >
             {t("au_forgot")}
           </button>
@@ -220,14 +220,14 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••"
-          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.06]"
+          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border/35 focus:bg-foreground/[0.06]"
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold transition hover:bg-white/90 disabled:opacity-60"
+        className="w-full h-11 rounded-xl bg-foreground text-background text-sm font-semibold transition hover:bg-foreground/90 disabled:opacity-60"
       >
         {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{t("au_signing_in")}</span> : t("au_sign_in")}
       </button>
@@ -238,7 +238,7 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: () => void; onForgot: (
         type="button"
         onClick={handleGoogle}
         disabled={loading}
-        className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-transparent text-sm font-semibold text-white transition hover:bg-white/[0.06] disabled:opacity-60"
+        className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-transparent text-sm font-semibold text-foreground transition hover:bg-foreground/[0.06] disabled:opacity-60"
       >
         {t("au_continue_with_google")}
       </button>
@@ -286,7 +286,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           onChange={(event) => setUsername(event.target.value)}
           placeholder="johndoe"
           required
-          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.06]"
+          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border/35 focus:bg-foreground/[0.06]"
         />
       </div>
 
@@ -298,7 +298,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
           required
-          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.06]"
+          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border/35 focus:bg-foreground/[0.06]"
         />
       </div>
 
@@ -311,21 +311,21 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           placeholder={t("au_at_least_8_chars")}
           required
           minLength={8}
-          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.06]"
+          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border/35 focus:bg-foreground/[0.06]"
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold transition hover:bg-white/90 disabled:opacity-60"
+        className="w-full h-11 rounded-xl bg-foreground text-background text-sm font-semibold transition hover:bg-foreground/90 disabled:opacity-60"
       >
         {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{t("au_creating")}</span> : t("au_create_account_btn")}
       </button>
 
       <div className="text-center text-xs text-[hsl(var(--popup-muted))]">
         {t("au_already_have_account")}{' '}
-        <button type="button" onClick={onSwitchToLogin} className="font-semibold text-white hover:underline">
+        <button type="button" onClick={onSwitchToLogin} className="font-semibold text-foreground hover:underline">
           {t("au_sign_in")}
         </button>
       </div>
@@ -359,8 +359,8 @@ function ForgotForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   };
 
   return sent ? (
-    <div className="rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] p-5 text-sm text-white/80">
-      {t("au_recovery_link_sent_to")} <span className="font-medium text-white">{email}</span>. {t("au_check_inbox_spam")}
+    <div className="rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] p-5 text-sm text-muted-foreground">
+      {t("au_recovery_link_sent_to")} <span className="font-medium text-foreground">{email}</span>. {t("au_check_inbox_spam")}
     </div>
   ) : (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -372,21 +372,21 @@ function ForgotForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
           required
-          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/35 focus:bg-white/[0.06]"
+          className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border/35 focus:bg-foreground/[0.06]"
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold transition hover:bg-white/90 disabled:opacity-60"
+        className="w-full h-11 rounded-xl bg-foreground text-background text-sm font-semibold transition hover:bg-foreground/90 disabled:opacity-60"
       >
         {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{t("au_sending")}</span> : t("au_send_recovery_link")}
       </button>
 
       <div className="text-center text-xs text-[hsl(var(--popup-muted))]">
         {t("au_remember_it")}{' '}
-        <button type="button" onClick={onSwitchToLogin} className="font-semibold text-white hover:underline">
+        <button type="button" onClick={onSwitchToLogin} className="font-semibold text-foreground hover:underline">
           {t("au_sign_in")}
         </button>
       </div>

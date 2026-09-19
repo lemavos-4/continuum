@@ -29,6 +29,7 @@ export default function LandingPage() {
       { q: t("lp_faq_q2"), a: t("lp_faq_a2") },
       { q: t("lp_faq_q3"), a: t("lp_faq_a3") },
       { q: t("lp_faq_q4"), a: t("lp_faq_a4") },
+      { q: t("lp_faq_q5"), a: t("lp_faq_a5") },
     ],
     [t],
   );

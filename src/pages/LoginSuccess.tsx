@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const LoginSuccess = () => {
+const LoginSuccess = ({ onDone }: { onDone?: () => void } = {}) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { setTokens, refreshUser } = useAuth();
@@ -25,7 +25,7 @@ const LoginSuccess = () => {
 
     if (!accessToken) {
       setError(t("au_auth_token_not_found"));
-      setTimeout(() => navigate("/", { replace: true }), 3000);
+      setTimeout(() => (onDone ? onDone() : navigate("/", { replace: true })), 3000);
       return;
     }
 
@@ -35,15 +35,18 @@ const LoginSuccess = () => {
         localStorage.setItem("vaultId", vaultId);
       }
 
-      window.history.replaceState({}, "", "/");
+      
 
       refreshUser()
-        .then(() => navigate("/", { replace: true }))
-        .catch(() => navigate("/", { replace: true }))
-        .finally(() => setLoading(false));
+        .catch(() => undefined)
+        .finally(() => {
+          setLoading(false);
+          if (onDone) onDone();
+          else navigate("/", { replace: true });
+        });
     } catch (err) {
       setError(t("au_error_saving_auth_data"));
-      setTimeout(() => navigate("/", { replace: true }), 3000);
+      setTimeout(() => (onDone ? onDone() : navigate("/", { replace: true })), 3000);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.service;
+package onl.continuum.continuum.application.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -6,18 +6,18 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.lemnova.continuum.controller.dto.metrics.ScoreTimelineResponse.ScorePoint;
-import tech.lemnova.continuum.domain.entity.Entity;
-import tech.lemnova.continuum.domain.entity.EntityType;
-import tech.lemnova.continuum.domain.metrics.UserScoreSnapshot;
-import tech.lemnova.continuum.domain.note.Note;
-import tech.lemnova.continuum.domain.plan.PlanConfiguration;
-import tech.lemnova.continuum.domain.user.User;
-import tech.lemnova.continuum.domain.user.UserRepository;
-import tech.lemnova.continuum.infra.persistence.EntityRepository;
-import tech.lemnova.continuum.infra.persistence.NoteRepository;
-import tech.lemnova.continuum.infra.persistence.UserScoreSnapshotRepository;
-import tech.lemnova.continuum.infra.vault.VaultDataService;
+import onl.continuum.continuum.controller.dto.metrics.ScoreTimelineResponse.ScorePoint;
+import onl.continuum.continuum.domain.entity.Entity;
+import onl.continuum.continuum.domain.entity.EntityType;
+import onl.continuum.continuum.domain.metrics.UserScoreSnapshot;
+import onl.continuum.continuum.domain.note.Note;
+import onl.continuum.continuum.domain.plan.PlanConfiguration;
+import onl.continuum.continuum.domain.user.User;
+import onl.continuum.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.infra.persistence.EntityRepository;
+import onl.continuum.continuum.infra.persistence.NoteRepository;
+import onl.continuum.continuum.infra.persistence.UserScoreSnapshotRepository;
+import onl.continuum.continuum.infra.vault.VaultDataService;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -57,7 +57,7 @@ class MetricsServiceTest {
     private UserScoreSnapshotRepository scoreSnapshotRepo;
 
     @Mock
-    private tech.lemnova.continuum.infra.repository.TimeEntryRepository timeEntryRepo;
+    private onl.continuum.continuum.infra.repository.TimeEntryRepository timeEntryRepo;
 
     @InjectMocks
     private MetricsService metricsService;

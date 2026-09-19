@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.infra.google;
+package onl.continuum.continuum.infra.google;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

@@ -195,8 +195,8 @@ export function MobileCommandBar({ editor }: Props) {
       role="toolbar"
       aria-label={t("editor_commands") || "Editor commands"}
       className={cn(
-        "fixed left-2 right-2 z-[60] flex flex-col gap-1 rounded-2xl border border-white/10",
-        "bg-black/90 backdrop-blur-xl shadow-2xl px-2 py-1.5"
+        "fixed left-2 right-2 z-[60] flex flex-col gap-1 rounded-2xl border border-border/10",
+        "bg-background/90 backdrop-blur-xl shadow-2xl px-2 py-1.5"
       )}
       style={{
         bottom: `calc(${offset}px + env(safe-area-inset-bottom, 0px) + 8px)`,
@@ -208,8 +208,8 @@ export function MobileCommandBar({ editor }: Props) {
       onTouchStart={(e) => e.stopPropagation()}
     >
       {inTable && tableMode && (
-        <div className="flex items-center gap-1 border-b border-white/10 pb-1.5">
-          <span className="shrink-0 px-1 text-[9px] uppercase tracking-widest text-white/40">
+        <div className="flex items-center gap-1 border-b border-border/10 pb-1.5">
+          <span className="shrink-0 px-1 text-[9px] uppercase tracking-widest text-muted-foreground">
             <TableIcon className="h-3.5 w-3.5" />
           </span>
           <div className="flex-1 overflow-x-auto no-scrollbar">
@@ -228,7 +228,7 @@ export function MobileCommandBar({ editor }: Props) {
                     "shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-[12px] transition-colors",
                     a.danger
                       ? "bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                      : "bg-white/[0.06] text-white/80 hover:bg-white/10"
+                      : "bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/10"
                   )}
                   aria-label={a.label}
                 >
@@ -259,8 +259,8 @@ export function MobileCommandBar({ editor }: Props) {
                 className={cn(
                   "shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 h-9 text-[12px] transition-colors",
                   active
-                    ? "bg-white text-black"
-                    : "bg-white/[0.06] text-white/80 hover:bg-white/10"
+                    ? "bg-foreground text-background"
+                    : "bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/10"
                 )}
                 aria-pressed={active}
                 aria-label={t(c.label)}

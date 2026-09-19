@@ -1,7 +1,8 @@
 import * as React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createIdbPersister, QUERY_CACHE_BUSTER } from "@/lib/offline/query-persister";
+import { queryClient } from "@/lib/query-client";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,18 +12,22 @@ import { EntityProvider } from "@/contexts/EntityContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SkeletonPage } from "@/components/ui/skeleton";
-import { PageTransition } from "@/components/motion/PageTransition";
 import { GlobalProgress } from "@/components/motion/GlobalProgress";
 import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 import { EMAIL_AUTH_ENABLED } from "@/lib/dev-mode";
+import UpdateDialog from "@/components/updater/UpdateDialog";
+import { prefetchPrimaryLists } from "@/lib/prefetch";
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
+// Capacitor: aplica cor da status bar só quando rodando dentro do APK nativo
+import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
+
 // Auth-critical screens stay eager (they gate the first paint); everything else
 // is code-split and streamed in behind a skeleton.
 import LoginSuccess from "./pages/LoginSuccess";
-import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
 
 const Login = React.lazy(() => import("./pages/Login"));
@@ -43,12 +48,22 @@ const Privacy = React.lazy(() => import("./pages/Privacy"));
 const Support = React.lazy(() => import("./pages/Support"));
 const About = React.lazy(() => import("./pages/About"));
 const Pricing = React.lazy(() => import("./pages/Pricing"));
+const Versions = React.lazy(() => import("./pages/Versions"));
 const Subscription = React.lazy(() => import("./pages/Subscription"));
-const Profile = React.lazy(() => import("./pages/Profile"));
+const SettingsPage = React.lazy(() => import("./pages/Settings"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Insights = React.lazy(() => import("./pages/Insights"));
 
-const queryClient = new QueryClient();
+const queryPersister = createIdbPersister();
+
+/** Warms notes/entities/insights as soon as the user is authenticated. */
+function PrefetchPrimaryData() {
+  const { user } = useAuth();
+  React.useEffect(() => {
+    if (user) prefetchPrimaryLists();
+  }, [user]);
+  return null;
+}
 
 function RouteFallback() {
   return (
@@ -61,7 +76,7 @@ function RouteFallback() {
 function HomeRoute() {
   const { user, loading } = useAuth();
   // Read tokens once per mount so we don't recompute on every render.
-  const [hasIncomingToken] = React.useState(() => {
+  const [hasIncomingToken, setHasIncomingToken] = React.useState(() => {
     const t = extractAuthTokensFromLocation();
     return !!t?.accessToken;
   });
@@ -70,10 +85,10 @@ function HomeRoute() {
     if (!hasIncomingToken) sanitizeAuthRedirectUrl();
   }, [hasIncomingToken]);
 
-  if (hasIncomingToken) return <LoginSuccess />;
+  if (hasIncomingToken) return <LoginSuccess onDone={() => setHasIncomingToken(false)} />;
 
   if (loading) return <RouteFallback />;
-  if (user) return <Dashboard />;
+  if (user) return <Notes />;
   return <LandingPage />;
 }
 
@@ -92,15 +107,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 const AppRoutes = () => {
-  const location = useLocation();
   return (
     <React.Suspense fallback={<RouteFallback />}>
-      <AnimatePresence mode="wait" initial={false}>
-        <PageTransition key={location.pathname}>
-          <Routes location={location}>
+      <Routes>
     <Route path="/" element={<HomeRoute />} />
     <Route path="/index" element={<HomeRoute />} />
-    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    <Route path="/dashboard" element={<Navigate to="/notes" replace />} />
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
     <Route
@@ -116,6 +128,7 @@ const AppRoutes = () => {
     <Route path="/support" element={<Support />} />
     <Route path="/about" element={<About />} />
     <Route path="/pricing" element={<Pricing />} />
+    <Route path="/versions" element={<Versions />} />
     <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
     <Route path="/notes/:id" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
     <Route path="/entities" element={<ProtectedRoute><Entities /></ProtectedRoute>} />
@@ -133,38 +146,60 @@ const AppRoutes = () => {
     <Route path="/vault" element={<ProtectedRoute><Vault /></ProtectedRoute>} />
     <Route path="/vault/download/:fileId" element={<ProtectedRoute><VaultDownload /></ProtectedRoute>} />
     <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+    <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+    <Route path="/profile" element={<Navigate to="/settings" replace />} />
     <Route path="*" element={<NotFound />} />
-          </Routes>
-        </PageTransition>
-      </AnimatePresence>
+      </Routes>
     </React.Suspense>
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <GlobalProgress />
-        <Toaster />
-        <Sonner />
-        <HashRouter>
-          <LanguageProvider>
-            <AuthProvider>
-              <UsageProvider>
-                <EntityProvider>
-                  <AppRoutes />
-                </EntityProvider>
-              </UsageProvider>
-            </AuthProvider>
-          </LanguageProvider>
-        </HashRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-    <Analytics />
-    <SpeedInsights />
-  </QueryClientProvider>
-);
+const App = () => {
+  React.useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setBackgroundColor({ color: "#000000" });
+      StatusBar.setStyle({ style: Style.Dark });
+    }
+  }, []);
+
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: 24 * 60 * 60 * 1000,
+        buster: QUERY_CACHE_BUSTER,
+        dehydrateOptions: {
+          // Never persist auth/session-scoped queries.
+          shouldDehydrateQuery: (query) =>
+            query.state.status === "success" && String(query.queryKey[0]) !== "auth",
+        },
+      }}
+    >
+      <ThemeProvider>
+        <TooltipProvider>
+          <GlobalProgress />
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <LanguageProvider>
+              <AuthProvider>
+                <UsageProvider>
+                  <EntityProvider>
+                    <PrefetchPrimaryData />
+                    <AppRoutes />
+                    <UpdateDialog />
+                  </EntityProvider>
+                </UsageProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+      <Analytics />
+      <SpeedInsights />
+    </PersistQueryClientProvider>
+  );
+};
 
 export default App;

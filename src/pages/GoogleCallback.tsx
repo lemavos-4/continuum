@@ -22,12 +22,8 @@ export default function GoogleCallback() {
     const refreshToken = authTokens?.refreshToken;
     const searchParams = new URLSearchParams(window.location.search);
 
-    const rawHash = window.location.hash.replace(/^#/, "");
-    const [, hashQuery = ""] = rawHash.split("?", 2);
-    const hashParams = new URLSearchParams(hashQuery);
-
-    const code = searchParams.get("code") ?? hashParams.get("code");
-    const state = searchParams.get("state") ?? hashParams.get("state");
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
 
     // Se já existem tokens na URL (redirecionamento direto)
     if (accessToken) {

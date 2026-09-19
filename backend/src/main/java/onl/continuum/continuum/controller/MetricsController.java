@@ -1,0 +1,55 @@
+package onl.continuum.continuum.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import onl.continuum.continuum.application.service.MetricsService;
+import onl.continuum.continuum.controller.dto.metrics.DashboardMetrics;
+import onl.continuum.continuum.controller.dto.metrics.EntityTimeline;
+import onl.continuum.continuum.controller.dto.metrics.ScoreTimelineResponse.ScorePoint;
+import onl.continuum.continuum.controller.dto.metrics.ScoreInsights;
+import onl.continuum.continuum.infra.security.CustomUserDetails;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/metrics")
+public class MetricsController {
+
+    private final MetricsService metricsService;
+
+    public MetricsController(MetricsService metricsService) { this.metricsService = metricsService; }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<DashboardMetrics> dashboard(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(metricsService.getDashboard(user.getUserId()));
+    }
+
+    @GetMapping("/entities/{entityId}/timeline")
+    public ResponseEntity<EntityTimeline> timeline(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable String entityId) {
+        return ResponseEntity.ok(metricsService.getEntityTimeline(user.getUserId(), entityId));
+    }
+
+    @GetMapping("/score/timeline")
+    public ResponseEntity<List<ScorePoint>> scoreTimeline(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(metricsService.getUserScoreTimeline(user.getUserId()));
+    }
+
+    @GetMapping("/score/insights")
+    public ResponseEntity<ScoreInsights> scoreInsights(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(metricsService.getScoreInsights(user.getUserId()));
+    }
+
+    @GetMapping("/score/breakdown")
+    public ResponseEntity<ScoreInsights.Point> scoreBreakdown(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam String date) {
+        return ResponseEntity.ok(metricsService.buildScoreBreakdown(user.getUserId(), java.time.LocalDate.parse(date)));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────

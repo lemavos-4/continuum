@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.controller;
+package onl.continuum.continuum.controller;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

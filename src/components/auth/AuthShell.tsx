@@ -17,32 +17,32 @@ interface AuthShellProps {
 export default function AuthShell({ eyebrow = "Continuum", title, subtitle, children, footer }: AuthShellProps) {
   const { t } = useLanguage();
   return (
-    <div className="min-h-screen bg-black text-white grid lg:grid-cols-2">
+    <div className="min-h-screen bg-background text-foreground grid lg:grid-cols-2">
       {/* Left — form */}
       <section className="flex flex-col px-6 sm:px-10 lg:px-16 py-10">
         <header className="flex items-center justify-between">
-          <Link to="/" className="label-caps text-white/80 hover:text-white transition-colors">
+          <Link to="/" className="label-caps text-muted-foreground hover:text-foreground transition-colors">
             {eyebrow}
           </Link>
-          <Link to="/" className="text-xs text-white/50 hover:text-white transition-colors">
+          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             ← {t("au_back")}
           </Link>
         </header>
 
         <div className="flex-1 flex flex-col justify-center max-w-sm w-full mx-auto">
           <h1 className="font-serif text-5xl leading-[1.05] tracking-tight">{title}</h1>
-          {subtitle && <p className="mt-3 text-sm text-white/60">{subtitle}</p>}
+          {subtitle && <p className="mt-3 text-sm text-muted-foreground">{subtitle}</p>}
           <div className="mt-10">{children}</div>
-          {footer && <div className="mt-8 text-sm text-white/50">{footer}</div>}
+          {footer && <div className="mt-8 text-sm text-muted-foreground">{footer}</div>}
         </div>
 
-        <footer className="text-[11px] text-white/30 tracking-wider uppercase">
+        <footer className="text-[11px] text-muted-foreground tracking-wider uppercase">
           © {new Date().getFullYear()} Continuum
         </footer>
       </section>
 
       {/* Right — typographic side */}
-      <aside className="hidden lg:flex relative items-center justify-center border-l border-white/[0.06] bg-[#050505] overflow-hidden">
+      <aside className="hidden lg:flex relative items-center justify-center border-l border-border bg-[#050505] overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
@@ -56,7 +56,7 @@ export default function AuthShell({ eyebrow = "Continuum", title, subtitle, chil
           <p className="font-serif text-3xl leading-tight tracking-tight">
             {t("au_plutarch_quote")}
           </p>
-          <p className="mt-4 text-xs text-white/40">— Plutarch</p>
+          <p className="mt-4 text-xs text-muted-foreground">— Plutarch</p>
         </div>
       </aside>
     </div>

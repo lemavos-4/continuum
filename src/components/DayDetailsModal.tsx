@@ -64,7 +64,7 @@ export function DayDetailsModal({ dayData, isOpen, onClose }: DayDetailsModalPro
           <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg text-white">
+                <h3 className="font-semibold text-lg text-foreground">
                   {t('tm_total_time_colon', { time: formatDuration(dayData.totalSeconds) })}
                 </h3>
                 <p className="text-sm text-zinc-500">
@@ -85,7 +85,7 @@ export function DayDetailsModal({ dayData, isOpen, onClose }: DayDetailsModalPro
               {dayData.entries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 bg-white dark:bg-zinc-800"
+                  className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 bg-foreground dark:bg-zinc-800"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

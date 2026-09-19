@@ -103,6 +103,10 @@ export const dict: Module = {
     db_habitsMarkDone: "Done",
     db_habitsMarked: "Marked as done",
     db_habitsMarkFailed: "Could not mark as done",
+    db_projectsEyebrow: "In motion",
+    db_projectsTitle: "Active projects",
+    db_projectsEmpty: "Create a project",
+    db_projectsLinks: "{n} links",
   },
   es: {
     db_overview: "Resumen",
@@ -206,6 +210,10 @@ export const dict: Module = {
     db_habitsMarkDone: "Hecho",
     db_habitsMarked: "Marcado como hecho",
     db_habitsMarkFailed: "No se pudo marcar",
+    db_projectsEyebrow: "En curso",
+    db_projectsTitle: "Proyectos activos",
+    db_projectsEmpty: "Crear un proyecto",
+    db_projectsLinks: "{n} conexiones",
   },
   pt: {
     db_overview: "Visão geral",
@@ -309,6 +317,10 @@ export const dict: Module = {
     db_habitsMarkDone: "Feito",
     db_habitsMarked: "Marcado como feito",
     db_habitsMarkFailed: "Não foi possível marcar",
+    db_projectsEyebrow: "Em andamento",
+    db_projectsTitle: "Projetos ativos",
+    db_projectsEmpty: "Criar um projeto",
+    db_projectsLinks: "{n} conexões",
   },
   fr: {
     db_overview: "Aperçu",
@@ -412,5 +424,9 @@ export const dict: Module = {
     db_habitsMarkDone: "Fait",
     db_habitsMarked: "Marqué comme fait",
     db_habitsMarkFailed: "Impossible de marquer",
+    db_projectsEyebrow: "En cours",
+    db_projectsTitle: "Projets actifs",
+    db_projectsEmpty: "Créer un projet",
+    db_projectsLinks: "{n} liens",
   },
 };

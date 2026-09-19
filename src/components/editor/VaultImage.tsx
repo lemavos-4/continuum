@@ -40,7 +40,7 @@ function VaultImageView({ node }: NodeViewProps) {
             <div
               role="dialog"
               aria-modal="true"
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm"
               onClick={() => setLightbox(false)}
             >
               <img src={src} alt={alt} className="max-h-[92vh] max-w-[96vw] rounded-lg object-contain" />
@@ -48,7 +48,7 @@ function VaultImageView({ node }: NodeViewProps) {
                 type="button"
                 aria-label="Close image"
                 onClick={() => setLightbox(false)}
-                className="absolute right-4 top-4 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-xs uppercase tracking-wider text-white/70 hover:text-white"
+                className="absolute right-4 top-4 rounded-full border border-border/15 bg-background/60 px-3 py-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
                 Close
               </button>

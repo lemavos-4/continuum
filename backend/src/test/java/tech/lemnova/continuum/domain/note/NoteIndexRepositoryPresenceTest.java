@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.domain.note;
+package onl.continuum.continuum.domain.note;
 
 import org.junit.jupiter.api.Test;
 

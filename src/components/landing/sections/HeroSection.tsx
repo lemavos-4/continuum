@@ -1,6 +1,6 @@
 /*
  * CONTINUUM — HeroSection
- * Design: Void Cartography — asymmetric layout, Playfair Display headline
+ * Design: Void Cartography — asymmetric layout, Inter Bold headline
  * Left: headline + subheadline + CTAs | Right: animated knowledge graph
  * Background: near-black with subtle radial gradient + grid
  */

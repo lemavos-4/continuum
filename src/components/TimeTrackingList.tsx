@@ -12,6 +12,7 @@ import { EntityTypeIcon } from '@/components/ui/entity-type-icon';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ActivityCompletionCalendar } from '@/components/ActivityCompletionCalendar';
 import type { Entity } from '@/types';
+import { qk, STALE } from '@/lib/queries';
 
 const todayKey = () => {
   const d = new Date();
@@ -63,13 +64,14 @@ export function TimeTrackingList({
   const lower = hideInternalSearch ? (search ?? '').trim().toLowerCase() : query.trim().toLowerCase();
 
   const { data: trackableEntities, isLoading: entitiesLoading } = useQuery({
-    queryKey: ['entities', 'trackable', filterType],
+    queryKey: qk.entities(filterType),
     queryFn: async () => {
       const response = await entitiesApi.list();
       const entities = response.data as Entity[];
       if (filterType) return entities.filter((e) => e.type === filterType);
       return entities.filter((e) => e.type === 'PROJECT' || e.type === 'ACTIVITY');
     },
+    staleTime: STALE.list,
   });
 
   const { data: summaries, isLoading: summariesLoading } = getAllSummaries();
@@ -116,7 +118,7 @@ export function TimeTrackingList({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="w-full max-w-sm bg-transparent border-0 border-b border-white/15 focus:border-white pb-2 text-sm outline-none transition-colors placeholder:text-white/30"
+            className="w-full max-w-sm bg-transparent border-0 border-b border-border/15 focus:border-border pb-2 text-sm outline-none transition-colors placeholder:text-muted-foreground"
           />
           <button onClick={() => setCreateDialogOpen(true)} className="btn-primary shrink-0">
             <Plus className="w-4 h-4" /> {filterType === 'PROJECT' ? t('tm_new_project') : filterType === 'ACTIVITY' ? t('tm_new_activity') : t('tm_new_entity')}
@@ -126,12 +128,12 @@ export function TimeTrackingList({
 
       {isLoading ? (
         <div className="flex justify-center py-24">
-          <Loader2 className="w-5 h-5 animate-spin text-white/30" />
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       ) : visible.length === 0 ? (
-        <div className="border border-dashed border-white/10 rounded-md py-16 text-center">
-          <FolderOpen className="w-10 h-10 text-white/20 mx-auto mb-3" />
-          <p className="text-sm text-white/40">
+        <div className="border border-dashed border-border/10 rounded-md py-16 text-center">
+          <FolderOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">
             {filterType === 'PROJECT' ? t('tm_no_projects_yet') : filterType === 'ACTIVITY' ? t('tm_no_activities_yet') : t('tm_no_entities_yet')}
           </p>
         </div>
@@ -147,7 +149,7 @@ export function TimeTrackingList({
             return (
               <li
                 key={entity.id}
-                className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] transition-colors hover:border-white/20"
+                className="overflow-hidden rounded-2xl border border-border/10 bg-foreground/[0.02] transition-colors hover:border-border/20"
               >
                 {/* Row header */}
                 <div className="flex items-center gap-3 p-3 sm:p-4">
@@ -169,7 +171,7 @@ export function TimeTrackingList({
                         </>
                       }
                       trailing={
-                        <ChevronDown className={cn('h-4 w-4 shrink-0 text-white/40 transition-transform', isOpen && 'rotate-180')} />
+                        <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
                       }
                     />
                   </button>
@@ -184,7 +186,7 @@ export function TimeTrackingList({
                         'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
                         doneToday
                           ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                          : 'border-white/15 text-white/80 hover:border-white/40 hover:bg-white/[0.06]',
+                          : 'border-border/15 text-muted-foreground hover:border-border/40 hover:bg-foreground/[0.06]',
                       )}
                     >
                       {marking ? (
@@ -199,17 +201,17 @@ export function TimeTrackingList({
 
                 {/* Expanded detail */}
                 {isOpen && (
-                  <div className="border-t border-white/[0.06] bg-black/30 p-4 sm:p-6">
+                  <div className="border-t border-border/[0.06] bg-background/30 p-4 sm:p-6">
                     <div className="grid gap-4">
                       {isProject ? (
                         <div className="grid grid-cols-2 gap-3 max-w-md">
-                          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                            <p className="label-caps text-white/50">{t('tm_total_time')}</p>
-                            <p className="mt-2 font-mono text-white/90">{summary?.formattedTotal || '00:00:00'}</p>
+                          <div className="rounded-xl border border-border/10 bg-foreground/5 p-4">
+                            <p className="label-caps text-muted-foreground">{t('tm_total_time')}</p>
+                            <p className="mt-2 font-mono text-muted-foreground">{summary?.formattedTotal || '00:00:00'}</p>
                           </div>
-                          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                            <p className="label-caps text-white/50">{t('tm_sessions_cap')}</p>
-                            <p className="mt-2 text-white/90">{summary?.entriesCount ?? 0}</p>
+                          <div className="rounded-xl border border-border/10 bg-foreground/5 p-4">
+                            <p className="label-caps text-muted-foreground">{t('tm_sessions_cap')}</p>
+                            <p className="mt-2 text-muted-foreground">{summary?.entriesCount ?? 0}</p>
                           </div>
                         </div>
                       ) : (
@@ -224,7 +226,7 @@ export function TimeTrackingList({
                         <div>
                           <button
                             onClick={() => navigate(`/entities/${entity.id}`)}
-                            className="text-xs px-3 py-1.5 rounded-md border border-white/10 text-white/70 hover:text-white hover:border-white/30 transition-colors"
+                            className="text-xs px-3 py-1.5 rounded-md border border-border/10 text-muted-foreground hover:text-foreground hover:border-border/30 transition-colors"
                           >
                             {t('tm_open_detail')}
                           </button>

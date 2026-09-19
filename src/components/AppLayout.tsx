@@ -4,20 +4,16 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
   StickyNote,
   Tag,
   User as UserIcon,
   Menu,
   GlobeAlt,
-  Timer,
   Clock,
   Lock,
   BarChart3,
-  X,
   FolderOpen,
   Squares2x2,
-  ArrowLeft,
 } from "@/lib/heroicons";
 import {
   Squares2X2Icon as Squares2x2Solid,
@@ -39,7 +35,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { OfflineStatus } from "@/components/offline/OfflineStatus";
 
 const mobileItems = [
-  { to: "/", icon: Squares2x2, key: "nav_dashboard", end: true },
   { to: "/notes", icon: StickyNote, key: "nav_notes" },
   { to: "/entities", icon: Tag, key: "nav_entities" },
   { to: "/insights", icon: BarChart3, key: "nav_insights" },
@@ -51,23 +46,10 @@ const mobileItems = [
 
 // Primary tabs shown in the bottom navigation bar on mobile.
 const mobileTabs = [
-  { to: "/", icon: Squares2x2, iconSolid: Squares2x2Solid, key: "nav_dashboard", end: true },
   { to: "/notes", icon: StickyNote, iconSolid: StickyNoteSolid, key: "nav_notes" },
   { to: "/entities", icon: Tag, iconSolid: TagSolid, key: "nav_entities" },
   { to: "/insights", icon: BarChart3, iconSolid: BarChart3Solid, key: "nav_insights" },
 ];
-
-// Mobile top bar shows the page title instead of the app logo on list screens.
-const MOBILE_TITLES: [string, string][] = [
-  ["/notes", "notes_title"],
-  ["/entities", "entities_title"],
-  ["/insights", "ins_title"],
-  ["/projects", "projects_title"],
-  ["/activities", "activities_title"],
-  ["/vault", "vault_title"],
-];
-
-
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -75,58 +57,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const isGraphPage = location.pathname.startsWith("/graph");
-  // The note editor owns the top area on mobile — it renders its own header.
-  const hideMobileTopBar = /^\/notes\/[^/]+$/.test(location.pathname);
-  const mobileTitleKey = MOBILE_TITLES.find(([p]) => location.pathname === p)?.[1];
-
-  const initial = (user?.username || user?.email || "U").trim().charAt(0).toUpperCase();
-  const display = user?.username || user?.email?.split("@")[0] || "Guest";
+  const isNoteEditor = /^\/notes\/[^/]+$/.test(location.pathname);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <CommandPalette />
 
-      {/* Mobile top bar */}
-      {!hideMobileTopBar && (
-      <div className="fixed left-0 right-0 top-0 z-40 flex items-center gap-3 border-b border-white/5 bg-background/80 px-4 py-3 backdrop-blur-md lg:hidden">
-        {mobileTitleKey ? (
-          <h1 className="min-w-0 truncate font-serif text-xl tracking-tight text-foreground">
-            {t(mobileTitleKey)}
-          </h1>
-        ) : (
-          <div className="flex items-center gap-2">
-            <img src="/favicon.ico" alt="Continuum" className="h-7 w-7 rounded-lg object-contain" />
-            <span className="text-base font-serif tracking-tight">Continuum</span>
-          </div>
-        )}
-
-
-        <div className="flex-1" />
-
-        <OfflineStatus compact />
-
-        {isGraphPage && (
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("common_back") || "Back"}
-          </button>
-        )}
-      </div>
-      )}
-
-
       {/* Desktop hover-expand sidebar */}
       <SessionNavBar />
 
       <main className="min-w-0 flex-1 overflow-auto bg-background lg:ml-[3.25rem]">
-        {!hideMobileTopBar && <div className="h-14 lg:hidden" />}
         {children}
         {/* Spacer so content isn't hidden behind the floating mobile bottom nav */}
-        {!hideMobileTopBar && <div className="h-[calc(5.5rem+env(safe-area-inset-bottom))] lg:hidden" />}
+        {!isNoteEditor && <div className="h-[calc(5.5rem+env(safe-area-inset-bottom))] lg:hidden" />}
       </main>
 
 
@@ -138,21 +81,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Mobile bottom tab bar — floating, rounded */}
-      {!isGraphPage && (
+      {!isGraphPage && !isNoteEditor && (
         <nav
           className="fixed inset-x-3 z-40 lg:hidden"
-          style={{ bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+          style={{
+            bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
+            width: "calc(100% - 20%)",
+            left: "10%",
+          }}
         >
-          <div className="flex items-stretch justify-around gap-1 rounded-xl border border-white/5 bg-background/75 px-2 py-1.5 shadow-[0_8px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm supports-[backdrop-filter]:bg-background/65">
+          <div className="flex items-center justify-around gap-0.5 rounded-2xl border border-border/10 bg-muted/60 px-1 py-1 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-[6px] supports-[backdrop-filter]:bg-muted/60">
             {mobileTabs.map((it) => (
               <NavLink
                 key={it.to}
                 to={it.to}
-                end={it.end}
                 className={({ isActive }) =>
                   cn(
-                    "flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors active:scale-95",
-                    isActive ? "text-primary" : "text-muted-foreground",
+                    "flex flex-1 items-center justify-center rounded-xl px-1 py-1.5 transition-all active:scale-95",
+                    isActive ? "bg-foreground/8 text-foreground" : "text-muted-foreground",
                   )
                 }
               >
@@ -160,47 +106,48 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   const IconEl = isActive && it.iconSolid ? it.iconSolid : it.icon;
                   return (
                     <>
-                      <span className="grid h-7 w-10 place-items-center rounded-lg">
+                      <span className="sr-only">{t(it.key)}</span>
+                      <span className="grid h-7 w-7 place-items-center rounded-lg">
                         <IconEl className="h-5 w-5" />
                       </span>
-                      <span className="leading-none">{t(it.key)}</span>
                     </>
                   );
                 }}
               </NavLink>
             ))}
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors active:scale-95 data-[state=open]:text-primary"
+                  className="flex flex-1 items-center justify-center rounded-xl px-1 py-1.5 text-muted-foreground transition-all active:scale-95 data-[state=open]:bg-foreground/8 data-[state=open]:text-foreground"
+                  aria-label={t("nav_more")}
                 >
-                  <span className="grid h-7 w-10 place-items-center rounded-lg">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg">
                     <Menu className="h-5 w-5" />
                   </span>
-                  <span className="leading-none">{t("nav_more")}</span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="end" className="mb-2 w-56">
-                <DropdownMenuItem onClick={() => navigate("/projects")}>
+              <DropdownMenuContent side="top" align="end" className="mb-2 w-56 bg-muted/60 backdrop-blur-[6px]">
+                <DropdownMenuItem onSelect={() => navigate("/projects")}>
                   <FolderOpen className="mr-2 h-4 w-4" /> {t("nav_projects")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/activities")}>
+                <DropdownMenuItem onSelect={() => navigate("/activities")}>
                   <Clock className="mr-2 h-4 w-4" /> {t("nav_activities")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/graph")}>
+                <DropdownMenuItem onSelect={() => navigate("/graph")}>
                   <GlobeAlt className="mr-2 h-4 w-4" /> {t("nav_graph")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/vault")}>
+                <DropdownMenuItem onSelect={() => navigate("/vault")}>
                   <Lock className="mr-2 h-4 w-4" /> {t("nav_vault")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-zinc-500">{user?.email}</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  <UserIcon className="mr-2 h-4 w-4" /> {t("nav_profile")}
+                <DropdownMenuLabel className="text-xs text-muted-foreground">{user?.email}</DropdownMenuLabel>
+                <DropdownMenuItem onSelect={() => navigate("/settings")}>
+                  <UserIcon className="mr-2 h-4 w-4" /> {t("nav_settings")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
           </div>
         </nav>
       )}

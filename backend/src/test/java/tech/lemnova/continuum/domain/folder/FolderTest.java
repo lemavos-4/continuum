@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.domain.folder;
+package onl.continuum.continuum.domain.folder;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

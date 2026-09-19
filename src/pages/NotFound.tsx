@@ -12,7 +12,7 @@ const NotFound = () => {
 
   return (
     // Alterado para bg-black e texto branco
-    <div className="flex min-h-screen items-center justify-center bg-black text-white p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground p-4">
       <div className="text-center">
         {/* h1 com fonte serifada para combinar com o "Your second brain" */}
         <h1 className="mb-4 text-7xl font-medium font-serif italic">{t("au_404_title")}</h1>
@@ -23,7 +23,7 @@ const NotFound = () => {
 
         <a 
           href="/" 
-          className="inline-block bg-white text-black px-6 py-2 rounded-md font-medium transition-hover hover:bg-zinc-200"
+          className="inline-block bg-foreground text-background px-6 py-2 rounded-md font-medium transition-hover hover:bg-zinc-200"
         >
           {t("au_return_home")}
         </a>

@@ -93,7 +93,7 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t("ent_name_your", { type: selected.label.toLowerCase() })}
-              className="h-11 bg-white/[0.03] border-white/[0.06] focus-visible:ring-white/20"
+              className="h-11 bg-foreground/[0.03] border-border focus-visible:ring-ring"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && title.trim()) {
                   e.preventDefault();
@@ -107,8 +107,8 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
             <div className="space-y-1.5">
               <Label className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("ent_type")}</Label>
               <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="h-11 bg-white/[0.03] border-white/[0.06]">
-                  <SelectValue />
+                <SelectTrigger className="h-11 bg-foreground/[0.03] border-border">
+                  <SelectValue className="flex-1 text-left" />
                 </SelectTrigger>
                 <SelectContent>
                   {TYPE_OPTIONS.map((opt) => (
@@ -130,7 +130,7 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t("ent_a_short_note")}
-              className="h-11 bg-white/[0.03] border-white/[0.06] focus-visible:ring-white/20"
+              className="h-11 bg-foreground/[0.03] border-border focus-visible:ring-ring"
             />
           </div>
 

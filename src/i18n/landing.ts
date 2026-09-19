@@ -68,6 +68,9 @@ export const dict: Module = {
     lp_faq_q4: "Is it free?",
     lp_faq_a4:
       "Continuum has a free plan with notes, entities, the knowledge graph and native sync. No credit card is required to start.",
+    lp_faq_q5: "Is it open source?",
+    lp_faq_a5:
+      "Yes. Continuum is an open-source project and the full code is public on GitHub, so anyone can audit how your notes are stored and processed.",
 
     lp_footer_tagline:
       "A modern knowledge management platform to organize, connect and rediscover your ideas at the speed of thought.",
@@ -79,6 +82,8 @@ export const dict: Module = {
     lp_footer_support: "Support",
     lp_footer_terms: "Terms and Conditions",
     lp_footer_privacy: "Privacy",
+    lp_footer_opensource: "Open Source",
+    lp_footer_howitworks: "How it works",
     lp_footer_rights: "All rights reserved.",
 
     lp_about_back_to_home: "← Back to home",
@@ -201,6 +206,9 @@ export const dict: Module = {
     lp_faq_q4: "¿Es gratis?",
     lp_faq_a4:
       "Continuum tiene un plan gratuito con notas, entidades, grafo de conocimiento y sincronización nativa. No necesitas tarjeta para empezar.",
+    lp_faq_q5: "¿Es open source?",
+    lp_faq_a5:
+      "Sí. Continuum es un proyecto de código abierto y todo el código está público en GitHub, así cualquiera puede auditar cómo se guardan y procesan tus notas.",
 
     lp_footer_tagline:
       "Una plataforma moderna de gestión del conocimiento para organizar, conectar y redescubrir tus ideas a la velocidad del pensamiento.",
@@ -212,6 +220,8 @@ export const dict: Module = {
     lp_footer_support: "Soporte",
     lp_footer_terms: "Términos y condiciones",
     lp_footer_privacy: "Privacidad",
+    lp_footer_opensource: "Open Source",
+    lp_footer_howitworks: "Cómo funciona",
     lp_footer_rights: "Todos los derechos reservados.",
 
     lp_about_back_to_home: "← Volver al inicio",
@@ -334,6 +344,9 @@ export const dict: Module = {
     lp_faq_q4: "É grátis?",
     lp_faq_a4:
       "O Continuum tem plano gratuito com notas, entidades, grafo de conhecimento e sincronização nativa. Não precisa de cartão de crédito para começar.",
+    lp_faq_q5: "É open source?",
+    lp_faq_a5:
+      "Sim. O Continuum é um projeto de código aberto e todo o código está público no GitHub, então qualquer pessoa pode auditar como suas notas são guardadas e processadas.",
 
     lp_footer_tagline:
       "Uma plataforma moderna de gestão de conhecimento para organizar, conectar e redescobrir suas ideias na velocidade do pensamento.",
@@ -345,6 +358,8 @@ export const dict: Module = {
     lp_footer_support: "Suporte",
     lp_footer_terms: "Termos e condições",
     lp_footer_privacy: "Privacidade",
+    lp_footer_opensource: "Open Source",
+    lp_footer_howitworks: "Como funciona",
     lp_footer_rights: "Todos os direitos reservados.",
 
     lp_about_back_to_home: "← Voltar ao início",
@@ -467,6 +482,9 @@ export const dict: Module = {
     lp_faq_q4: "Est-ce gratuit ?",
     lp_faq_a4:
       "Continuum propose un plan gratuit avec notes, entités, graphe de connaissances et synchronisation native. Aucune carte bancaire requise.",
+    lp_faq_q5: "Est-ce open source ?",
+    lp_faq_a5:
+      "Oui. Continuum est un projet open source et tout le code est public sur GitHub : chacun peut vérifier comment vos notes sont stockées et traitées.",
 
     lp_footer_tagline:
       "Une plateforme moderne de gestion des connaissances pour organiser, connecter et redécouvrir vos idées à la vitesse de la pensée.",
@@ -478,6 +496,8 @@ export const dict: Module = {
     lp_footer_support: "Support",
     lp_footer_terms: "Conditions générales",
     lp_footer_privacy: "Confidentialité",
+    lp_footer_opensource: "Open Source",
+    lp_footer_howitworks: "Comment ça marche",
     lp_footer_rights: "Tous droits réservés.",
 
     lp_about_back_to_home: "← Retour à l'accueil",

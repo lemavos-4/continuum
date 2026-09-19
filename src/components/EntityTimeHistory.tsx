@@ -68,9 +68,9 @@ export function EntityTimeHistory({ entityId }: Props) {
   const pageEntries = entries.slice(0, page * PAGE);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
+    <div className="rounded-xl border border-border/10 bg-foreground/[0.02] p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs uppercase tracking-widest text-white/50 font-mono">{t('tm_time_history')}</h3>
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-mono">{t('tm_time_history')}</h3>
       </div>
 
       <div className="grid grid-cols-4 gap-2 mb-4">
@@ -82,23 +82,23 @@ export function EntityTimeHistory({ entityId }: Props) {
 
       {isLoading ? (
         <div className="flex justify-center py-10">
-          <Loader2 className="w-4 h-4 animate-spin text-white/40" />
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-white/40 text-center py-6">{t('tm_no_entries_yet')}</p>
+        <p className="text-sm text-muted-foreground text-center py-6">{t('tm_no_entries_yet')}</p>
       ) : (
-        <ul className="divide-y divide-white/[0.06]">
+        <ul className="divide-y divide-border">
           {pageEntries.map((e) => (
             <li key={e.id} className="flex items-center gap-3 py-2">
-              <span className="text-xs text-white/40 font-mono w-24 shrink-0">{e.date}</span>
-              <span className="text-sm font-mono text-white/90 w-24 shrink-0">
+              <span className="text-xs text-muted-foreground font-mono w-24 shrink-0">{e.date}</span>
+              <span className="text-sm font-mono text-muted-foreground w-24 shrink-0">
                 {fmtClock(e.durationSeconds || 0)}
               </span>
-              <span className="text-xs text-white/50 truncate flex-1">{e.note || '—'}</span>
-              <span className="text-[10px] uppercase tracking-wider text-white/30">{e.source}</span>
+              <span className="text-xs text-muted-foreground truncate flex-1">{e.note || '—'}</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{e.source}</span>
               <button
                 onClick={() => deleteEntry(e.id)}
-                className="text-white/30 hover:text-red-400 transition"
+                className="text-muted-foreground hover:text-red-400 transition"
                 title={t('tm_delete_entry')}
               >
                 <X className="w-3.5 h-3.5" />
@@ -111,7 +111,7 @@ export function EntityTimeHistory({ entityId }: Props) {
       {pageEntries.length < entries.length && (
         <button
           onClick={() => setPage((p) => p + 1)}
-          className="mt-3 text-xs text-white/50 hover:text-white transition"
+          className="mt-3 text-xs text-muted-foreground hover:text-foreground transition"
         >
           {t('tm_show_more', { count: entries.length - pageEntries.length })}
         </button>
@@ -122,9 +122,9 @@ export function EntityTimeHistory({ entityId }: Props) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] px-2 py-2.5 text-center min-w-0">
-      <p className="text-[9px] uppercase tracking-wider text-white/40">{label}</p>
-      <p className="mt-1 font-mono text-[13px] sm:text-sm text-white/90 truncate" title={value}>{value}</p>
+    <div className="rounded-lg border border-border/10 bg-foreground/[0.02] px-2 py-2.5 text-center min-w-0">
+      <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 font-mono text-[13px] sm:text-sm text-muted-foreground truncate" title={value}>{value}</p>
     </div>
   );
 }
