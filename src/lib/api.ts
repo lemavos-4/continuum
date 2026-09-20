@@ -412,6 +412,8 @@ export const notesApi = {
   delete: (id: string) => api.delete(`/api/notes/${id}`),
   toggleFavorite: (id: string) => api.patch(`/api/notes/${id}/favorite`),
   getBacklinks: (id: string) => api.get(`/api/notes/${id}/backlinks`),
+  getForwardLinks: (id: string) => api.get(`/api/notes/${id}/forward-links`),
+  getBacklinkCount: (id: string) => api.get(`/api/notes/${id}/backlink-count`),
   getTypes: () => api.get("/api/notes/types"),
 };
 
