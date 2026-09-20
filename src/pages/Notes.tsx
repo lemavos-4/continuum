@@ -799,7 +799,7 @@ export default function Notes() {
                       </Button>
 
                       {!collapsed && (
-                        <ul className="divide-y divide-border">
+                        <ul className="divide-y divide-border/10">
                           {items.map((note) => {
                             const preview = extractPreview(note.content);
                             const targetDate = sortBy === "createdAt" ? note.createdAt : note.updatedAt;
@@ -822,7 +822,7 @@ export default function Notes() {
                                     <span
                                       className={cn(
                                         "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-sm border transition-colors",
-                                        selected ? "border-border bg-foreground text-background" : "border-border/30 text-transparent"
+                                        selected ? "border-border/10 bg-foreground text-background" : "border-border/30 text-transparent"
                                       )}
                                     >
                                       <Check className="h-3.5 w-3.5" />

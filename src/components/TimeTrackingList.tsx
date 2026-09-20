@@ -118,7 +118,7 @@ export function TimeTrackingList({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="w-full max-w-sm bg-transparent border-0 border-b border-border/15 focus:border-border pb-2 text-sm outline-none transition-colors placeholder:text-muted-foreground"
+            className="w-full max-w-sm bg-transparent border-0 border-b border-border/15 focus:border-border/10 pb-2 text-sm outline-none transition-colors placeholder:text-muted-foreground"
           />
           <button onClick={() => setCreateDialogOpen(true)} className="btn-primary shrink-0">
             <Plus className="w-4 h-4" /> {filterType === 'PROJECT' ? t('tm_new_project') : filterType === 'ACTIVITY' ? t('tm_new_activity') : t('tm_new_entity')}

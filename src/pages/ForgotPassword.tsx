@@ -58,7 +58,7 @@ export default function ForgotPassword() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full bg-transparent border-0 border-b border-border/15 focus:border-border pb-2 text-base outline-none transition-colors"
+              className="w-full bg-transparent border-0 border-b border-border/15 focus:border-border/10 pb-2 text-base outline-none transition-colors"
             />
           </div>
 

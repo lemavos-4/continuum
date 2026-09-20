@@ -290,7 +290,7 @@ export default function EntityDetail() {
         </Button>
 
         {/* Premium serif header — matches /entities */}
-        <header className="border-b border-border pb-8 mb-8">
+        <header className="border-b border-border/10 pb-8 mb-8">
           <div className="flex items-center gap-2 mb-2">
             <p className="label-caps">{typeLabel}</p>
             <InsightSignalBadge kind="entity" id={entity.id} />
@@ -374,9 +374,9 @@ export default function EntityDetail() {
         <Accordion
           type="multiple"
           defaultValue={["metadata"]}
-          className="border-t border-border"
+          className="border-t border-border/10"
         >
-          <AccordionItem value="metadata" className="border-b border-border">
+          <AccordionItem value="metadata" className="border-b border-border/10">
             <AccordionTrigger className="label-caps text-muted-foreground hover:text-foreground hover:no-underline py-4">
               {t("ent_metadata")}
             </AccordionTrigger>
@@ -403,7 +403,7 @@ export default function EntityDetail() {
                       <select
                         value={newType}
                         onChange={(e) => setNewType(e.target.value)}
-                        className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                        className="h-9 rounded-md border border-border/10 bg-background px-2 text-sm text-foreground"
                       >
                         {entityTypeOptions.map((option) => (
                           <option key={option.value} value={option.value}>{option.label}</option>
@@ -444,7 +444,7 @@ export default function EntityDetail() {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="notes" className="border-b border-border">
+          <AccordionItem value="notes" className="border-b border-border/10">
             <AccordionTrigger className="label-caps text-muted-foreground hover:text-foreground hover:no-underline py-4">
               <span className="flex w-full items-center justify-between gap-3">
                 <span>{t("ent_connected_notes")}</span>
@@ -477,7 +477,7 @@ export default function EntityDetail() {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="entities" className="border-b border-border">
+          <AccordionItem value="entities" className="border-b border-border/10">
             <AccordionTrigger className="label-caps text-muted-foreground hover:text-foreground hover:no-underline py-4">
               <span className="flex w-full items-center justify-between gap-3">
                 <span>{t("ent_connected_entities")}</span>

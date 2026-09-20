@@ -87,7 +87,7 @@ export function EntityTimeHistory({ entityId }: Props) {
       ) : entries.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">{t('tm_no_entries_yet')}</p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border/10">
           {pageEntries.map((e) => (
             <li key={e.id} className="flex items-center gap-3 py-2">
               <span className="text-xs text-muted-foreground font-mono w-24 shrink-0">{e.date}</span>

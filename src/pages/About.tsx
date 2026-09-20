@@ -40,9 +40,9 @@ function FlowStep({
   return (
     <li className="relative flex gap-4">
       {!last && (
-        <span className="absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px bg-border" />
+        <span className="absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px bg-border/10" />
       )}
-      <span className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border bg-card">
+      <span className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border/10 bg-card">
         <IconEl className="h-4.5 w-4.5 text-muted-foreground" />
       </span>
       <div className="pb-7">
@@ -88,7 +88,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
-      <header className="border-b border-border">
+      <header className="border-b border-border/10">
         <div className="container mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
           <a href="/" className="flex items-center gap-2.5">
             <AppLogo />
@@ -121,7 +121,7 @@ export default function About() {
         </section>
 
         {/* What is Continuum */}
-        <section className="border-t border-border py-10 sm:py-14">
+        <section className="border-t border-border/10 py-10 sm:py-14">
           <SectionTitle>{t("ab_what_title")}</SectionTitle>
           <p className="mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">
             {t("ab_what_body")}
@@ -147,7 +147,7 @@ export default function About() {
         </section>
 
         {/* How it works */}
-        <section className="border-t border-border py-10 sm:py-14">
+        <section className="border-t border-border/10 py-10 sm:py-14">
           <SectionTitle>{t("ab_how_title")}</SectionTitle>
           <p className="mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">
             {t("ab_how_sub")}
@@ -167,7 +167,7 @@ export default function About() {
         </section>
 
         {/* Your data */}
-        <section className="border-t border-border py-10 sm:py-14">
+        <section className="border-t border-border/10 py-10 sm:py-14">
           <SectionTitle>{t("ab_data_title")}</SectionTitle>
           <p className="mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">
             {t("ab_data_body1")}
@@ -175,13 +175,13 @@ export default function About() {
           <p className="mt-3 max-w-2xl text-[15px] leading-7 text-muted-foreground/80">
             {t("ab_data_body2")}
           </p>
-          <p className="mt-5 border-l-2 border-border pl-4 text-[13px] leading-6 text-muted-foreground/70">
+          <p className="mt-5 border-l-2 border-border/10 pl-4 text-[13px] leading-6 text-muted-foreground/70">
             {t("ab_data_note")}
           </p>
         </section>
 
         {/* Open source */}
-        <section className="border-t border-border py-10 sm:py-14">
+        <section className="border-t border-border/10 py-10 sm:py-14">
           <SectionTitle>{t("ab_oss_title")}</SectionTitle>
           <p className="mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">
             {t("ab_oss_body")}
@@ -207,7 +207,7 @@ export default function About() {
         </section>
 
         {/* Technology */}
-        <section className="border-t border-border py-10 sm:py-14">
+        <section className="border-t border-border/10 py-10 sm:py-14">
           <SectionTitle>{t("ab_tech_title")}</SectionTitle>
           <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {techGroups.map((g) => (
@@ -226,7 +226,7 @@ export default function About() {
         </section>
 
         {/* Final CTA */}
-        <section className="border-t border-border py-14 sm:py-20">
+        <section className="border-t border-border/10 py-14 sm:py-20">
           <div className="text-center">
             <h2 className="font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
               {t("ab_cta_title")}
@@ -255,7 +255,7 @@ export default function About() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border">
+      <footer className="border-t border-border/10">
         <div className="container mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 py-8 sm:px-6">
           <a href="/" className="flex items-center gap-2.5">
             <AppLogo />

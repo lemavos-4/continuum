@@ -506,7 +506,7 @@ export default function Entities() {
                 </p>
               </div>
             ) : (
-              <ul className="divide-y divide-border">
+              <ul className="divide-y divide-border/10">
                 {filteredAndSorted.map((entity) => {
                   const targetDate = sortBy === "updatedAt" ? (entity.updatedAt || entity.createdAt) : entity.createdAt;
                   const selected = selectedIds.has(entity.id);
@@ -527,7 +527,7 @@ export default function Entities() {
                         <span
                           className={cn(
                             "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-sm border transition-colors",
-                            selected ? "border-border bg-foreground text-background" : "border-border/30 text-transparent"
+                            selected ? "border-border/10 bg-foreground text-background" : "border-border/30 text-transparent"
                           )}
                         >
                           <Check className="h-3.5 w-3.5" />

@@ -165,7 +165,7 @@ function PdfCard({ file, name, onDelete, onRename, onOpen }: {
           <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-[11px] bg-background border border-border px-2.5 py-1 text-muted-foreground rounded-sm">{t("gr_vault_view_document")}</span>
+          <span className="text-[11px] bg-background border border-border/10 px-2.5 py-1 text-muted-foreground rounded-sm">{t("gr_vault_view_document")}</span>
         </div>
       </button>
       <div className="p-3 flex items-center justify-between gap-2">
@@ -188,7 +188,7 @@ function OtherFileRow({ file, name, onDelete, onRename }: {
   file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void;
 }) {
   return (
-    <div className="group relative flex items-center justify-between py-4 border-b border-border hover:bg-foreground/[0.01] transition-colors">
+    <div className="group relative flex items-center justify-between py-4 border-b border-border/10 hover:bg-foreground/[0.01] transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <FileGeneric className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         <div className="min-w-0">
@@ -440,7 +440,7 @@ export default function Vault() {
                 grouped.other.length === 0 ? (
                   <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_other")}</p>
                 ) : (
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-border/10">
                     {grouped.other.map((f) => (
                       <OtherFileRow key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} />
                     ))}
@@ -455,7 +455,7 @@ export default function Vault() {
 
       {/* CONFIRM DIALOG — Adaptado para seguir o design limpo do app */}
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
-        <AlertDialogContent className="bg-background border border-border rounded-sm max-w-sm">
+        <AlertDialogContent className="bg-background border border-border/10 rounded-sm max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif text-xl font-normal text-foreground">{t("gr_vault_remove_title")}</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground text-xs mt-2">

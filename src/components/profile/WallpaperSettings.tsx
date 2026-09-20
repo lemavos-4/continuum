@@ -96,7 +96,7 @@ export default function WallpaperSettings() {
       </div>
 
       {/* Live preview */}
-      <div className="relative h-36 w-full overflow-hidden rounded-xl border border-border bg-accent">
+      <div className="relative h-36 w-full overflow-hidden rounded-xl border border-border/10 bg-accent">
         {url ? (
           <>
             <div

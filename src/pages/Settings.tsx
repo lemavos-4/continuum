@@ -282,7 +282,7 @@ export default function SettingsPage() {
         <section className="space-y-4">
           <SectionTitle eyebrow={currentPlan} title={t("profile_planUsage")} />
           <Card variant="faint">
-            <CardContent className="divide-y divide-border p-0">
+            <CardContent className="divide-y divide-border/10 p-0">
               {usageLoading && !usage ? (
                 <div className="flex justify-center py-10">
                   <ArrowPathIcon className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -334,7 +334,7 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             <Card variant="faint">
-              <CardContent className="divide-y divide-border p-0">
+              <CardContent className="divide-y divide-border/10 p-0">
                 <div className="px-4">
                   <LanguageSelector />
                 </div>
@@ -479,7 +479,7 @@ export default function SettingsPage() {
           <SectionTitle eyebrow={t("profile_eyebrowSupport")} title={t("profile_supportCenter")} />
 
           <Card variant="faint" className="w-full">
-            <CardContent className="divide-y divide-border p-0">
+            <CardContent className="divide-y divide-border/10 p-0">
               <a href="/support" className="flex items-center gap-4 px-4 py-3.5 w-full">
                 <LifebuoyIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">

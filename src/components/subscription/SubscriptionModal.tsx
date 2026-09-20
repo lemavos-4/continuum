@@ -129,7 +129,7 @@ export default function SubscriptionModal({ open, onOpenChange }: Props) {
           </DialogHeader>
 
           {/* Current status */}
-          <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+          <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/10 pt-4">
             <div className="flex items-baseline gap-2">
               <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
                 {t("bill_current")}
@@ -152,7 +152,7 @@ export default function SubscriptionModal({ open, onOpenChange }: Props) {
             )}
           </div>
 
-          <ul className="mt-5 space-y-3 border-t border-border pt-5">
+          <ul className="mt-5 space-y-3 border-t border-border/10 pt-5">
             {VISION_BENEFITS.map((b) => (
               <li key={b} className="flex items-start gap-3 text-sm text-foreground/80">
                 <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -162,7 +162,7 @@ export default function SubscriptionModal({ open, onOpenChange }: Props) {
           </ul>
 
           {visionLimits && (
-            <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-5 text-xs sm:grid-cols-4">
+            <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border/10 pt-5 text-xs sm:grid-cols-4">
               {[
                 { k: t("bill_notes"), v: formatLimit(visionLimits.maxNotes ?? -1) },
                 { k: t("bill_entities"), v: formatLimit(visionLimits.maxEntities ?? -1) },
@@ -185,7 +185,7 @@ export default function SubscriptionModal({ open, onOpenChange }: Props) {
 
           <div className="mt-6 space-y-3">
             {isPro ? (
-              <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-border text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
+              <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-border/10 text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
                 {t("bill_active")}
               </div>
             ) : (

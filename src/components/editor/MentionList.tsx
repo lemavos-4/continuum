@@ -119,7 +119,7 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
                 })()}
               </button>
               {showTypeSelector && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border/10 rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
                   {entityTypes.map((type) => {
                     const Icon = type.icon;
                     return (

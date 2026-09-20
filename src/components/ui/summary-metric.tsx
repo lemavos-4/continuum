@@ -18,7 +18,7 @@ export function SummaryMetric({ label, value, delta = 0, comparison }: SummaryMe
       <p className="truncate font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{label}</p>
       <p className="truncate font-serif text-4xl leading-none tabular-nums text-foreground sm:text-5xl">{value}</p>
       {comparison && (
-        <div className="inline-flex items-center gap-1.5 self-start rounded-sm border border-border bg-accent/40 px-2 py-1 font-mono text-[10px] text-muted-foreground">
+        <div className="inline-flex items-center gap-1.5 self-start rounded-sm border border-border/10 bg-accent/40 px-2 py-1 font-mono text-[10px] text-muted-foreground">
           <span className={cn(isDown && "text-red-300/80", isUp && "text-emerald-300/80")}>
             {arrow} {Math.abs(delta)}
           </span>
