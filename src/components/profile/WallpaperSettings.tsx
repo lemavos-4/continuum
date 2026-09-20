@@ -10,19 +10,22 @@ import {
   loadWallpaperSettings,
   removeWallpaper,
   resolveVaultBlobFast,
-  saveWallpaperSettings,
   subscribeWallpaper,
   uploadWallpaper,
   type NoteWallpaperSettings,
 } from "@/lib/note-wallpaper";
 import { loadNoteFontSize, subscribeNoteFontSize } from "@/lib/note-font-size";
 
-export default function WallpaperSettings() {
+interface WallpaperSettingsProps {
+  value: NoteWallpaperSettings;
+  onChange: (value: NoteWallpaperSettings) => void;
+}
+
+export default function WallpaperSettings({ value, onChange }: WallpaperSettingsProps) {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [wallpaper, setWallpaper] = useState<NoteWallpaperSettings>(() => loadWallpaperSettings());
   const [noteFontSize, setNoteFontSize] = useState(() => loadNoteFontSize());
-  const [draftWallpaper, setDraftWallpaper] = useState<NoteWallpaperSettings>(() => loadWallpaperSettings());
   const [url, setUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,8 +38,6 @@ export default function WallpaperSettings() {
       unsubscribeFont();
     };
   }, []);
-
-  useEffect(() => setDraftWallpaper(wallpaper), [wallpaper]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,11 +76,7 @@ export default function WallpaperSettings() {
   };
 
   const update = (patch: Partial<NoteWallpaperSettings>) => {
-    setDraftWallpaper((current) => ({ ...current, ...patch }));
-  };
-
-  const confirmSettings = () => {
-    saveWallpaperSettings(draftWallpaper);
+    onChange({ ...value, ...patch });
   };
 
   return (
@@ -111,8 +108,8 @@ export default function WallpaperSettings() {
               className="absolute inset-0 bg-cover bg-center"
               style={{
                 backgroundImage: `url(${url})`,
-                filter: `blur(${draftWallpaper.blur}px) brightness(${draftWallpaper.brightness}%)`,
-                transform: draftWallpaper.blur > 0 ? "scale(1.08)" : undefined,
+                filter: `blur(${value.blur}px) brightness(${value.brightness}%)`,
+                transform: value.blur > 0 ? "scale(1.08)" : undefined,
               }}
             />
             <div aria-hidden="true" className="absolute inset-0 bg-background/55" />
@@ -158,13 +155,13 @@ export default function WallpaperSettings() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("ed_blur")}</Label>
-          <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{draftWallpaper.blur}px</span>
+          <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{value.blur}px</span>
         </div>
         <Slider
           min={0}
           max={40}
           step={1}
-          value={[draftWallpaper.blur]}
+          value={[value.blur]}
           onValueChange={([v]) => update({ blur: v })}
           disabled={!wallpaper.fileId}
         />
@@ -173,21 +170,18 @@ export default function WallpaperSettings() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("ed_brightness")}</Label>
-          <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{draftWallpaper.brightness}%</span>
+          <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{value.brightness}%</span>
         </div>
         <Slider
           min={20}
           max={150}
           step={1}
-          value={[draftWallpaper.brightness]}
+          value={[value.brightness]}
           onValueChange={([v]) => update({ brightness: v })}
           disabled={!wallpaper.fileId}
         />
       </div>
 
-      <Button type="button" variant="outline" onClick={confirmSettings} className="w-full normal-case">
-        {t("common_confirm")}
-      </Button>
     </div>
   );
 }

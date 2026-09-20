@@ -36,6 +36,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import WallpaperSettings from "@/components/profile/WallpaperSettings";
 import { DEFAULT_NOTE_FONT_SIZE, loadNoteFontSize, saveNoteFontSize, subscribeNoteFontSize } from "@/lib/note-font-size";
+import { loadWallpaperSettings, saveWallpaperSettings, type NoteWallpaperSettings } from "@/lib/note-wallpaper";
 
 /* ── Shared building blocks ──────────────────────────────────────────── */
 
@@ -153,6 +154,7 @@ export default function SettingsPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [draftNoteTitleScale, setDraftNoteTitleScale] = useState<number>(() => loadNoteFontSize().titleScale);
   const [draftNoteBodyScale, setDraftNoteBodyScale] = useState<number>(() => loadNoteFontSize().bodyScale);
+  const [draftWallpaper, setDraftWallpaper] = useState<NoteWallpaperSettings>(() => loadWallpaperSettings());
 
   useEffect(() => {
     const unsubscribe = subscribeNoteFontSize((settings) => {
@@ -177,8 +179,9 @@ export default function SettingsPage() {
     setDraftNoteBodyScale(DEFAULT_NOTE_FONT_SIZE.bodyScale);
   };
 
-  const confirmNoteFontScale = () => {
+  const updateEditorSettings = () => {
     saveNoteFontSize({ titleScale: draftNoteTitleScale, bodyScale: draftNoteBodyScale });
+    saveWallpaperSettings(draftWallpaper);
   };
 
   const handleExportData = async () => {
@@ -395,11 +398,11 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <Button type="button" variant="outline" onClick={confirmNoteFontScale} className="w-full normal-case">
-                    {t("common_confirm")}
-                  </Button>
                 </div>
-                <WallpaperSettings />
+                <WallpaperSettings value={draftWallpaper} onChange={setDraftWallpaper} />
+                <Button type="button" variant="outline" onClick={updateEditorSettings} className="w-full normal-case">
+                  {t("common_update")}
+                </Button>
               </CardContent>
             </Card>
           </div>
