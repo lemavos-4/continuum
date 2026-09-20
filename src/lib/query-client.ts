@@ -8,7 +8,7 @@ export const queryClient = new QueryClient({
       // Cached data paints instantly and refreshes in the background.
       staleTime: STALE.list,
       gcTime: 24 * 60 * 60 * 1000,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       refetchOnReconnect: true,
       retry: 1,
     },

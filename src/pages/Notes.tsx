@@ -9,6 +9,7 @@ import { notesApi, vaultApi } from "@/lib/api";
 import { usePlanGate } from "@/hooks/usePlanGate";
 import { useCachedResource } from "@/hooks/useCachedResource";
 import { qk, STALE } from "@/lib/queries";
+import { queryClient } from "@/lib/query-client";
 import { useCreateNote } from "@/hooks/useCreateNote";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import UpgradeModal from "@/components/UpgradeModal";
@@ -238,7 +239,7 @@ export default function Notes() {
       const res = await notesApi.list();
       return Array.isArray(res.data) ? res.data : [];
     },
-    { staleTime: STALE.list }
+    { staleTime: STALE.list, refetchInterval: 15_000 }
   );
   const typesQuery = useCachedResource<string[]>(
     qk.noteTypes(),
@@ -253,7 +254,10 @@ export default function Notes() {
     (notesQuery.data !== undefined && notes.length === 0 && notesQuery.data.length > 0);
 
   useEffect(() => {
-    if (notesQuery.data) setNotes(notesQuery.data);
+    if (notesQuery.data) {
+      setNotes(notesQuery.data);
+      void queryClient.invalidateQueries({ queryKey: ["notes", "detail"] });
+    }
   }, [notesQuery.data]);
   useEffect(() => {
     if (typesQuery.data) setTypes(typesQuery.data);
