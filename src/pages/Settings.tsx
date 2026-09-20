@@ -399,7 +399,11 @@ export default function SettingsPage() {
                   </div>
 
                 </div>
-                <WallpaperSettings value={draftWallpaper} onChange={setDraftWallpaper} />
+                <WallpaperSettings
+                  value={draftWallpaper}
+                  onChange={setDraftWallpaper}
+                  fontSize={{ titleScale: draftNoteTitleScale, bodyScale: draftNoteBodyScale }}
+                />
                 <Button type="button" variant="outline" onClick={updateEditorSettings} className="w-full normal-case">
                   {t("common_update")}
                 </Button>
