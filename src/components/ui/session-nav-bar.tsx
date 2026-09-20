@@ -187,19 +187,19 @@ export function SessionNavBar() {
                 </motion.span>
               </button>
 
-              <Separator className="my-2 bg-sidebar-border" />
+              <Separator className="my-2 bg-sidebar-border/10" />
 
               {primaryNav.map((it) => (
                 <SidebarLink key={it.to} item={it} collapsed={isCollapsed} pathname={pathname} />
               ))}
 
-              <Separator className="my-2 bg-sidebar-border" />
+              <Separator className="my-2 bg-sidebar-border/10" />
 
               {trackingNav.map((it) => (
                 <SidebarLink key={it.to} item={it} collapsed={isCollapsed} pathname={pathname} />
               ))}
 
-              <Separator className="my-2 bg-sidebar-border" />
+              <Separator className="my-2 bg-sidebar-border/10" />
 
               {exploreNav.map((it) => (
                 <SidebarLink key={it.to} item={it} collapsed={isCollapsed} pathname={pathname} />
