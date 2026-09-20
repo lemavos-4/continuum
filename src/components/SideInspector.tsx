@@ -174,7 +174,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 320 }}
           transition={{ duration: 0.25 }}
-          className="fixed right-0 top-0 bottom-0 z-40 w-[22rem] border-l border-border bg-background/95 backdrop-blur-xl shadow-2xl"
+          className="fixed right-0 top-0 bottom-0 z-40 w-[22rem] border-l border-border/10 bg-background/95 backdrop-blur-xl shadow-2xl"
         >
           <ScrollArea className="h-full">
             <div className="space-y-4 p-6">
@@ -201,7 +201,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                 </motion.button>
               </div>
 
-              <div className="h-px bg-border" />
+              <div className="h-px bg-border/10" />
 
               {loading ? (
                 <div className="space-y-3">
@@ -228,7 +228,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                         <h3 className="mb-3 label-caps text-muted-foreground">{t("ent_summary")}</h3>
                         <div className="space-y-3">
                           <p className="text-xs leading-relaxed text-muted-foreground">{notePreview}</p>
-                          <div className="space-y-2 border-t border-border pt-3">
+                          <div className="space-y-2 border-t border-border/10 pt-3">
                             <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
                               <span className="inline-flex items-center gap-1.5">
                                 <Link2 className="h-3 w-3" />
@@ -281,7 +281,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
 
                       <Button
                         variant="outline"
-                        className="w-full gap-2 border-border hover:bg-muted"
+                        className="w-full gap-2 border-border/10 hover:bg-muted"
                         onClick={() => {
                           navigate(`/notes/${displayEntity.id}`);
                           onClose();
@@ -328,7 +328,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                           ) : (
                             <p className="text-xs text-muted-foreground">{t("ent_no_description_added")}</p>
                           )}
-                          <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
+                          <div className="grid grid-cols-2 gap-2 border-t border-border/10 pt-3">
                             <div className="text-center text-[10px] font-mono">
                               <div className="font-semibold text-foreground">{relatedNotes.length}</div>
                               <div className="mt-1 text-muted-foreground">{t("ent_notes")}</div>
@@ -369,7 +369,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                                   navigate(`/notes/${note.id}`);
                                   onClose();
                                 }}
-                                className="flex w-full items-start gap-2 rounded-sm border border-border px-2.5 py-2 text-left transition-colors hover:bg-muted"
+                                className="flex w-full items-start gap-2 rounded-sm border border-border/10 px-2.5 py-2 text-left transition-colors hover:bg-muted"
                               >
                                 <StickyNote className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                                 <div className="min-w-0 flex-1">
@@ -392,7 +392,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
                               <button
                                 key={relatedEntity.id}
                                 onClick={() => openInspector(relatedEntity)}
-                                className="flex w-full items-center justify-between rounded-sm border border-border px-2.5 py-2 text-left transition-colors hover:bg-muted"
+                                className="flex w-full items-center justify-between rounded-sm border border-border/10 px-2.5 py-2 text-left transition-colors hover:bg-muted"
                               >
                                 <div className="min-w-0">
                                   <p className="truncate text-xs text-foreground">{relatedEntity.title}</p>
@@ -411,7 +411,7 @@ export const SideInspector = memo(function SideInspector({ isOpen, entity, onClo
 
                       <Button
                         variant="outline"
-                        className="w-full gap-2 border-border hover:bg-muted"
+                        className="w-full gap-2 border-border/10 hover:bg-muted"
                         onClick={() => {
                           navigate(`/entities/${displayEntity.id}`);
                           onClose();

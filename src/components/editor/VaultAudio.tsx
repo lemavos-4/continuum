@@ -21,7 +21,7 @@ function VaultAudioView({ node }: NodeViewProps) {
 
   return (
     <NodeViewWrapper as="div" className="my-4">
-      <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+      <div className="rounded-xl border border-border/10 bg-muted/30 p-3 space-y-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
             <Music className="h-4 w-4 text-primary" />

@@ -56,7 +56,7 @@ function VaultImageView({ node }: NodeViewProps) {
           )}
         </>
       ) : (
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-6 text-sm text-muted-foreground justify-center">
+        <div className="flex items-center gap-2 rounded-lg border border-border/10 bg-muted/30 px-3 py-6 text-sm text-muted-foreground justify-center">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading image…
         </div>
       )}

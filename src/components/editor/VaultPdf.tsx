@@ -21,8 +21,8 @@ function VaultPdfView({ node }: NodeViewProps) {
 
   return (
     <NodeViewWrapper as="div" className="my-4">
-      <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-card/50">
+      <div className="rounded-xl border border-border/10 bg-muted/30 overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border/10 bg-card/50">
           <div className="flex items-center gap-2 min-w-0">
             <FileText className="h-4 w-4 text-primary shrink-0" />
             <span className="text-sm font-medium truncate">{fileName}</span>

@@ -525,7 +525,7 @@ export default function Insights() {
                   </p>
                 </div>
               ) : (
-                <ul className="divide-y divide-border">
+                <ul className="divide-y divide-border/10">
                   {filteredInsights.map((item) => (
                     <InsightRow key={`${item.kind}-${item.id}-${item.category}`} item={item} />
                   ))}

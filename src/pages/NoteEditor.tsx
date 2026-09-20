@@ -489,7 +489,7 @@ export default function NoteEditor() {
               <Button variant="ghost" size="icon" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/notes"))} className="text-muted-foreground hover:text-foreground w-8 h-8">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <div className="h-4 w-[1px] bg-border mx-2" />
+              <div className="h-4 w-[1px] bg-border/10 mx-2" />
               
               {/* Status Indicator */}
               <div className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 bg-foreground/5 px-2.5 py-1 rounded-full">

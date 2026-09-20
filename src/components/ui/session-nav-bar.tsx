@@ -130,7 +130,7 @@ export function SessionNavBar() {
     <motion.aside
       className={cn(
         "fixed inset-y-0 left-0 z-30 hidden h-full shrink-0 lg:flex",
-        "border-r border-sidebar-border bg-sidebar/85 backdrop-blur-xl",
+        "border-r border-sidebar-border/10 bg-sidebar/85 backdrop-blur-xl",
       )}
       initial={false}
       animate={isCollapsed ? "closed" : "open"}
@@ -141,7 +141,7 @@ export function SessionNavBar() {
     >
       <div className="relative z-40 flex h-full w-full flex-col text-sidebar-foreground">
         {/* Brand / search trigger */}
-        <div className="flex h-[54px] w-full shrink-0 items-center border-b border-sidebar-border px-2">
+        <div className="flex h-[54px] w-full shrink-0 items-center border-b border-sidebar-border/10 px-2">
           <button
             type="button"
             onClick={() => navigate("/")}
@@ -181,7 +181,7 @@ export function SessionNavBar() {
                 </motion.span>
                 <motion.span
                   variants={labelVariants}
-                  className="ml-auto rounded border border-sidebar-border px-1.5 py-0.5 font-mono text-[10px] text-sidebar-foreground/70"
+                  className="ml-auto rounded border border-sidebar-border/10 px-1.5 py-0.5 font-mono text-[10px] text-sidebar-foreground/70"
                 >
                   {!isCollapsed && "Ctrl+K"}
                 </motion.span>
@@ -208,7 +208,7 @@ export function SessionNavBar() {
           </ScrollArea>
 
           {/* Footer */}
-          <div className="flex flex-col gap-1 border-t border-sidebar-border p-2">
+          <div className="flex flex-col gap-1 border-t border-sidebar-border/10 p-2">
             <div className="flex items-center gap-2">
               <button
                 type="button"

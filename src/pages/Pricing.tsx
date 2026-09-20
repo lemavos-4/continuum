@@ -64,7 +64,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <dl className="divide-y divide-border px-6 py-5">
+          <dl className="divide-y divide-border/10 px-6 py-5">
             {rows.map((r) => (
               <div key={r.label} className="grid grid-cols-[1.4fr_1fr_1fr] items-center gap-2 py-3.5">
                 <dt className="text-sm text-muted-foreground">{r.label}</dt>

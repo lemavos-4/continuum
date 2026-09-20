@@ -42,7 +42,7 @@ export default function AuthShell({ eyebrow = "Continuum", title, subtitle, chil
       </section>
 
       {/* Right — typographic side */}
-      <aside className="hidden lg:flex relative items-center justify-center border-l border-border bg-[#050505] overflow-hidden">
+      <aside className="hidden lg:flex relative items-center justify-center border-l border-border/10 bg-[#050505] overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{

@@ -278,7 +278,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
       }}
     >
       <DialogContent className="max-w-3xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] sm:max-h-[85vh] p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="space-y-0 p-4 sm:p-6 border-b border-border text-left">
+        <DialogHeader className="space-y-0 p-4 sm:p-6 border-b border-border/10 text-left">
           <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{t("import_eyebrow")}</p>
           <DialogTitle className="font-serif text-xl sm:text-2xl tracking-tight text-foreground mt-2">
             {t("profile_importMd")}
@@ -297,7 +297,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   e.preventDefault();
                   handleFiles(e.dataTransfer.files);
                 }}
-                className="border border-dashed border-border rounded-sm p-6 sm:p-10 text-center hover:border-foreground/25 transition-colors"
+                className="border border-dashed border-border/10 rounded-sm p-6 sm:p-10 text-center hover:border-foreground/25 transition-colors"
               >
                 <ArrowUpTrayIcon className="w-8 h-8 mx-auto text-muted-foreground" />
                 <p className="text-sm text-foreground/80 mt-3">{t("import_dropHere")}</p>
@@ -362,11 +362,11 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 <Stat label={t("import_stat_accepted")} value={acceptedCount} />
               </dl>
 
-              <section className="border-t border-border pt-5">
+              <section className="border-t border-border/10 pt-5">
                 <h3 className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-3">{t("import_stat_files")}</h3>
                 <ul className="space-y-1 max-h-40 overflow-y-auto pr-2">
                   {preview.files.map((f) => (
-                    <li key={f.filename} className="flex items-center gap-2 text-xs text-foreground/80 py-1 border-b border-border">
+                    <li key={f.filename} className="flex items-center gap-2 text-xs text-foreground/80 py-1 border-b border-border/10">
                       <DocumentTextIcon className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="truncate flex-1">{f.title}</span>
                       <span className="text-muted-foreground tabular-nums">{f.wordCount} w</span>
@@ -380,7 +380,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 )}
               </section>
 
-              <section className="border-t border-border pt-5">
+              <section className="border-t border-border/10 pt-5">
                 <h3 className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-3">
                   {t("import_addOwnTitle")}
                 </h3>
@@ -399,12 +399,12 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                       }
                     }}
                     placeholder={t("import_addOwnPlaceholder")}
-                    className="flex-1 min-w-0 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground/40 focus:outline-none rounded-sm px-3 py-2"
+                    className="flex-1 min-w-0 bg-transparent border border-border/10 text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground/40 focus:outline-none rounded-sm px-3 py-2"
                   />
                   <select
                     value={customDraftType}
                     onChange={(e) => setCustomDraftType(e.target.value as EntityType)}
-                    className="bg-transparent border border-border text-xs text-foreground/80 rounded-sm px-2 py-2 focus:outline-none focus:border-foreground/30"
+                    className="bg-transparent border border-border/10 text-xs text-foreground/80 rounded-sm px-2 py-2 focus:outline-none focus:border-foreground/30"
                   >
                     {TYPES.map((opt) => (
                       <option key={opt} value={opt} className="bg-[hsl(var(--popup-background))] text-[hsl(var(--popup-foreground))]">
@@ -426,7 +426,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     {customEntities.map((c, i) => (
                       <li
                         key={`${c.name}-${i}`}
-                        className="flex items-center gap-2 border border-border bg-accent/60 rounded-sm pl-2 pr-1 py-1"
+                        className="flex items-center gap-2 border border-border/10 bg-accent/60 rounded-sm pl-2 pr-1 py-1"
                       >
                         <span className="text-xs text-foreground/90">{c.name}</span>
                         <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -451,7 +451,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                 )}
               </section>
 
-              <section className="border-t border-border pt-5">
+              <section className="border-t border-border/10 pt-5">
                 <h3 className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground mb-3">
                   {t("import_detectedTitle")}
                 </h3>
@@ -462,7 +462,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                     {preview.candidates.map((c) => {
                       const d = decisions[c.key] ?? { accept: false, type: c.suggestedType, name: c.name };
                       return (
-                        <li key={c.key} className="py-2 border-b border-border">
+                        <li key={c.key} className="py-2 border-b border-border/10">
                           <div className="flex items-center gap-2 sm:gap-3">
                             <input
                               type="checkbox"
@@ -479,7 +479,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                               onChange={(e) =>
                                 setDecisions((s) => ({ ...s, [c.key]: { ...d, name: e.target.value } }))
                               }
-                              className="flex-1 min-w-0 bg-transparent border-b border-border text-sm text-foreground focus:border-foreground/40 focus:outline-none px-0 py-1"
+                              className="flex-1 min-w-0 bg-transparent border-b border-border/10 text-sm text-foreground focus:border-foreground/40 focus:outline-none px-0 py-1"
                             />
                             <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums shrink-0">
                               {c.existing ? t("import_exists") : `${c.occurrences}×`}
@@ -491,7 +491,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                               onChange={(e) =>
                                 setDecisions((s) => ({ ...s, [c.key]: { ...d, type: e.target.value as EntityType } }))
                               }
-                              className="bg-transparent border border-border text-xs text-foreground/80 rounded-sm px-2 py-1 focus:outline-none focus:border-foreground/30"
+                              className="bg-transparent border border-border/10 text-xs text-foreground/80 rounded-sm px-2 py-1 focus:outline-none focus:border-foreground/30"
                             >
                               {TYPES.map((opt) => (
                                 <option key={opt} value={opt} className="bg-[hsl(var(--popup-background))] text-[hsl(var(--popup-foreground))]">
@@ -564,7 +564,7 @@ export default function MarkdownImportDialog({ open, onOpenChange, onImported }:
                   <p className="text-xs text-muted-foreground">{t("import_completeDesc")}</p>
                 </div>
               </div>
-              <dl className="grid grid-cols-2 gap-3 border-t border-border pt-5 text-xs sm:grid-cols-4 sm:gap-4">
+              <dl className="grid grid-cols-2 gap-3 border-t border-border/10 pt-5 text-xs sm:grid-cols-4 sm:gap-4">
                 <Stat label={t("import_stat_notes")} value={result.notesCreated} />
                 <Stat label={t("import_stat_newEntities")} value={result.entitiesCreated} />
                 <Stat label={t("import_stat_reused")} value={result.entitiesReused} />

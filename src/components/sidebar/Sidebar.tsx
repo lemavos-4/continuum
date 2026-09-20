@@ -16,7 +16,7 @@ export function Sidebar({ expanded, onToggleCollapse, onOpenMobile, mobileMode =
     <div
       className={cn(
         "flex h-full flex-col bg-background/90 border-r border-border/8 shadow-[0_30px_70px_rgba(0,0,0,0.6)] backdrop-blur-xl",
-        "ring-1 ring-border",
+        "ring-1 ring-border/10",
         "overflow-hidden",
         expanded ? "w-72" : "w-20",
         mobileMode ? "min-w-[18rem]" : "min-w-0",
