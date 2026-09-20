@@ -35,7 +35,7 @@ import { toast as sonnerToast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import WallpaperSettings from "@/components/profile/WallpaperSettings";
-import { DEFAULT_NOTE_FONT_SIZE, loadNoteFontSize, resetNoteFontSize, saveNoteFontSize, subscribeNoteFontSize } from "@/lib/note-font-size";
+import { DEFAULT_NOTE_FONT_SIZE, loadNoteFontSize, saveNoteFontSize, subscribeNoteFontSize } from "@/lib/note-font-size";
 
 /* ── Shared building blocks ──────────────────────────────────────────── */
 
@@ -151,33 +151,34 @@ export default function SettingsPage() {
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [noteTitleScale, setNoteTitleScale] = useState<number>(() => loadNoteFontSize().titleScale);
-  const [noteBodyScale, setNoteBodyScale] = useState<number>(() => loadNoteFontSize().bodyScale);
+  const [draftNoteTitleScale, setDraftNoteTitleScale] = useState<number>(() => loadNoteFontSize().titleScale);
+  const [draftNoteBodyScale, setDraftNoteBodyScale] = useState<number>(() => loadNoteFontSize().bodyScale);
 
   useEffect(() => {
     const unsubscribe = subscribeNoteFontSize((settings) => {
-      setNoteTitleScale(settings.titleScale);
-      setNoteBodyScale(settings.bodyScale);
+      setDraftNoteTitleScale(settings.titleScale);
+      setDraftNoteBodyScale(settings.bodyScale);
     });
     return () => unsubscribe();
   }, []);
 
   const updateNoteTitleScale = (value: number) => {
     const nextValue = Math.round(value);
-    setNoteTitleScale(nextValue);
-    saveNoteFontSize({ titleScale: nextValue, bodyScale: noteBodyScale });
+    setDraftNoteTitleScale(nextValue);
   };
 
   const updateNoteBodyScale = (value: number) => {
     const nextValue = Math.round(value);
-    setNoteBodyScale(nextValue);
-    saveNoteFontSize({ titleScale: noteTitleScale, bodyScale: nextValue });
+    setDraftNoteBodyScale(nextValue);
   };
 
   const resetNoteFontScale = () => {
-    setNoteTitleScale(DEFAULT_NOTE_FONT_SIZE.titleScale);
-    setNoteBodyScale(DEFAULT_NOTE_FONT_SIZE.bodyScale);
-    resetNoteFontSize();
+    setDraftNoteTitleScale(DEFAULT_NOTE_FONT_SIZE.titleScale);
+    setDraftNoteBodyScale(DEFAULT_NOTE_FONT_SIZE.bodyScale);
+  };
+
+  const confirmNoteFontScale = () => {
+    saveNoteFontSize({ titleScale: draftNoteTitleScale, bodyScale: draftNoteBodyScale });
   };
 
   const handleExportData = async () => {
@@ -353,7 +354,7 @@ export default function SettingsPage() {
                       variant="ghost"
                       size="sm"
                       onClick={resetNoteFontScale}
-                      disabled={noteTitleScale === DEFAULT_NOTE_FONT_SIZE.titleScale && noteBodyScale === DEFAULT_NOTE_FONT_SIZE.bodyScale}
+                      disabled={draftNoteTitleScale === DEFAULT_NOTE_FONT_SIZE.titleScale && draftNoteBodyScale === DEFAULT_NOTE_FONT_SIZE.bodyScale}
                       className="h-7 px-2 text-[10px] normal-case"
                     >
                       {t("common_reset")}
@@ -363,14 +364,14 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("profile_fontTitle")}</Label>
-                      <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{noteTitleScale}%</span>
+                      <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{draftNoteTitleScale}%</span>
                     </div>
                     <input
                       type="range"
                       min={80}
                       max={180}
                       step={5}
-                      value={noteTitleScale}
+                      value={draftNoteTitleScale}
                       onChange={(e) => updateNoteTitleScale(Number(e.target.value))}
                       className="w-full accent-primary"
                       aria-label={t("profile_ariaNoteTitleSize")}
@@ -380,19 +381,23 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("profile_fontBody")}</Label>
-                      <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{noteBodyScale}%</span>
+                      <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{draftNoteBodyScale}%</span>
                     </div>
                     <input
                       type="range"
                       min={80}
                       max={180}
                       step={5}
-                      value={noteBodyScale}
+                      value={draftNoteBodyScale}
                       onChange={(e) => updateNoteBodyScale(Number(e.target.value))}
                       className="w-full accent-primary"
                       aria-label={t("profile_ariaNoteBodySize")}
                     />
                   </div>
+
+                  <Button type="button" variant="outline" onClick={confirmNoteFontScale} className="w-full normal-case">
+                    {t("common_confirm")}
+                  </Button>
                 </div>
                 <WallpaperSettings />
               </CardContent>
