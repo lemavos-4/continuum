@@ -12,7 +12,6 @@ import { EntityProvider } from "@/contexts/EntityContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SkeletonPage } from "@/components/ui/skeleton";
-import { GlobalProgress } from "@/components/motion/GlobalProgress";
 import { extractAuthTokensFromLocation, sanitizeAuthRedirectUrl } from "@/lib/auth-redirect";
 import { EMAIL_AUTH_ENABLED } from "@/lib/dev-mode";
 import UpdateDialog from "@/components/updater/UpdateDialog";
@@ -178,7 +177,6 @@ const App = () => {
     >
       <ThemeProvider>
         <TooltipProvider>
-          <GlobalProgress />
           <Toaster />
           <Sonner />
           <BrowserRouter>
