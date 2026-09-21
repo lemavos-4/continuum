@@ -86,6 +86,19 @@ function extractPreview(content: unknown): string {
   return out.join(" ").replace(/\s+/g, " ").trim();
 }
 
+function extractSearchSnippet(content: unknown, query: string): string {
+  const preview = extractPreview(content);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (!normalizedQuery || !preview) return preview;
+
+  const matchIndex = preview.toLocaleLowerCase().indexOf(normalizedQuery);
+  if (matchIndex < 0) return preview;
+
+  const start = Math.max(0, matchIndex - 45);
+  const end = Math.min(preview.length, matchIndex + normalizedQuery.length + 90);
+  return `${start > 0 ? "..." : ""}${preview.slice(start, end)}${end < preview.length ? "..." : ""}`;
+}
+
 function monthKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -846,7 +859,10 @@ export default function Notes() {
                       {!collapsed && (
                         <ul className="divide-y divide-border/10">
                           {items.map((note) => {
-                            const preview = extractPreview(note.content);
+                            const noteContent = note.content
+                              ?? searchContentById[note.id]
+                              ?? queryClient.getQueryData<{ content?: unknown }>(qk.note(note.id))?.content;
+                            const preview = extractSearchSnippet(noteContent, search);
                             const targetDate = sortBy === "createdAt" ? note.createdAt : note.updatedAt;
 
                             const selected = selectedIds.has(note.id);
