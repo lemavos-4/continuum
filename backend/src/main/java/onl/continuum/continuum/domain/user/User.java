@@ -30,7 +30,7 @@ public class User {
     @NotBlank @Email
     private String email;
 
-    @Size(min = 6, max = 100)
+    @Size(max = 100)
     private String password;
 
     @Builder.Default

@@ -161,7 +161,7 @@ public class AuthService {
         User user = User.builder()
                 .username(username)
                 .email(email)
-                .password(password == null ? null : passwordEncoder.encode(password))
+                .password(password == null || password.isBlank() ? null : passwordEncoder.encode(password))
                 .role("USER")
                 .active(true)
                 .emailVerified(true)
@@ -183,7 +183,7 @@ public class AuthService {
     public AuthResponse login(String email, String password) {
         User user = users.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException("Invalid email or password"));
-        if (password == null || user.getPassword() == null || !passwordEncoder.matches(password, user.getPassword())) {
+        if (user.getPassword() == null ? password != null && !password.isBlank() : password == null || !passwordEncoder.matches(password, user.getPassword())) {
             throw new BadRequestException("Invalid email or password");
         }
         if (!Boolean.TRUE.equals(user.getActive())) {
