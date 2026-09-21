@@ -859,10 +859,13 @@ export default function Notes() {
                       {!collapsed && (
                         <ul className="divide-y divide-border/10">
                           {items.map((note) => {
-                            const noteContent = note.content
-                              ?? searchContentById[note.id]
-                              ?? queryClient.getQueryData<{ content?: unknown }>(qk.note(note.id))?.content;
-                            const preview = search.trim() ? extractSearchSnippet(noteContent, search) : "";
+                            const activeSearch = search.trim();
+                            const noteContent = activeSearch
+                              ? note.content
+                                ?? searchContentById[note.id]
+                                ?? queryClient.getQueryData<{ content?: unknown }>(qk.note(note.id))?.content
+                              : undefined;
+                            const preview = activeSearch ? extractSearchSnippet(noteContent, activeSearch) : "";
                             const targetDate = sortBy === "createdAt" ? note.createdAt : note.updatedAt;
 
                             const selected = selectedIds.has(note.id);
@@ -893,18 +896,20 @@ export default function Notes() {
                                   <ListRowContent
                                     icon={<StickyNote className="h-5 w-5" />}
                                     title={note.title || t("notes_untitled")}
-                                    className={cn(search.trim() && "items-start")}
+                                    className={cn(activeSearch && "items-start")}
                                     metaClassName={cn(
-                                      search.trim() && "whitespace-normal leading-relaxed line-clamp-3"
+                                      activeSearch && "whitespace-normal leading-relaxed line-clamp-3"
                                     )}
-                                    meta={
+                                    meta={activeSearch ? (
                                       <>
                                         {note.type ? `${note.type} · ` : ""}
                                         {relativeDate(targetDate)}
                                         {preview ? " · " : ""}
                                         {preview}
                                       </>
-                                    }
+                                    ) : (
+                                      <>{note.type ? `${note.type} · ` : ""}{relativeDate(targetDate)}</>
+                                    )}
                                   />
 
                                   {!selectMode && (
