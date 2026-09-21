@@ -862,7 +862,7 @@ export default function Notes() {
                             const noteContent = note.content
                               ?? searchContentById[note.id]
                               ?? queryClient.getQueryData<{ content?: unknown }>(qk.note(note.id))?.content;
-                            const preview = extractSearchSnippet(noteContent, search);
+                            const preview = search.trim() ? extractSearchSnippet(noteContent, search) : "";
                             const targetDate = sortBy === "createdAt" ? note.createdAt : note.updatedAt;
 
                             const selected = selectedIds.has(note.id);
