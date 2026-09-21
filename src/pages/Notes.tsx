@@ -893,6 +893,7 @@ export default function Notes() {
                                   <ListRowContent
                                     icon={<StickyNote className="h-5 w-5" />}
                                     title={note.title || t("notes_untitled")}
+                                    className={cn(search.trim() && "items-start")}
                                     metaClassName={cn(
                                       search.trim() && "whitespace-normal leading-relaxed line-clamp-3"
                                     )}
