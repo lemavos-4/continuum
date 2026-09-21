@@ -6,7 +6,16 @@ Every notable change to **Continuum**, from the first release to what just shipp
 
 ---
 
-## v1.2.16 — Set 13, 2026 *(current)*
+## v1.2.17 — XXX XX, 2026 *(current)*
+- Enhanced UI/UX.
+- Changed "/profile" to "/settings".
+- Enhanced "/settings" UI.
+- Enhanced the mobile bottom bar.
+- Added caching for improved performance and speed.
+- Added note search for both mobile and desktop.
+- Fixed Markdown elements when changing the body text size.
+
+## v1.2.16 — Set 13, 2026
 - Add apk feature using capacitor.
 - Remove "/" for dashboard. 
 
