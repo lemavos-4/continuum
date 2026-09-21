@@ -406,7 +406,9 @@ export default function Notes() {
         if (view === "recent" && age >= RECENT_WINDOW) return false;
         if (view === "archived" && age <= ARCHIVE_WINDOW) return false;
         if (q) {
-          const hay = `${n.title} ${extractPreview(n.content)}`.toLowerCase();
+          const cachedDetail = queryClient.getQueryData<{ content?: unknown }>(qk.note(n.id));
+          const content = n.content ?? cachedDetail?.content;
+          const hay = `${n.title} ${extractPreview(content)}`.toLowerCase();
           if (!hay.includes(q)) return false;
         }
         return true;
