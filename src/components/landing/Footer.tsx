@@ -30,7 +30,7 @@ export default function Footer() {
     {
       title: t("lp_footer_contact"),
       links: [
-        { label: "cmontact@continuum.onl", href: "mailto:contact@continuum.onl" },
+        { label: "contact@continuum.onl", href: "mailto:contact@continuum.onl" },
         { label: "feedback@continuum.onl", href: "mailto:feedback@continuum.onl" },
       ],
     },
