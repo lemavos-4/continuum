@@ -10,6 +10,7 @@ import { usePlanGate } from "@/hooks/usePlanGate";
 import { useCachedResource } from "@/hooks/useCachedResource";
 import { qk, STALE } from "@/lib/queries";
 import { queryClient } from "@/lib/query-client";
+import { tiptapContentToPlainText } from "@/lib/tiptap-content";
 import { useCreateNote } from "@/hooks/useCreateNote";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import UpgradeModal from "@/components/UpgradeModal";
@@ -187,6 +188,7 @@ export default function Notes() {
   const [notes, setNotes] = useState<NoteSummary[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [contentSearchMatches, setContentSearchMatches] = useState<Set<string>>(new Set());
   const [view, setView] = useState<View>("all");
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
@@ -262,6 +264,47 @@ export default function Notes() {
   useEffect(() => {
     if (typesQuery.data) setTypes(typesQuery.data);
   }, [typesQuery.data]);
+
+  // Note summaries intentionally omit content. Load uncached details only when
+  // the user searches so mobile and desktop can search the complete note text.
+  useEffect(() => {
+    const query = search.trim().toLocaleLowerCase();
+    if (query.length < 2 || notes.length === 0) {
+      setContentSearchMatches(new Set());
+      return;
+    }
+
+    let cancelled = false;
+    setContentSearchMatches(new Set());
+    const timer = window.setTimeout(async () => {
+      const matches = new Set<string>();
+      const uncached = notes.filter((note) => {
+        const detail = queryClient.getQueryData<{ content?: unknown }>(qk.note(note.id));
+        if (!detail || !Object.prototype.hasOwnProperty.call(detail, "content")) return true;
+        const content = tiptapContentToPlainText(detail.content).toLocaleLowerCase();
+        if (`${note.title} ${content}`.includes(query)) matches.add(note.id);
+        return false;
+      });
+      if (!cancelled) setContentSearchMatches(new Set(matches));
+
+      await Promise.allSettled(uncached.map(async (note) => {
+        const response = await notesApi.get(note.id);
+        queryClient.setQueryData(qk.note(note.id), response.data);
+        const content = tiptapContentToPlainText(response.data?.content).toLocaleLowerCase();
+        if (`${note.title} ${content}`.includes(query)) {
+          matches.add(note.id);
+          if (!cancelled) setContentSearchMatches(new Set(matches));
+        }
+      }));
+
+      if (!cancelled) setContentSearchMatches(matches);
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [search, notes]);
 
   const fetchData = async () => {
     await Promise.all([notesQuery.refetch(), typesQuery.refetch()]);
@@ -409,7 +452,7 @@ export default function Notes() {
           const cachedDetail = queryClient.getQueryData<{ content?: unknown }>(qk.note(n.id));
           const content = n.content ?? cachedDetail?.content;
           const hay = `${n.title} ${extractPreview(content)}`.toLowerCase();
-          if (!hay.includes(q)) return false;
+          if (!hay.includes(q) && !contentSearchMatches.has(n.id)) return false;
         }
         return true;
       })
@@ -418,7 +461,7 @@ export default function Notes() {
         const dateB = new Date(sortBy === "createdAt" ? b.createdAt : b.updatedAt).getTime();
         return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
       });
-  }, [notes, view, selectedType, search, sortBy, sortOrder]);
+  }, [notes, view, selectedType, search, sortBy, sortOrder, contentSearchMatches]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, NoteSummary[]>();
