@@ -307,7 +307,6 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder={t("au_at_least_8_chars")}
           className="w-full h-11 rounded-xl border border-[hsl(var(--popup-border))] bg-foreground/[0.03] px-3.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border/35 focus:bg-foreground/[0.06]"
         />
       </div>

@@ -238,7 +238,13 @@ class RefreshTokenManager {
         console.log("[RefreshTokenManager] Token renovado com sucesso");
         
         // Atualiza tokens (pode vir novo refresh token por rotation)
-        setAuthTokens(data.accessToken, data.refreshToken);
+        // O endpoint pode não rotacionar o refresh token. Nesse caso, preserve
+        // o token atual em vez de apagá-lo ao salvar apenas o novo access token.
+        if (data.refreshToken) {
+          setAuthTokens(data.accessToken, data.refreshToken);
+        } else {
+          setAuthTokens(data.accessToken);
+        }
 
         // Processa fila de requisições
         this.processQueue(data.accessToken);
