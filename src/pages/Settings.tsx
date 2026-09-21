@@ -526,6 +526,31 @@ export default function SettingsPage() {
           </Card>
         </section>
 
+        <footer className="border-t border-border/10 pt-6">
+          <div className="flex flex-col gap-3">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+              <a href="/about" className="transition-colors hover:text-foreground">{t("lp_footer_about")}</a>
+              <a href="/pricing" className="transition-colors hover:text-foreground">{t("lp_footer_pricing")}</a>
+              <a href="/support" className="transition-colors hover:text-foreground">{t("lp_footer_support")}</a>
+              <a href="/terms" className="transition-colors hover:text-foreground">{t("lp_footer_terms")}</a>
+              <a href="/privacy" className="transition-colors hover:text-foreground">{t("lp_footer_privacy")}</a>
+              <a href="/versions" className="transition-colors hover:text-foreground">Versions</a>
+              <a
+                href="https://github.com/continuumnodes/continuum"
+                target="_blank"
+                rel="noreferrer"
+                className="transition-colors hover:text-foreground"
+              >
+                GitHub
+              </a>
+            </nav>
+            <div className="flex flex-col gap-1 text-[10px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <span>© {new Date().getFullYear()} Continuum</span>
+              <span className="font-mono">{version}</span>
+            </div>
+          </div>
+        </footer>
+
         <div>
           <Button
             variant="destructive"
