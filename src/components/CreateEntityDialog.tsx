@@ -27,9 +27,10 @@ interface Props {
   defaultType?: string;
   lockType?: boolean;
   onCreated?: (entity: Entity) => void;
+  onCreationFailed?: (entityId: string) => void;
 }
 
-export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", lockType = false, onCreated }: Props) {
+export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", lockType = false, onCreated, onCreationFailed }: Props) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState(defaultType);
   const [description, setDescription] = useState("");
@@ -57,14 +58,23 @@ export function CreateEntityDialog({ open, onOpenChange, defaultType = "TOPIC", 
       return;
     }
     setSubmitting(true);
+    const optimisticEntity: Entity = {
+      id: `optimistic-entity-${Date.now()}`,
+      title: title.trim(),
+      type: type as Entity["type"],
+      description: description.trim() || undefined,
+      createdAt: new Date().toISOString(),
+    };
+    onCreated?.(optimisticEntity);
     try {
       const { data } = await entitiesApi.create(title.trim(), type, description.trim() || undefined);
       applyUsageDelta({ entitiesCount: 1, activitiesCount: type === "ACTIVITY" ? 1 : 0 });
       void refresh();
       toast({ title: t("ent_created_toast", { type: selected.label }), description: data?.title });
-      onCreated?.(data as Entity);
+      onCreated?.({ ...data, _optimisticId: optimisticEntity.id } as Entity & { _optimisticId: string });
       onOpenChange(false);
     } catch (err: any) {
+      onCreationFailed?.(optimisticEntity.id);
       toast({
         title: t("ent_could_not_create"),
         description: err?.response?.data?.message || err?.message || t("ent_try_again"),

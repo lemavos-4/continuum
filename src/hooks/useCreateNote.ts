@@ -36,15 +36,30 @@ export function useCreateNote(options: UseCreateNoteOptions = {}) {
     inFlight.current = true;
     setCreating(true);
     applyUsageDelta({ notesCount: 1 });
+    const optimisticId = `optimistic-note-${Date.now()}`;
+    const optimisticNote = {
+      id: optimisticId,
+      title: "Untitled",
+      content: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    queryClient.setQueryData(qk.notes(), (prev: any[] | undefined) => [optimisticNote, ...(prev ?? [])]);
 
     try {
       const { data } = await notesApi.create("Untitled", "");
       if (!data?.id) throw new Error("Invalid response from server");
       queryClient.setQueryData(qk.note(data.id), data);
+      queryClient.setQueryData(qk.notes(), (prev: any[] | undefined) =>
+        (prev ?? []).map((note) => note.id === optimisticId ? data : note)
+      );
       void queryClient.invalidateQueries({ queryKey: qk.notes() });
       void refresh();
       navigate(`/notes/${data.id}`);
     } catch (err: any) {
+      queryClient.setQueryData(qk.notes(), (prev: any[] | undefined) =>
+        (prev ?? []).filter((note) => note.id !== optimisticId)
+      );
       applyUsageDelta({ notesCount: -1 });
       if (err?.response?.status === 403) {
         options.onLimitReached?.();

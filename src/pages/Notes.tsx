@@ -291,13 +291,16 @@ export default function Notes() {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
+    const deletedNote = pendingDelete;
+    setNotes((prev) => prev.filter((n) => n.id !== deletedNote.id));
+    notesQuery.setData((prev) => (prev ?? []).filter((n) => n.id !== deletedNote.id));
     try {
-      await notesApi.delete(pendingDelete.id);
-      setNotes((prev) => prev.filter((n) => n.id !== pendingDelete.id));
-      notesQuery.setData((prev) => (prev ?? []).filter((n) => n.id !== pendingDelete.id));
+      await notesApi.delete(deletedNote.id);
       applyUsageDelta({ notesCount: -1 });
       void refresh();
     } catch {
+      setNotes((prev) => [deletedNote, ...prev]);
+      notesQuery.setData((prev) => [deletedNote, ...(prev ?? [])]);
       toast({ title: t("ls_notes_error_deleting"), variant: "destructive" });
     } finally {
       setPendingDelete(null);
@@ -328,16 +331,19 @@ export default function Notes() {
   const confirmBulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
+    const deletedNotes = notes.filter((note) => selectedIds.has(note.id));
+    setNotes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
+    notesQuery.setData((prev) => (prev ?? []).filter((n) => !selectedIds.has(n.id)));
     setBulkDeleting(true);
     try {
       await Promise.all(ids.map((id) => notesApi.delete(id)));
-      setNotes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
-      notesQuery.setData((prev) => (prev ?? []).filter((n) => !selectedIds.has(n.id)));
       applyUsageDelta({ notesCount: -ids.length });
       void refresh();
       toast({ title: t(ids.length === 1 ? "notes_bulk_removed_one" : "notes_bulk_removed", { n: ids.length }) || `${ids.length} removed` });
       exitSelectMode();
     } catch {
+      setNotes((prev) => [...deletedNotes, ...prev]);
+      notesQuery.setData((prev) => [...deletedNotes, ...(prev ?? [])]);
       toast({ title: t("ls_notes_error_deleting_entries"), variant: "destructive" });
     } finally {
       setBulkDeleting(false);

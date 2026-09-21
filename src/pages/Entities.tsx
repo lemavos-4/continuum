@@ -211,13 +211,16 @@ export default function Entities() {
 
   const confirmDelete = async () => {
     if (!pendingDeleteEntity) return;
+    const deletedEntity = pendingDeleteEntity;
+    setEntities((prev) => prev.filter((x) => x.id !== deletedEntity.id));
+    entitiesQuery.setData((prev) => (prev ?? []).filter((x) => x.id !== deletedEntity.id));
     try {
-      await entitiesApi.delete(pendingDeleteEntity.id);
-      setEntities((prev) => prev.filter((x) => x.id !== pendingDeleteEntity.id));
-      entitiesQuery.setData((prev) => (prev ?? []).filter((x) => x.id !== pendingDeleteEntity.id));
-      applyUsageDelta({ entitiesCount: -1, activitiesCount: pendingDeleteEntity.type === "ACTIVITY" ? -1 : 0 });
+      await entitiesApi.delete(deletedEntity.id);
+      applyUsageDelta({ entitiesCount: -1, activitiesCount: deletedEntity.type === "ACTIVITY" ? -1 : 0 });
       void refreshUsage();
     } catch {
+      setEntities((prev) => [deletedEntity, ...prev]);
+      entitiesQuery.setData((prev) => [deletedEntity, ...(prev ?? [])]);
       toast({ title: t("ls_entities_error_deleting"), variant: "destructive" });
     } finally {
       setPendingDeleteEntity(null);
@@ -248,17 +251,19 @@ export default function Entities() {
   const confirmBulkDelete = async () => {
     const targets = entities.filter((e) => selectedIds.has(e.id));
     if (targets.length === 0) return;
+    setEntities((prev) => prev.filter((e) => !selectedIds.has(e.id)));
+    entitiesQuery.setData((prev) => (prev ?? []).filter((e) => !selectedIds.has(e.id)));
     setBulkDeleting(true);
     try {
       await Promise.all(targets.map((e) => entitiesApi.delete(e.id)));
-      setEntities((prev) => prev.filter((x) => !selectedIds.has(x.id)));
-      entitiesQuery.setData((prev) => (prev ?? []).filter((x) => !selectedIds.has(x.id)));
       const activities = targets.filter((e) => e.type === "ACTIVITY").length;
       applyUsageDelta({ entitiesCount: -targets.length, activitiesCount: -activities });
       void refreshUsage();
       toast({ title: t(targets.length === 1 ? "entities_countRemoved_one" : "entities_countRemoved", { n: targets.length }) });
       exitSelectMode();
     } catch {
+      setEntities((prev) => [...targets, ...prev]);
+      entitiesQuery.setData((prev) => [...targets, ...(prev ?? [])]);
       toast({ title: t("ls_entities_error_deleting_many"), variant: "destructive" });
     } finally {
       setBulkDeleting(false);
@@ -586,8 +591,19 @@ export default function Entities() {
         onOpenChange={setCreateOpen}
         defaultType={(selectedType as EntityType) || "TOPIC"}
         onCreated={(entity) => {
-          setEntities((prev) => [...prev, entity as Entity]);
-          entitiesQuery.setData((prev) => [...(prev ?? []), entity as Entity]);
+          const resolvedEntity = entity as Entity & { _optimisticId?: string };
+          if (resolvedEntity._optimisticId) {
+            const { _optimisticId, ...serverEntity } = resolvedEntity;
+            setEntities((prev) => prev.map((item) => item.id === _optimisticId ? serverEntity : item));
+            entitiesQuery.setData((prev) => (prev ?? []).map((item) => item.id === _optimisticId ? serverEntity : item));
+            return;
+          }
+          setEntities((prev) => [...prev, resolvedEntity]);
+          entitiesQuery.setData((prev) => [...(prev ?? []), resolvedEntity]);
+        }}
+        onCreationFailed={(entityId) => {
+          setEntities((prev) => prev.filter((entity) => entity.id !== entityId));
+          entitiesQuery.setData((prev) => (prev ?? []).filter((entity) => entity.id !== entityId));
         }}
       />
       <UpgradeModal
