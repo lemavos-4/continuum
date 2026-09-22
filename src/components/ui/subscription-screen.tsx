@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,6 @@ interface SubscriptionScreenProps {
   subscribeButtonText: string;
   footerText: string;
   currentPlanText?: string;
-  onClose?: () => void;
   onSubscribe: (planId: string) => void;
 }
 
@@ -44,27 +43,14 @@ export function SubscriptionScreen({
   subscribeButtonText,
   footerText,
   currentPlanText,
-  onClose,
   onSubscribe,
 }: SubscriptionScreenProps) {
   const [selectedPlan, setSelectedPlan] = React.useState(defaultPlanId);
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-end overflow-visible rounded-2xl bg-transparent shadow-2xl">
+    <div className="relative flex min-h-[min(760px,100dvh)] w-full max-w-md flex-col items-center justify-end overflow-visible rounded-2xl bg-transparent shadow-2xl">
       {backgroundImageSrc && <img src={backgroundImageSrc} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />}
       {backgroundImageSrc && <div className="absolute inset-0 z-[1] bg-black/25" />}
-
-      {onClose && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-4 z-20 rounded-full bg-black/30 text-white hover:bg-black/50 hover:text-white"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      )}
 
       <motion.div
         initial={{ y: "100%" }}

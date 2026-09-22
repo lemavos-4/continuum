@@ -14,7 +14,7 @@ interface SubInfo {
   cancelAtPeriodEnd?: boolean;
 }
 
-export default function SubscriptionContent({ onClose }: { onClose?: () => void } = {}) {
+export default function SubscriptionContent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -79,9 +79,13 @@ export default function SubscriptionContent({ onClose }: { onClose?: () => void 
   const isPro = (currentPlan === "PRO" ? "VISION" : currentPlan) === "VISION";
 
   const handleCheckout = async () => {
+    if (!prices.monthly || !prices.monthly.startsWith("price_")) {
+      toast({ title: t("bill_error"), description: "Subscription pricing is not configured yet.", variant: "destructive" });
+      return;
+    }
     setCheckoutLoading(true);
     try {
-      const { data } = await subscriptionApi.checkout(prices.monthly || "VISION");
+      const { data } = await subscriptionApi.checkout(prices.monthly);
       if (data?.url) window.location.href = data.url;
     } catch (err: any) {
       toast({ title: t("bill_error"), description: err.response?.data?.message || t("bill_try_again"), variant: "destructive" });
@@ -102,7 +106,7 @@ export default function SubscriptionContent({ onClose }: { onClose?: () => void 
   };
 
   return (
-    <div className="flex min-h-[100dvh] w-full items-center justify-center">
+    <div className="flex min-h-[100dvh] w-full items-end justify-center">
       <SubscriptionScreen
         headerImageSrc="/pro-symbol.png"
         appName="Continuum"
@@ -113,7 +117,6 @@ export default function SubscriptionContent({ onClose }: { onClose?: () => void 
         subscribeButtonText={isPro ? (portalLoading ? t("bill_opening") : t("bill_manage_billing")) : checkoutLoading ? t("bill_opening") : t("bill_upgrade_to_vision")}
         footerText={syncing ? "Confirming your payment with Stripe…" : t("bill_cancel_secure")}
         currentPlanText={`${t("bill_current")}: ${isPro ? "VISION" : "FREE"}${sub?.status ? ` · ${sub.status.toLowerCase()}` : ""}`}
-        onClose={onClose}
         onSubscribe={isPro ? handlePortal : handleCheckout}
       />
     </div>

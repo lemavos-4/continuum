@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import onl.continuum.continuum.application.exception.BadRequestException;
 import onl.continuum.continuum.application.exception.NotFoundException;
+import onl.continuum.continuum.application.exception.StripeIntegrationException;
 import onl.continuum.continuum.controller.dto.subscription.CheckoutResponse;
 import onl.continuum.continuum.controller.dto.subscription.SubscriptionDTO;
 import onl.continuum.continuum.domain.plan.PlanConfiguration;
@@ -85,7 +86,7 @@ public class SubscriptionService {
             return stripe.createCheckout(customerId, userId, email, priceOrPlan);
         } catch (StripeException e) {
             log.error("[Stripe] Failed to prepare checkout customer: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create Stripe checkout: " + e.getMessage(), e);
+            throw new StripeIntegrationException("Failed to create Stripe checkout: " + e.getMessage(), e);
         }
     }
 

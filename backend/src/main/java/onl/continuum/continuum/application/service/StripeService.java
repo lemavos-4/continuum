@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import onl.continuum.continuum.application.exception.BadRequestException;
+import onl.continuum.continuum.application.exception.StripeConfigurationException;
+import onl.continuum.continuum.application.exception.StripeIntegrationException;
 import onl.continuum.continuum.controller.dto.subscription.CheckoutResponse;
 
 /**
@@ -88,6 +90,9 @@ public class StripeService {
     /* ─────────────────── Checkout ─────────────────── */
 
     public CheckoutResponse createCheckout(String customerId, String userId, String email, String priceOrPlan) {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new StripeConfigurationException("Stripe checkout is not configured on the server");
+        }
         String priceId = resolvePriceId(priceOrPlan);
         if (priceId == null || priceId.isBlank()) {
             throw new BadRequestException("Invalid Stripe price or plan: " + priceOrPlan);
@@ -120,7 +125,7 @@ public class StripeService {
             return new CheckoutResponse(session.getId(), session.getUrl());
         } catch (StripeException e) {
             log.error("[Stripe] Failed to create Checkout Session: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create Stripe checkout: " + e.getMessage(), e);
+            throw new StripeIntegrationException("Failed to create Stripe checkout: " + e.getMessage(), e);
         }
     }
 

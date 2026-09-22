@@ -42,6 +42,20 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(e.getMessage(), "PLAN_LIMIT_EXCEEDED"));
     }
 
+    @ExceptionHandler(StripeConfigurationException.class)
+    public ResponseEntity<ErrorResponse> handleStripeConfiguration(StripeConfigurationException e) {
+        log.error("Stripe configuration error: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(e.getMessage(), "STRIPE_NOT_CONFIGURED"));
+    }
+
+    @ExceptionHandler(StripeIntegrationException.class)
+    public ResponseEntity<ErrorResponse> handleStripeIntegration(StripeIntegrationException e) {
+        log.error("Stripe integration error: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ErrorResponse(e.getMessage(), "STRIPE_ERROR"));
+    }
+
     @ExceptionHandler(TokenRefreshException.class)
     public ResponseEntity<ErrorResponse> handleTokenRefresh(TokenRefreshException e) {
         log.warn("Token refresh error: {} [{}]", e.getMessage(), e.getErrorCode());
