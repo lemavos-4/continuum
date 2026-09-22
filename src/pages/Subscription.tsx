@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { SubscriptionScreen } from "@/components/ui/subscription-screen";
-import backgroundImage from "@/assets/landing-notes.jpg";
 import type { Plan } from "@/types";
 
 interface SubInfo {
@@ -119,8 +118,7 @@ export function SubscriptionContent({ onClose }: { onClose?: () => void } = {}) 
   return (
       <div className="flex min-h-[calc(100vh-1rem)] w-full items-center justify-center px-3 py-3 sm:px-8 sm:py-8">
         <SubscriptionScreen
-          backgroundImageSrc={backgroundImage}
-          headerImageSrc={backgroundImage}
+          headerImageSrc="/pro-symbol.png"
           appName="Continuum"
           planType="VISION"
           features={VISION_BENEFITS.map((text) => ({ text }))}

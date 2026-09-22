@@ -19,7 +19,7 @@ interface PricingOption {
 }
 
 interface SubscriptionScreenProps {
-  backgroundImageSrc: string;
+  backgroundImageSrc?: string;
   headerImageSrc: string;
   appName: string;
   planType: string;
@@ -51,8 +51,8 @@ export function SubscriptionScreen({
 
   return (
     <div className="relative flex min-h-[min(760px,calc(100dvh-2rem))] w-full max-w-md flex-col items-center justify-end overflow-hidden rounded-2xl bg-background shadow-2xl">
-      <img src={backgroundImageSrc} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 z-[1] bg-black/25" />
+      {backgroundImageSrc && <img src={backgroundImageSrc} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />}
+      {backgroundImageSrc && <div className="absolute inset-0 z-[1] bg-black/25" />}
 
       {onClose && (
         <Button

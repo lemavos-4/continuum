@@ -9,6 +9,7 @@ Every notable change to **Continuum**, from the first release to what just shipp
 - Changed "/profile" to "/settings".
 - Enhanced "/settings" UI.
 - Enhanced the mobile bottom bar.
+- Enchance subscription screen
 - Added caching for improved performance and speed.
 - Added note search for both mobile and desktop.
 - Fixed Markdown elements when changing the body text size.
