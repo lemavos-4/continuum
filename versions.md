@@ -2,8 +2,6 @@
 
 Every notable change to **Continuum**, from the first release to what just shipped. Newest at the top.
 
-> A few early versions (`v2`, `v3`) predate our versioning scheme, and a couple of tags got committed twice on the same day — those are merged into one entry each below.
-
 ---
 
 ## v1.2.17 — XXX XX, 2026 *(current)*
@@ -37,7 +35,7 @@ Every notable change to **Continuum**, from the first release to what just shipp
 ## v1.2.8 — Aug 30, 2026
 - Reworked how sign-in/sign-up redirects you through the app, plus route fixes on several pages.
 - Free plan limits were tightened, and data export is now a paid-only feature.
-🗑️ Removed a leftover static Google auth file from the backend build.
+- Removed a leftover static Google auth file from the backend build.
 
 ## v1.2.6 — Aug 26, 2026
 - Notifications now go through **Telegram** instead of Discord.
@@ -80,13 +78,13 @@ Every notable change to **Continuum**, from the first release to what just shipp
 - Small fix to time-tracking behavior.
 
 ## v1.0.4 — Jul 28, 2026
-🐛 Backend security hardening.
+- Backend security hardening.
 
 ## v1.0.3 — Jul 28, 2026
 - Environment configuration tweak.
 
 ## v1.0.2 — Jul 28, 2026
-🗑️ Cleaned up unused code and simplified the build config.
+-Cleaned up unused code and simplified the build config.
 
 ## v1.0.1 — Jul 28, 2026
 - Continuum now works **offline** and can run as a PWA, syncing automatically once you're back online.
@@ -95,17 +93,12 @@ Every notable change to **Continuum**, from the first release to what just shipp
 - New About, Pricing, and Support pages.
 - Timer goals and related notifications.
 - Payments migrated from LemonSqueezy to **Stripe**.
-🗑️ Removed the LemonSqueezy integration.
-
-## v3 — Jun 13, 2026
-- Reverted the folder reorganization from v2 — no functional changes.
-
-## v2 — Jun 13, 2026
+- Removed the LemonSqueezy integration.
 - You can now **import Markdown files**, with a confirmation step before anything is committed.
 - Expanded the note editor: find & replace, status bar, keyboard shortcuts, and more.
 - New sign-up page.
 - Vercel Web Analytics and Speed Insights added.
-🐛 Fixed Google login and token refresh issues.
+- Fixed Google login and token refresh issues.
 
 ## v1.0.0-RELEASE — May 28, 2026
 🎉 **The first full release of Continuum**, shipped as a complete product:
