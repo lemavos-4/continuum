@@ -45,6 +45,7 @@ const en = {
   nav_logout: "Log out",
   nav_settings: "Settings",
   nav_editor: "Editor",
+  nav_editorSettings: "Editor settings",
   nav_more: "More",
 
   // Common
@@ -372,6 +373,7 @@ const es: Dict = {
   nav_logout: "Cerrar sesión",
   nav_settings: "Ajustes",
   nav_editor: "Editor",
+  nav_editorSettings: "Configuración del editor",
   nav_more: "Más",
 
   common_save: "Guardar",
@@ -603,6 +605,7 @@ const pt: Dict = {
   nav_logout: "Sair",
   nav_settings: "Ajustes",
   nav_editor: "Editor",
+  nav_editorSettings: "Configurações do editor",
   nav_more: "Mais",
 
   common_save: "Salvar",
@@ -915,6 +918,7 @@ const fr: Dict = {
   nav_logout: "Déconnexion",
   nav_settings: "Paramètres",
   nav_editor: "Éditeur",
+  nav_editorSettings: "Réglages de l’éditeur",
   nav_more: "Plus",
 
   common_save: "Enregistrer",

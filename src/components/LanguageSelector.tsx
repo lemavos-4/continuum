@@ -1,5 +1,5 @@
 import { AVAILABLE_LANGUAGES, useLanguage, Language } from "@/contexts/LanguageContext";
-import { GlobeAltIcon } from "@heroicons/react/24/outline";
+import { ChevronRightIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
 import {
   Select,
   SelectContent,
@@ -36,11 +36,10 @@ export function LanguageSelector({ compact = false }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-4 py-4">
-      <GlobeAltIcon className="h-4 w-4 text-foreground/30 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-foreground/70">{t("profile_language")}</p>
-        <p className="text-xs text-foreground/30 truncate">{t("profile_languageDesc")}</p>
+    <div className="flex h-[60px] items-center gap-4 border-b border-border/10 py-0 transition-colors last:border-b-0 hover:text-foreground">
+      <GlobeAltIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1 text-left">
+        <p className="text-sm font-medium text-foreground/80">{t("profile_language")}</p>
       </div>
       <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
         <SelectTrigger className="h-8 w-[140px] text-xs">
@@ -54,6 +53,7 @@ export function LanguageSelector({ compact = false }: Props) {
           ))}
         </SelectContent>
       </Select>
+      <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
     </div>
   );
 }
