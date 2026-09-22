@@ -65,7 +65,7 @@ export default function WallpaperSettings({ value, onChange }: WallpaperSettings
     <div className="space-y-4 py-5">
       <div className="flex items-start gap-4">
         <PhotoIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-foreground/80">{t("ed_wallpaper")}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{t("ed_wallpaper_note")}</p>
         </div>
@@ -94,7 +94,7 @@ export default function WallpaperSettings({ value, onChange }: WallpaperSettings
         variant="outline"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className="ml-8 w-[calc(100%-2rem)] gap-2 normal-case sm:w-auto"
+        className="ml-8 w-[calc(100%_-_2rem)] gap-2 normal-case sm:w-auto"
       >
         {uploading ? (
           <><ArrowPathIcon className="h-3.5 w-3.5 animate-spin" /> {t("ed_uploading")}</>

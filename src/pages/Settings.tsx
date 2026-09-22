@@ -91,7 +91,7 @@ function OfflineSyncCard() {
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>
           </div>
       </div>
-      <Button type="button" variant="outline" onClick={onSync} disabled={active} className="ml-8 mt-4 w-[calc(100%-2rem)] normal-case sm:w-auto">
+      <Button type="button" variant="outline" onClick={onSync} disabled={active} className="ml-8 mt-4 w-[calc(100%_-_2rem)] normal-case sm:w-auto">
         {active ? t("profile_syncing") : t("profile_syncNow")}
       </Button>
     </div>
@@ -380,7 +380,7 @@ export default function SettingsPage() {
                     <p className="mt-0.5 text-xs text-muted-foreground">{t("profile_importMdDesc")}</p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => setImportOpen(true)} className="ml-8 mt-4 w-[calc(100%-2rem)] normal-case sm:w-auto">
+                <Button variant="outline" onClick={() => setImportOpen(true)} className="ml-8 mt-4 w-[calc(100%_-_2rem)] normal-case sm:w-auto">
                   {t("profile_importMdBtn")}
                 </Button>
             </div>
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                     variant="outline"
                     onClick={handleExportData}
                     disabled={exporting}
-                    className="ml-8 mt-4 w-[calc(100%-2rem)] gap-2 normal-case sm:w-auto"
+                    className="ml-8 mt-4 w-[calc(100%_-_2rem)] gap-2 normal-case sm:w-auto"
                   >
                     <ArrowDownTrayIcon className="h-3.5 w-3.5" />
                     {exporting ? t("profile_exporting") : t("profile_downloadBackup")}
@@ -422,7 +422,7 @@ export default function SettingsPage() {
                   variant="outline"
                   onClick={handleRelinkEntities}
                   disabled={relinking}
-                  className="ml-8 mt-4 w-[calc(100%-2rem)] gap-2 normal-case sm:w-auto"
+                  className="ml-8 mt-4 w-[calc(100%_-_2rem)] gap-2 normal-case sm:w-auto"
                 >
                   <ArrowPathIcon className={relinking ? "animate-spin" : ""} />
                   {relinking ? t("profile_relinking") : t("import_relinkBtn")}
