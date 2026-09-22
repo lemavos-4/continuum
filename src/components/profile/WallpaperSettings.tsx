@@ -27,7 +27,7 @@ export default function WallpaperSettings({ value, onChange }: WallpaperSettings
 
   useEffect(() => {
     const unsubscribeWallpaper = subscribeWallpaper(setWallpaper);
-    return unsubscribeWallpaper;
+    return () => { unsubscribeWallpaper(); };
   }, []);
 
   const handleFile = async (file: File | undefined | null) => {

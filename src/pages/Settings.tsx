@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import SubscriptionModal from "@/components/subscription/SubscriptionModal";
@@ -9,7 +9,6 @@ import { usePlanGate } from "@/hooks/usePlanGate";
 import { getCurrentPlan, getPlanLimits, isUnlimited } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
