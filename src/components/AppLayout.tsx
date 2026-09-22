@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   StickyNote,
   Tag,
-  User as UserIcon,
+  Settings as SettingsIcon,
   Menu,
   GlobeAlt,
   Clock,
@@ -143,7 +143,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground">{user?.email}</DropdownMenuLabel>
                 <DropdownMenuItem onSelect={() => navigate("/settings")}>
-                  <UserIcon className="mr-2 h-4 w-4" /> {t("nav_settings")}
+                  <SettingsIcon className="mr-2 h-4 w-4" /> {t("nav_settings")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import AppLayout from "@/components/AppLayout";
 import api, { plansApi, subscriptionApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,14 +7,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { isUnlimited } from "@/lib/plan";
 import { type Plan, type PlanLimits } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   ArrowPathIcon,
   ArrowRightIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
-
-const MotionCard = motion(Card);
 
 interface SubInfo {
   plan?: string;
@@ -30,7 +26,6 @@ export default function Subscription() {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [sub, setSub] = useState<SubInfo | null>(null);
-  const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -49,8 +44,7 @@ export default function Subscription() {
   useEffect(() => {
     subscriptionApi.me()
       .then(({ data }) => setSub(data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, []);
 
   // Returning from Stripe Checkout: force a sync with Stripe instead of trusting
@@ -140,110 +134,60 @@ export default function Subscription() {
 
   return (
     <AppLayout>
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-2xl flex-col px-5 py-8 sm:px-8 sm:py-14">
-        {/* HEADER */}
-        <header className="mb-8 sm:mb-12">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">
-            {t("bill_plans_billing")}
-          </p>
-          <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
-            {t("bill_subscription")}
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {t("bill_one_tier")}
-          </p>
-        </header>
+      <div className="mx-auto w-full max-w-lg px-5 py-8 sm:px-8 sm:py-12">
+        <div className="continuum-popup-black rounded-2xl border border-[hsl(var(--popup-border))] bg-[hsl(var(--popup-background))] text-[hsl(var(--popup-foreground))] shadow-2xl">
+          <div className="px-6 pb-6 pt-8 sm:px-8">
+            <header>
+              <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">
+                {t("bill_plans_billing")}
+              </p>
+              <div className="mt-2 flex items-start justify-between gap-4">
+                <h1 className="font-serif text-4xl tracking-tight text-foreground">VISION</h1>
+                <div className="text-right">
+                  <p className="font-serif text-3xl text-foreground">$7.90</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+                    {t("bill_per_month")}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                {t("bill_vision_tagline")}
+              </p>
+            </header>
 
-        {/* POST-CHECKOUT SYNC */}
-        {syncing && (
-          <div className="mb-6 border-t border-border/10 pt-5 text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
-            <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/60 align-middle" />
-            Confirming your payment with Stripe…
-          </div>
-        )}
-
-        {/* CURRENT STATUS */}
-        {!loading && sub && (
-          <div className="mb-8 flex items-baseline gap-6 border-t border-border/10 pt-5 sm:mb-10">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-                {t("bill_current")}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {isPro ? "VISION" : "FREE"}
-              </span>
-              <span className="text-xs text-muted-foreground">· {sub.status.toLowerCase()}</span>
-            </div>
-            
-            {isPro && (
-              <Button
-                variant="link"
-                size="sm"
-                onClick={handlePortal}
-                disabled={portalLoading}
-                className="text-muted-foreground hover:text-muted-foreground"
-              >
-                {portalLoading ? t("bill_opening") : t("bill_manage_billing")}
-              </Button>
+            {syncing && (
+              <div className="mt-5 border-t border-border/10 pt-4 text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+                <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/60 align-middle" />
+                Confirming your payment with Stripe…
+              </div>
             )}
-          </div>
-        )}
 
-        {/* VISION CARD */}
-        <MotionCard
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-          variant="subtle"
-          className="relative flex-1 overflow-hidden"
-        >
-          {/* subtle top gradient */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/40 to-transparent"
-          />
-
-          <CardHeader className="pt-8 sm:pt-12">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">
-                  Continuum
-                </p>
-                <h2 className="mt-2 font-serif text-4xl tracking-tight text-foreground sm:text-5xl">
-                  VISION
-                </h2>
+            <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/10 pt-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+                  {t("bill_current")}
+                </span>
+                <span className="text-sm text-foreground">{isPro ? "VISION" : "FREE"}</span>
+                {sub?.status && <span className="text-xs text-muted-foreground">· {sub.status.toLowerCase()}</span>}
               </div>
-              <div className="text-right">
-                <p className="font-serif text-3xl text-foreground sm:text-4xl">$7.90</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-                  {t("bill_per_month")}
-                </p>
-              </div>
+              {isPro && (
+                <Button variant="quiet" size="xs" onClick={handlePortal} disabled={portalLoading} className="normal-case">
+                  {portalLoading ? t("bill_opening") : t("bill_manage_billing")}
+                </Button>
+              )}
             </div>
 
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
-              {t("bill_vision_tagline")}
-            </p>
-          </CardHeader>
-
-          <CardContent className="space-y-8">
-            <ul className="space-y-3 border-t border-border/10 pt-6">
-              {VISION_BENEFITS.map((b, i) => (
-                <motion.li
-                  key={b}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.15 + i * 0.05, ease: "easeOut" }}
-                  className="flex items-start gap-3 text-sm text-muted-foreground"
-                >
+            <ul className="mt-5 space-y-3 border-t border-border/10 pt-5">
+              {VISION_BENEFITS.map((benefit) => (
+                <li key={benefit} className="flex items-start gap-3 text-sm text-foreground/80">
                   <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span>{b}</span>
-                </motion.li>
+                  <span>{benefit}</span>
+                </li>
               ))}
             </ul>
 
             {visionLimits && (
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border/10 pt-6 text-xs sm:grid-cols-4">
+              <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border/10 pt-5 text-xs sm:grid-cols-4">
                 {[
                   { k: t("bill_notes"), v: formatLimit(visionLimits.maxNotes ?? -1) },
                   { k: t("bill_entities"), v: formatLimit(visionLimits.maxEntities ?? -1) },
@@ -251,48 +195,29 @@ export default function Subscription() {
                   { k: t("bill_history"), v: formatLimit(((visionLimits as any)?.maxHistoryDays ?? visionLimits?.historyDays) ?? -1, "d") },
                 ].map((row) => (
                   <div key={row.k}>
-                    <dt className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-                      {row.k}
-                    </dt>
-                    <dd className="mt-1 font-serif text-lg tabular-nums text-muted-foreground">
-                      {row.v}
-                    </dd>
+                    <dt className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{row.k}</dt>
+                    <dd className="mt-1 font-serif text-lg tabular-nums text-foreground/90">{row.v}</dd>
                   </div>
                 ))}
               </dl>
             )}
-          </CardContent>
 
-          <CardFooter className="flex-col items-stretch gap-3 pt-0">
-            {isPro ? (
-              <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-border/10 text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
-                {t("bill_active")}
-              </div>
-            ) : (
-              <Button
-                type="button"
-                variant="white"
-                size="lg"
-                onClick={handleCheckout}
-                disabled={checkoutLoading}
-                className="group w-full justify-center gap-2"
-              >
-                {checkoutLoading ? (
-                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    {t("bill_upgrade_to_vision")}
-                    <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </>
-                )}
-              </Button>
-            )}
-
-            <p className="text-center text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-              {t("bill_cancel_secure")}
-            </p>
-          </CardFooter>
-        </MotionCard>
+            <div className="mt-6 space-y-3">
+              {isPro ? (
+                <div className="flex h-11 items-center justify-center rounded-sm border border-dashed border-border/10 text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
+                  {t("bill_active")}
+                </div>
+              ) : (
+                <Button type="button" variant="white" size="lg" onClick={handleCheckout} disabled={checkoutLoading} className="group w-full justify-center gap-2">
+                  {checkoutLoading ? <ArrowPathIcon className="h-4 w-4 animate-spin" /> : <>{t("bill_upgrade_to_vision")}<ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" /></>}
+                </Button>
+              )}
+              <p className="text-center text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                {t("bill_cancel_secure")}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );
