@@ -50,7 +50,7 @@ export function SubscriptionScreen({
   const [selectedPlan, setSelectedPlan] = React.useState(defaultPlanId);
 
   return (
-    <div className="relative flex min-h-[min(760px,calc(100dvh-2rem))] w-full max-w-md flex-col items-center justify-end overflow-hidden rounded-2xl bg-background shadow-2xl">
+    <div className="relative flex min-h-[min(760px,calc(100dvh-2rem))] w-full max-w-md flex-col items-center justify-end overflow-visible rounded-2xl bg-transparent shadow-2xl">
       {backgroundImageSrc && <img src={backgroundImageSrc} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />}
       {backgroundImageSrc && <div className="absolute inset-0 z-[1] bg-black/25" />}
 
@@ -70,18 +70,18 @@ export function SubscriptionScreen({
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-        className="relative z-10 flex w-full flex-col items-center rounded-t-3xl bg-background/85 px-6 pb-6 pt-8 backdrop-blur-xl sm:px-8"
+        className="relative z-10 -mx-4 flex w-[calc(100%+2rem)] flex-col items-center rounded-t-3xl bg-muted/60 px-8 pb-6 pt-12 backdrop-blur-xl sm:-mx-8 sm:w-[calc(100%+4rem)] sm:px-12"
       >
         <motion.img
           src={headerImageSrc}
           alt=""
-          className="absolute -top-14 h-24 w-24 rounded-full border-4 border-background/80 object-cover shadow-xl"
+          className="absolute -top-16 h-32 w-32 rounded-full border-4 border-background/80 object-cover shadow-xl"
           initial={{ y: 32, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
         />
 
-        <div className="mt-12 text-center">
+        <div className="mt-4 text-center">
           <h1 className="font-serif text-3xl tracking-tight text-foreground">
             {appName} <span className="text-primary">{planType}</span>
           </h1>
