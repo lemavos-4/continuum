@@ -56,7 +56,8 @@ export function SubscriptionScreen({
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-        className="relative z-10 -mx-4 flex w-[calc(100%+2rem)] flex-col items-center rounded-t-3xl bg-muted/60 px-8 pb-6 pt-12 backdrop-blur-xl sm:-mx-8 sm:w-[calc(100%+4rem)] sm:px-12"
+        data-subscription-panel
+        className="relative z-10 -mx-2 flex w-[calc(100%+1rem)] flex-col items-center rounded-t-3xl bg-muted/60 px-8 pb-6 pt-12 backdrop-blur-xl sm:-mx-4 sm:w-[calc(100%+2rem)] sm:px-12"
       >
         <motion.img
           src={headerImageSrc}
