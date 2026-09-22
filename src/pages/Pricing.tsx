@@ -91,7 +91,7 @@ export default function Pricing() {
           <Button
             type="button"
             variant="white"
-            onClick={() => navigate("/subscription")}
+            onClick={() => navigate("/settings")}
             className="h-11 text-[11px] uppercase tracking-[0.28em] rounded-sm"
           >
             {t("bill_upgrade_to_vision")}

@@ -50,7 +50,7 @@ export function SubscriptionScreen({
   const [selectedPlan, setSelectedPlan] = React.useState(defaultPlanId);
 
   return (
-    <div className="relative flex min-h-[min(760px,calc(100dvh-2rem))] w-full max-w-md flex-col items-center justify-end overflow-visible rounded-2xl bg-transparent shadow-2xl">
+    <div className="relative flex min-h-[100dvh] w-full max-w-md flex-col items-center justify-end overflow-visible rounded-2xl bg-transparent shadow-2xl">
       {backgroundImageSrc && <img src={backgroundImageSrc} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />}
       {backgroundImageSrc && <div className="absolute inset-0 z-[1] bg-black/25" />}
 
