@@ -4,9 +4,9 @@ Need a hand? Send us feedback, get in touch, report a bug, or browse the most co
 
 ## Contact us
 
-- [Send feedback](mailto:feedback@continuum.onl?subject=Continuum%20%E2%80%94%20Feedback&body=Hi%20Continuum%20team%2C%0A%0AHere's%20my%20feedback%3A%0A%0A) — Share ideas, suggestions, or anything you'd love to see in Continuum.
-- [Contact support](mailto:contact@continuum.onl?subject=Continuum%20%E2%80%94%20Contact&body=Hi%20Continuum%20team%2C%0A%0A) — Questions about your account, billing, or anything else? We're here.
-- [Report a bug](mailto:bugs@continuum.onl?subject=Continuum%20%E2%80%94%20Bug%20report&body=Hi%20Continuum%20team%2C%0A%0AI found a bug%3A%0A%0A) — Found something broken? Tell us what happened so we can fix it fast.
+- [Send feedback](<mailto:feedback@continuum.onl?subject=Continuum%20%E2%80%94%20Feedback&body=Hi%20Continuum%20team%2C%0A%0AHere's%20my%20feedback%3A%0A%0A>) — Share ideas, suggestions, or anything you'd love to see in Continuum.
+- [Contact support](<mailto:contact@continuum.onl?subject=Continuum%20%E2%80%94%20Contact&body=Hi%20Continuum%20team%2C%0A%0A>) — Questions about your account, billing, or anything else? We're here.
+- [Report a bug](<mailto:bugs@continuum.onl?subject=Continuum%20%E2%80%94%20Bug%20report&body=Hi%20Continuum%20team%2C%0A%0AI%20found%20a%20bug%3A%0A%0A>) — Found something broken? Tell us what happened so we can fix it fast.
 
 ## Frequently asked questions
 
@@ -32,8 +32,8 @@ Go to Subscription from the menu to view your plan, upgrade, or manage billing a
 
 ### How can I delete my account or data?
 
-You can request access, correction, or deletion of your data at any time by contacting us at [contact@continuum.onl](mailto:contact@continuum.onl). We'll respond promptly.
+You can request access, correction, or deletion of your data at any time by contacting us at [contact@continuum.onl](<mailto:contact@continuum.onl>). We'll respond promptly.
 
 ---
 
-Still stuck? Email us directly at [contact@continuum.onl](mailto:contact@continuum.onl).
+Still stuck? Email us directly at [contact@continuum.onl](<mailto:contact@continuum.onl>).
