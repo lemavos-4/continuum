@@ -8,7 +8,7 @@ import { version } from "@/lib/version";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ArrowDownTrayIcon, ArrowPathIcon, ArrowUpTrayIcon, ChatBubbleLeftEllipsisIcon, ChevronRightIcon, CodeBracketIcon, BugAntIcon, LifebuoyIcon, LinkIcon, InformationCircleIcon, CurrencyDollarIcon, DocumentTextIcon, ShieldCheckIcon, ClockIcon, PencilSquareIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { ArrowDownTrayIcon, ArrowPathIcon, ArrowUpTrayIcon, ChatBubbleLeftEllipsisIcon, ChevronRightIcon, CodeBracketIcon, BugAntIcon, LifebuoyIcon, LinkIcon, InformationCircleIcon, CurrencyDollarIcon, DocumentTextIcon, ShieldCheckIcon, ClockIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
 import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -24,6 +24,10 @@ function ActionRow({ icon: Icon, label, description, onClick, href, disabled = f
   return href ? <a href={href} className={className}>{content}</a> : <button type="button" onClick={onClick} disabled={disabled} className={className}>{content}</button>;
 }
 
+function VisionIcon({ className }: { className?: string }) {
+  return <img src="/vision-symbol.png" alt="" aria-hidden="true" className={`${className ?? ""} rounded-full object-cover`} />;
+}
+
 const moreLinks = [
   { href: "/about", icon: InformationCircleIcon, label: "lp_footer_about" }, { href: "/pricing", icon: CurrencyDollarIcon, label: "lp_footer_pricing" }, { href: "/support", icon: LifebuoyIcon, label: "lp_footer_support" }, { href: "/terms", icon: DocumentTextIcon, label: "lp_footer_terms" }, { href: "/privacy", icon: ShieldCheckIcon, label: "lp_footer_privacy" }, { href: "/versions", icon: ClockIcon, label: "versions_title" },
 ] as const;
@@ -37,7 +41,7 @@ export default function SettingsPage() {
   const handleLogout = async () => { await logout(); navigate("/"); };
 
   return <AppLayout><div className="mx-auto max-w-5xl space-y-7 px-4 py-6 sm:px-6 lg:px-10 lg:py-12">
-    <section className="space-y-4"><SectionTitle title={t("profile_planUsage")} /><div className="divide-y divide-border/10"><ActionRow icon={SparklesIcon} label={t("profile_continuumSubscription")} onClick={() => setSubscriptionOpen(true)} /></div></section>
+    <section className="space-y-4"><SectionTitle title={t("profile_planUsage")} /><div className="divide-y divide-border/10"><ActionRow icon={VisionIcon} label={t("profile_continuumSubscription")} onClick={() => setSubscriptionOpen(true)} /></div></section>
     <section className="space-y-4"><SectionTitle eyebrow={t("profile_eyebrowData")} title={t("profile_dataSync")} /><div className="divide-y divide-border/10"><ActionRow icon={ArrowUpTrayIcon} label={t("profile_importMd")} description={t("profile_importMdDesc")} onClick={() => setImportOpen(true)} /><ActionRow icon={ArrowDownTrayIcon} label={t("profile_exportData")} description={user?.dataExport ? "continuum-backup.json" : t("profile_locked")} onClick={handleExportData} disabled={exporting || !user?.dataExport} /><ActionRow icon={LinkIcon} label={t("import_relinkBtn")} description={t("profile_relinkDesc")} onClick={handleRelinkEntities} disabled={relinking} /></div></section>
     <section className="space-y-4"><SectionTitle eyebrow={t("profile_eyebrowSupport")} title={t("profile_supportCenter")} /><div className="divide-y divide-border/10"><ActionRow icon={LifebuoyIcon} label={t("profile_supportCenter")} description={t("profile_supportCenterDesc")} href="/support" /><ActionRow icon={ChatBubbleLeftEllipsisIcon} label={t("profile_sendFeedback")} description="feedback@continuum.onl" href="mailto:feedback@continuum.onl?subject=Continuum%20%E2%80%94%20Feedback" /><ActionRow icon={BugAntIcon} label={t("profile_reportBug")} description="bugs@continuum.onl" href="mailto:bugs@continuum.onl?subject=Continuum%20%E2%80%94%20Bug%20report" /></div></section>
     <section className="space-y-4"><SectionTitle eyebrow={t("nav_more")} title={t("nav_more")} /><div className="divide-y divide-border/10"><LanguageSelector /><ActionRow href="/editor" icon={PencilSquareIcon} label={t("nav_editorSettings")} />{moreLinks.map(({ href, icon: Icon, label }) => <ActionRow key={href} href={href} icon={Icon} label={label === "versions_title" ? "Versions" : t(label)} />)}<ActionRow href="https://github.com/continuumnodes/continuum" icon={CodeBracketIcon} label="GitHub" /></div></section>

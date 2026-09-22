@@ -108,7 +108,7 @@ export default function SubscriptionContent() {
   return (
     <div className="flex min-h-[100dvh] w-full items-end justify-center">
       <SubscriptionScreen
-        headerImageSrc="/pro-symbol.png"
+        headerImageSrc="/vision-symbol.png"
         appName="Continuum"
         planType="VISION"
         features={visionBenefits.map((text) => ({ text }))}
