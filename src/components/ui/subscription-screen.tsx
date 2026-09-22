@@ -48,7 +48,7 @@ export function SubscriptionScreen({
   const [selectedPlan, setSelectedPlan] = React.useState(defaultPlanId);
 
   return (
-    <div className="relative flex min-h-[min(760px,100dvh)] w-full max-w-md flex-col items-center justify-end overflow-visible rounded-2xl bg-transparent shadow-2xl">
+    <div className="relative flex w-[clamp(18rem,88vw,26rem)] flex-col items-center justify-end overflow-visible rounded-2xl bg-transparent shadow-2xl">
       {backgroundImageSrc && <img src={backgroundImageSrc} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />}
       {backgroundImageSrc && <div className="absolute inset-0 z-[1] bg-black/25" />}
 
@@ -57,7 +57,7 @@ export function SubscriptionScreen({
         animate={{ y: 0 }}
         transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
         data-subscription-panel
-        className="relative z-10 -mx-2 flex w-[calc(100%+1rem)] flex-col items-center rounded-t-3xl bg-muted/60 px-8 pb-6 pt-12 backdrop-blur-xl sm:-mx-4 sm:w-[calc(100%+2rem)] sm:px-12"
+        className="relative z-10 flex w-[calc(100%+0.5rem)] flex-col items-center rounded-t-3xl bg-muted/60 px-6 pb-6 pt-12 backdrop-blur-xl sm:w-[calc(100%+1rem)] sm:px-8"
       >
         <motion.img
           src={headerImageSrc}
