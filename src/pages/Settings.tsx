@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import SubscriptionModal from "@/components/subscription/SubscriptionModal";
@@ -9,16 +9,11 @@ import { usePlanGate } from "@/hooks/usePlanGate";
 import { getCurrentPlan, getPlanLimits, isUnlimited } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
-  UserIcon,
-  EnvelopeIcon,
-  CalendarIcon,
-  LockClosedIcon,
   ArrowPathIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
@@ -27,6 +22,7 @@ import {
   BugAntIcon,
   ChevronRightIcon,
   LinkIcon,
+  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
@@ -45,29 +41,6 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
     <div>
       <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{eyebrow}</p>
       <h2 className="mt-1 font-serif text-xl text-foreground">{title}</h2>
-    </div>
-  );
-}
-
-function SettingRow({
-  icon: Icon,
-  title,
-  subtitle,
-  action,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  subtitle?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-4 px-4 py-3.5">
-      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-foreground/80">{title}</p>
-        {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
-      </div>
-      {action}
     </div>
   );
 }
@@ -110,26 +83,18 @@ function OfflineSyncCard() {
         : t("profile_upToDate");
 
   return (
-    <Card variant="faint">
-      <CardContent className="flex h-full flex-col gap-3 p-4 sm:p-5">
-        <div className="flex items-start gap-3">
+    <div className="py-5">
+      <div className="flex items-start gap-4">
           <ArrowPathIcon className={`mt-0.5 h-4 w-4 shrink-0 text-muted-foreground ${active ? "animate-spin" : ""}`} />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-foreground/80">{t("profile_offlineSync")}</p>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>
           </div>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onSync}
-          disabled={active}
-          className="mt-auto w-full normal-case"
-        >
-          {active ? t("profile_syncing") : t("profile_syncNow")}
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+      <Button type="button" variant="outline" onClick={onSync} disabled={active} className="ml-8 mt-4 w-[calc(100%_-_2rem)] normal-case sm:w-auto">
+        {active ? t("profile_syncing") : t("profile_syncNow")}
+      </Button>
+    </div>
   );
 }
 
@@ -333,24 +298,19 @@ export default function SettingsPage() {
         <SubscriptionModal open={subscriptionOpen} onOpenChange={setSubscriptionOpen} />
 
         {/* PREFERENCES */}
-        <section className="space-y-4">
+        <section className="space-y-3">
           <SectionTitle eyebrow={t("profile_eyebrowPreferences")} title={t("profile_prefsAppearance")} />
 
-          <div className="space-y-4">
-            <Card variant="faint">
-              <CardContent className="divide-y divide-border/10 p-0">
-                <div className="px-4">
-                  <LanguageSelector />
-                </div>
-              </CardContent>
-            </Card>
-            <Card variant="faint" className="w-full">
-              <CardContent className="space-y-4 p-4 sm:p-5">
-                <div className="space-y-4">
+          <div className="divide-y divide-border/10">
+            <LanguageSelector />
+            <div className="space-y-4 py-5">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="flex min-w-0 items-start gap-4">
+                      <AdjustmentsHorizontalIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
                       <p className="text-xs font-medium text-foreground/80">{t("profile_noteFontSize")}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">{t("profile_noteFontSizeDesc")}</p>
+                      </div>
                     </div>
                     <Button
                       type="button"
@@ -364,7 +324,7 @@ export default function SettingsPage() {
                     </Button>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="ml-8 space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("profile_fontTitle")}</Label>
                       <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{draftNoteTitleScale}%</span>
@@ -381,7 +341,7 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="ml-8 space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("profile_fontBody")}</Label>
                       <span className="font-mono text-[10px] tabular-nums text-muted-foreground">{draftNoteBodyScale}%</span>
@@ -397,47 +357,36 @@ export default function SettingsPage() {
                       aria-label={t("profile_ariaNoteBodySize")}
                     />
                   </div>
-
-                </div>
-                <WallpaperSettings
-                  value={draftWallpaper}
-                  onChange={setDraftWallpaper}
-                  fontSize={{ titleScale: draftNoteTitleScale, bodyScale: draftNoteBodyScale }}
-                />
-                <Button type="button" variant="outline" onClick={updateEditorSettings} className="w-full normal-case">
-                  {t("common_update")}
-                </Button>
-              </CardContent>
-            </Card>
+            </div>
+            <WallpaperSettings value={draftWallpaper} onChange={setDraftWallpaper} />
           </div>
-
+          <Button type="button" variant="outline" onClick={updateEditorSettings} className="w-full normal-case sm:w-auto">
+            {t("common_update")}
+          </Button>
         </section>
 
         {/* DATA */}
         <section className="space-y-4">
           <SectionTitle eyebrow={t("profile_eyebrowData")} title={t("profile_dataSync")} />
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="divide-y divide-border/10">
             <OfflineSyncCard />
 
-            <Card variant="faint">
-              <CardContent className="space-y-3 p-4 sm:p-5">
-                <div className="flex items-start gap-3">
+            <div className="py-5">
+                <div className="flex items-start gap-4">
                   <ArrowUpTrayIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-foreground/80">{t("profile_importMd")}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{t("profile_importMdDesc")}</p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => setImportOpen(true)} className="w-full normal-case">
+                <Button variant="outline" onClick={() => setImportOpen(true)} className="ml-8 mt-4 w-[calc(100%_-_2rem)] normal-case sm:w-auto">
                   {t("profile_importMdBtn")}
                 </Button>
-              </CardContent>
-            </Card>
+            </div>
 
-            <Card variant="faint">
-              <CardContent className="space-y-3 p-4 sm:p-5">
-                <div className="flex items-start gap-3">
+            <div className="py-5">
+                <div className="flex items-start gap-4">
                   <ArrowDownTrayIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-foreground/80">{t("profile_exportData")}</p>
@@ -450,20 +399,18 @@ export default function SettingsPage() {
                     variant="outline"
                     onClick={handleExportData}
                     disabled={exporting}
-                    className="w-full gap-2 normal-case"
+                    className="ml-8 mt-4 w-[calc(100%_-_2rem)] gap-2 normal-case sm:w-auto"
                   >
                     <ArrowDownTrayIcon className="h-3.5 w-3.5" />
                     {exporting ? t("profile_exporting") : t("profile_downloadBackup")}
                   </Button>
                 ) : (
-                  <p className="text-xs text-muted-foreground">{t("profile_locked")}</p>
+                  <p className="ml-8 mt-3 text-xs text-muted-foreground">{t("profile_locked")}</p>
                 )}
-              </CardContent>
-            </Card>
+            </div>
 
-            <Card variant="faint">
-              <CardContent className="flex h-full flex-col gap-3 p-4 sm:p-5">
-                <div className="flex items-start gap-3">
+            <div className="py-5">
+                <div className="flex items-start gap-4">
                   <LinkIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-foreground/80">{t("import_relinkBtn")}</p>
@@ -475,13 +422,12 @@ export default function SettingsPage() {
                   variant="outline"
                   onClick={handleRelinkEntities}
                   disabled={relinking}
-                  className="mt-auto w-full gap-2 normal-case"
+                  className="ml-8 mt-4 w-[calc(100%_-_2rem)] gap-2 normal-case sm:w-auto"
                 >
                   <ArrowPathIcon className={relinking ? "animate-spin" : ""} />
                   {relinking ? t("profile_relinking") : t("import_relinkBtn")}
                 </Button>
-              </CardContent>
-            </Card>
+            </div>
           </div>
 
         </section>
@@ -490,9 +436,8 @@ export default function SettingsPage() {
         <section className="space-y-4">
           <SectionTitle eyebrow={t("profile_eyebrowSupport")} title={t("profile_supportCenter")} />
 
-          <Card variant="faint" className="w-full">
-            <CardContent className="divide-y divide-border/10 p-0">
-              <a href="/support" className="flex items-center gap-4 px-4 py-3.5 w-full">
+          <div className="divide-y divide-border/10">
+              <a href="/support" className="flex w-full items-center gap-4 py-5">
                 <LifebuoyIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-foreground/80">{t("profile_supportCenter")}</p>
@@ -502,7 +447,7 @@ export default function SettingsPage() {
               </a>
               <a
                 href="mailto:feedback@continuum.onl?subject=Continuum%20%E2%80%94%20Feedback"
-                className="flex items-center gap-4 px-4 py-3.5 w-full"
+                className="flex w-full items-center gap-4 py-5"
               >
                 <ChatBubbleLeftEllipsisIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
@@ -513,7 +458,7 @@ export default function SettingsPage() {
               </a>
               <a
                 href="mailto:bugs@continuum.onl?subject=Continuum%20%E2%80%94%20Bug%20report"
-                className="flex items-center gap-4 px-4 py-3.5 w-full"
+                className="flex w-full items-center gap-4 py-5"
               >
                 <BugAntIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
@@ -522,8 +467,7 @@ export default function SettingsPage() {
                 </div>
                 <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
               </a>
-            </CardContent>
-          </Card>
+          </div>
         </section>
 
         <footer className="border-t border-border/10 pt-6">
