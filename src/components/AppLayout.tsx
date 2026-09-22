@@ -14,6 +14,7 @@ import {
   BarChart3,
   FolderOpen,
   Squares2x2,
+  Edit,
 } from "@/lib/heroicons";
 import {
   Squares2X2Icon as Squares2x2Solid,
@@ -144,6 +145,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuLabel className="text-xs text-muted-foreground">{user?.email}</DropdownMenuLabel>
                 <DropdownMenuItem onSelect={() => navigate("/settings")}>
                   <UserIcon className="mr-2 h-4 w-4" /> {t("nav_settings")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => navigate("/editor")}>
+                  <Edit className="mr-2 h-4 w-4" /> {t("nav_editor")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -50,6 +50,7 @@ const Pricing = React.lazy(() => import("./pages/Pricing"));
 const Versions = React.lazy(() => import("./pages/Versions"));
 const Subscription = React.lazy(() => import("./pages/Subscription"));
 const SettingsPage = React.lazy(() => import("./pages/Settings"));
+const EditorSettingsPage = React.lazy(() => import("./pages/EditorSettings"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Insights = React.lazy(() => import("./pages/Insights"));
 
@@ -146,6 +147,7 @@ const AppRoutes = () => {
     <Route path="/vault/download/:fileId" element={<ProtectedRoute><VaultDownload /></ProtectedRoute>} />
     <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+    <Route path="/editor" element={<ProtectedRoute><EditorSettingsPage /></ProtectedRoute>} />
     <Route path="/profile" element={<Navigate to="/settings" replace />} />
     <Route path="*" element={<NotFound />} />
       </Routes>
