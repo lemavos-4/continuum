@@ -24,7 +24,7 @@ function SectionTitle({ title }: { eyebrow?: string; title: string }) {
 type RowIcon = typeof ArrowPathIcon;
 function ActionRow({ icon: Icon, label, description, onClick, href, disabled = false }: { icon: RowIcon; label: string; description?: string; onClick?: () => void; href?: string; disabled?: boolean }) {
   const content = <><Icon className="h-5 w-5 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1 text-left"><span className="block text-sm font-medium text-foreground/80">{label}</span>{description && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{description}</span>}</span><ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground" /></>;
-  const className = "flex w-full items-center gap-4 border-b border-border/10 py-5 transition-colors last:border-b-0 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60";
+  const className = "flex h-16 w-full items-center gap-4 border-b border-border/10 py-0 transition-colors last:border-b-0 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60";
   return href ? <a href={href} className={className}>{content}</a> : <button type="button" onClick={onClick} disabled={disabled} className={className}>{content}</button>;
 }
 
