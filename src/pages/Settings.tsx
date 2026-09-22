@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
-import SubscriptionModal from "@/components/subscription/SubscriptionModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi, importApi } from "@/lib/api";
 import { version } from "@/lib/version";
@@ -9,7 +8,7 @@ import { getCurrentPlan } from "@/lib/plan";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ArrowDownTrayIcon, ArrowPathIcon, ArrowUpTrayIcon, ChatBubbleLeftEllipsisIcon, ChevronRightIcon, CodeBracketIcon, BugAntIcon, LifebuoyIcon, LinkIcon, InformationCircleIcon, CurrencyDollarIcon, DocumentTextIcon, ShieldCheckIcon, ClockIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
+import { ArrowDownTrayIcon, ArrowPathIcon, ArrowUpTrayIcon, ChatBubbleLeftEllipsisIcon, ChevronRightIcon, CodeBracketIcon, BugAntIcon, LifebuoyIcon, LinkIcon, InformationCircleIcon, CurrencyDollarIcon, DocumentTextIcon, ShieldCheckIcon, ClockIcon, PencilSquareIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import MarkdownImportDialog from "@/components/import/MarkdownImportDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -31,7 +30,7 @@ const moreLinks = [
 
 export default function SettingsPage() {
   const { user, refreshUser, logout } = useAuth(); const navigate = useNavigate(); const { toast } = useToast(); const { t } = useLanguage();
-  const [username, setUsername] = useState(""); const [exporting, setExporting] = useState(false); const [relinking, setRelinking] = useState(false); const [subscriptionOpen, setSubscriptionOpen] = useState(false); const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false); const [importOpen, setImportOpen] = useState(false);
+  const [username, setUsername] = useState(""); const [exporting, setExporting] = useState(false); const [relinking, setRelinking] = useState(false); const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false); const [importOpen, setImportOpen] = useState(false);
   useEffect(() => { setUsername(user?.username ?? ""); }, [user]);
   const handleExportData = async () => { if (exporting) return; setExporting(true); try { const res = await authApi.exportData(); const json = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2); const url = URL.createObjectURL(new Blob([json], { type: "application/json" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = "continuum-backup.json"; document.body.appendChild(anchor); anchor.click(); anchor.remove(); URL.revokeObjectURL(url); toast({ title: t("profile_backupOk") }); } catch (error: any) { toast({ title: t("profile_backupFailed"), description: error?.message ?? t("common_tryAgain"), variant: "destructive" }); } finally { setExporting(false); } };
   const handleRelinkEntities = async () => { if (relinking) return; setRelinking(true); try { const res = await importApi.relinkEntities(); const data = res.data as { notesUpdated?: number; connectionsCreated?: number }; toast({ title: t("import_relinkDoneTitle"), description: t("import_relinkDoneDesc", { n: data.connectionsCreated ?? 0, notes: data.notesUpdated ?? 0 }) }); } catch (error: any) { toast({ title: t("profile_relinkFailed"), description: error?.response?.data?.message || error?.message || t("profile_relinkFailedDesc"), variant: "destructive" }); } finally { setRelinking(false); } };
@@ -39,8 +38,7 @@ export default function SettingsPage() {
   const handleLogout = async () => { await logout(); navigate("/"); };
 
   return <AppLayout><div className="mx-auto max-w-5xl space-y-7 px-4 py-6 sm:px-6 lg:px-10 lg:py-12">
-    <section className="space-y-4"><SectionTitle eyebrow={currentPlan} title={t("profile_planUsage")} /><div className="divide-y divide-border/10"><ActionRow icon={CurrencyDollarIcon} label={t("profile_planUsage")} description={currentPlan} onClick={() => setSubscriptionOpen(true)} /></div></section>
-    <SubscriptionModal open={subscriptionOpen} onOpenChange={setSubscriptionOpen} />
+    <section className="space-y-4"><SectionTitle title={t("profile_planUsage")} /><div className="divide-y divide-border/10"><ActionRow href="/subscription" icon={SparklesIcon} label={t("profile_continuumSubscription")} description={currentPlan} /></div></section>
     <section className="space-y-4"><SectionTitle eyebrow={t("profile_eyebrowData")} title={t("profile_dataSync")} /><div className="divide-y divide-border/10"><ActionRow icon={ArrowUpTrayIcon} label={t("profile_importMd")} description={t("profile_importMdDesc")} onClick={() => setImportOpen(true)} /><ActionRow icon={ArrowDownTrayIcon} label={t("profile_exportData")} description={user?.dataExport ? "continuum-backup.json" : t("profile_locked")} onClick={handleExportData} disabled={exporting || !user?.dataExport} /><ActionRow icon={LinkIcon} label={t("import_relinkBtn")} description={t("profile_relinkDesc")} onClick={handleRelinkEntities} disabled={relinking} /></div></section>
     <section className="space-y-4"><SectionTitle eyebrow={t("profile_eyebrowSupport")} title={t("profile_supportCenter")} /><div className="divide-y divide-border/10"><ActionRow icon={LifebuoyIcon} label={t("profile_supportCenter")} description={t("profile_supportCenterDesc")} href="/support" /><ActionRow icon={ChatBubbleLeftEllipsisIcon} label={t("profile_sendFeedback")} description="feedback@continuum.onl" href="mailto:feedback@continuum.onl?subject=Continuum%20%E2%80%94%20Feedback" /><ActionRow icon={BugAntIcon} label={t("profile_reportBug")} description="bugs@continuum.onl" href="mailto:bugs@continuum.onl?subject=Continuum%20%E2%80%94%20Bug%20report" /></div></section>
     <section className="space-y-4"><SectionTitle eyebrow={t("nav_more")} title={t("nav_more")} /><div className="divide-y divide-border/10"><LanguageSelector /><ActionRow href="/editor" icon={PencilSquareIcon} label={t("nav_editorSettings")} />{moreLinks.map(({ href, icon: Icon, label }) => <ActionRow key={href} href={href} icon={Icon} label={label === "versions_title" ? "Versions" : t(label)} />)}<ActionRow href="https://github.com/continuumnodes/continuum" icon={CodeBracketIcon} label="GitHub" /></div></section>
