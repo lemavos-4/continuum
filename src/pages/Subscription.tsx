@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { SubscriptionScreen } from "@/components/ui/subscription-screen";
 import backgroundImage from "@/assets/landing-notes.jpg";
+import type { Plan } from "@/types";
 
 interface SubInfo {
   plan?: string;
@@ -15,7 +16,7 @@ interface SubInfo {
   cancelAtPeriodEnd?: boolean;
 }
 
-export default function Subscription() {
+export function SubscriptionContent({ onClose }: { onClose?: () => void } = {}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -116,7 +117,6 @@ export default function Subscription() {
   };
 
   return (
-    <AppLayout>
       <div className="flex min-h-[calc(100vh-1rem)] w-full items-center justify-center px-3 py-3 sm:px-8 sm:py-8">
         <SubscriptionScreen
           backgroundImageSrc={backgroundImage}
@@ -129,9 +129,17 @@ export default function Subscription() {
           subscribeButtonText={isPro ? (portalLoading ? t("bill_opening") : t("bill_manage_billing")) : checkoutLoading ? t("bill_opening") : t("bill_upgrade_to_vision")}
           footerText={syncing ? "Confirming your payment with Stripe…" : t("bill_cancel_secure")}
           currentPlanText={`${t("bill_current")}: ${isPro ? "VISION" : "FREE"}${sub?.status ? ` · ${sub.status.toLowerCase()}` : ""}`}
+          onClose={onClose}
           onSubscribe={isPro ? handlePortal : handleCheckout}
         />
       </div>
+  );
+}
+
+export default function Subscription() {
+  return (
+    <AppLayout>
+      <SubscriptionContent />
     </AppLayout>
   );
 }
