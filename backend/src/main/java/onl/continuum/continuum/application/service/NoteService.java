@@ -4,7 +4,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
@@ -137,6 +136,7 @@ public class NoteService {
         note.setUpdatedAt(Instant.now());
 
         note = noteRepo.save(note);
+        storageService.cacheNoteContent(vaultId, noteId, content);
         
         // ===================================================================
         // CRIAR LINKS AUTOMÁTICOS A PARTIR DAS MENÇÕES
@@ -198,19 +198,10 @@ public class NoteService {
         return NoteResponse.from(note, content);
     }
 
-    /**
-     * Atualiza uma nota existente.
-     * 
-     * Cache Invalidation:
-     * - Remove entrada do cache quando nota é atualizada
-     * - Chave evicted: cache:note:content:{vaultId}:{noteId}
-     */
+    /** Atualiza uma nota existente e aquece o cache após a persistência. */
     @Caching(evict = {
         @CacheEvict(
-            value = "note-content",
-            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
-        ),
-        @CacheEvict(value = "insights:notes",    allEntries = true),
+            value = "insights:notes", allEntries = true),
         @CacheEvict(value = "insights:entities", allEntries = true)
     })
     public NoteResponse update(String noteId, NoteUpdateRequest req) {
@@ -313,12 +304,12 @@ public class NoteService {
 
         // Salvar no MongoDB
         note = noteRepo.save(note);
+        storageService.cacheNoteContent(vaultId, noteId, newContent);
 
         return NoteResponse.from(note, newContent);
     }
 
     @Caching(evict = {
-        @CacheEvict(value = "note-content", allEntries = true),
         @CacheEvict(value = "insights:notes", allEntries = true),
         @CacheEvict(value = "insights:entities", allEntries = true)
     })
@@ -349,35 +340,9 @@ public class NoteService {
         return noteRepo.saveAll(notes);
     }
 
-    /**
-     * Busca nota por ID e carrega seu conteúdo.
-     * 
-     * Cache Strategy:
-     * - Chave: cache:note:content:{vaultId}:{noteId}
-     * - TTL: 1 hora
-     * - Invalidado quando: nota é atualizada ou deletada
-     * 
-     * Performance Gain:
-     * - Primeira requisição: ~100ms (lê de B2)
-     * - Requisições seguintes: ~1ms (Redis)
-     * - Redução: 99% mais rápido
-     */
     public NoteResponse getById(String noteId) {
         String userId = getCurrentUserId();
         String vaultId = getCurrentVaultId();
-        return getNoteByIdCached(userId, vaultId, noteId);
-    }
-    
-    /**
-     * Método interno com cache habilitado.
-     * Deve ser chamado por método público (transação/proxy em Spring).
-     */
-    @Cacheable(
-        value = "note-content",
-        key = "#vaultId + ':' + #noteId",
-        unless = "#result == null"
-    )
-    private NoteResponse getNoteByIdCached(String userId, String vaultId, String noteId) {
         Note note = noteRepo.findById(noteId)
             .filter(n -> n.getUserId().equals(userId))
             .orElseThrow(() -> new NotFoundException("Note not found: " + noteId));
@@ -399,18 +364,8 @@ public class NoteService {
         return noteRepo.findGraphDataByUserId(userId);
     }
 
-    /**
-     * Deleta uma nota e todos seus links associados.
-     * 
-     * Cache Invalidation:
-     * - Remove entrada do cache quando nota é deletada
-     * - Chave evicted: cache:note:content:{vaultId}:{noteId}
-     */
+    /** Deleta uma nota, seu conteúdo no storage e todos os links associados. */
     @Caching(evict = {
-        @CacheEvict(
-            value = "note-content",
-            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
-        ),
         @CacheEvict(value = "insights:notes",    allEntries = true),
         @CacheEvict(value = "insights:entities", allEntries = true)
     })
@@ -435,6 +390,8 @@ public class NoteService {
 
         // Delete from MongoDB
         noteRepo.deleteById(noteId);
+        // Fallback for notes without fileKey, which skip storageService.deleteNote().
+        storageService.invalidateNoteContent(vaultId, noteId);
 
         // Decrement user count
         userService.decrementNoteCount(userId);
@@ -444,10 +401,6 @@ public class NoteService {
      * Alterna o status de favorito de uma nota. Persiste no MongoDB.
      */
     @Caching(evict = {
-        @CacheEvict(
-            value = "note-content",
-            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getPrincipal().getVaultId() + ':' + #noteId"
-        ),
         @CacheEvict(value = "insights:notes",    allEntries = true),
         @CacheEvict(value = "insights:entities", allEntries = true)
     })
@@ -609,11 +562,8 @@ public class NoteService {
     }
 
     private String extractSnippet(Note note, String vaultId) {
-        String rawContent = note.getContent();
-        if (rawContent == null || rawContent.isBlank()) {
-            rawContent = storageService.loadNoteContent(vaultId, note.getId()).orElse("");
-        }
-        if (rawContent == null || rawContent.isBlank()) {
+        String rawContent = storageService.loadNoteContent(vaultId, note.getId()).orElse("");
+        if (rawContent.isBlank()) {
             return "";
         }
         try {

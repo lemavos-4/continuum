@@ -8,7 +8,7 @@ import java.util.Optional;
  * [V11-ARCH] Interface centraliza todo I/O do vault do usuário no B2.
  *
  * Estrutura de paths no bucket:
- *   vaults/{vaultId}/_notes/{noteId}.md          ← conteúdo markdown
+ *   vaults/{vaultId}/notes/{noteId}.md           ← conteúdo markdown
  *   vaults/{vaultId}/_notes/index.json           ← NoteIndex[] (metadados)
  *   vaults/{vaultId}/_entities/entities.json     ← Entity[] (definições)
  *   vaults/{vaultId}/_entities/entity_index.json ← métricas de menções
@@ -28,6 +28,8 @@ public interface VaultStorageService {
 
     String saveNoteContent(String vaultId, String noteId, String content);
     Optional<String> loadNoteContent(String vaultId, String noteId);
+    default void cacheNoteContent(String vaultId, String noteId, String content) {}
+    default void invalidateNoteContent(String vaultId, String noteId) {}
 
     // ── Note index (metadados) ────────────────────────────────────────────────
     void saveNoteIndex(String vaultId, String indexJson);

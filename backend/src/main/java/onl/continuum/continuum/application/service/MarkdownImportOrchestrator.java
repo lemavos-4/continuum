@@ -378,6 +378,7 @@ public class MarkdownImportOrchestrator {
                 note.setCreatedAt(Instant.now());
                 note.setUpdatedAt(Instant.now());
                 noteRepo.save(note);
+                storageService.cacheNoteContent(vaultId, noteId, contentStr);
 
                 for (String eid : entityIds) {
                     try {
@@ -481,6 +482,7 @@ public class MarkdownImportOrchestrator {
                     log.warn("Vault save failed during relink for {}: {}", note.getId(), storeEx.getMessage());
                 }
                 noteRepo.save(note);
+                storageService.cacheNoteContent(vaultId, note.getId(), contentStr);
 
                 connections += entityIds.size() - before;
                 updated++;

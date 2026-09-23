@@ -29,8 +29,9 @@ COPY --from=builder /build/application/ ./
 
 USER spring:spring
 
-# Flags de performance otimizadas
-# -Djava.security.egd=file:/dev/./urandom acelera o SecureRandom (JWT/SSL)
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "org.springframework.boot.loader.launch.JarLauncher"]
+# Render Free has 512 MB total container memory. Keep the Java heap explicit at
+# 256 MB so native memory, Spring Boot, MongoDB, AWS SDK and connection pools
+# retain the remaining budget instead of relying on JVM container heuristics.
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-Xmx256m", "-Djava.security.egd=file:/dev/./urandom", "org.springframework.boot.loader.launch.JarLauncher"]
 
 EXPOSE 8080

@@ -1,9 +1,14 @@
 package onl.continuum.continuum.infra.vault;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.CacheStats;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import onl.continuum.continuum.infra.notification.TelegramLogService;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.retry.RetryPolicy;
@@ -32,9 +37,30 @@ public class BackblazeVaultStorage implements VaultStorageService {
     private final S3Client s3;
     private final String bucket;
     private final boolean configured;
+    private final TelegramLogService telegramLogService;
 
-    public BackblazeVaultStorage(VaultConfig cfg) {
+    /**
+     * Local per-instance cache. When Render scales horizontally, instances have
+     * independent caches and no cross-instance invalidation. This is acceptable
+     * until a shared cache is justified.
+     *
+     * Missing B2 objects are intentionally cached as an empty string for up to
+     * 30 minutes. The service stays active through an external ping, so this
+     * cache no longer gets reset by Render sleep; explicit memory limits matter.
+     * Render Free has 512 MB RAM and the Dockerfile caps the heap at 256 MB;
+     * this cache is limited to 16 MB, leaving room for the rest of the stack.
+     */
+    private final Cache<String, String> noteContentCache = Caffeine.newBuilder()
+            .maximumWeight(16L * 1024 * 1024)
+            .weigher((String cacheKey, String content) ->
+                    Math.max(1, content.getBytes(StandardCharsets.UTF_8).length))
+            .expireAfterAccess(Duration.ofMinutes(30))
+            .recordStats()
+            .build();
+
+    public BackblazeVaultStorage(VaultConfig cfg, TelegramLogService telegramLogService) {
         this.bucket = cfg.getBucketName();
+        this.telegramLogService = telegramLogService;
         boolean hasCredentials = cfg.getAccessKey() != null && !cfg.getAccessKey().isBlank()
                 && cfg.getSecretKey() != null && !cfg.getSecretKey().isBlank();
         this.configured = hasCredentials;
@@ -108,11 +134,54 @@ public class BackblazeVaultStorage implements VaultStorageService {
         return objectKey;
     }
 
+    /**
+     * Loads note content from the L1 cache or B2. A confirmed missing object is
+     * cached as an empty string for up to the cache TTL to avoid repeated B2 GETs.
+     */
     @Override
     public Optional<String> loadNoteContent(String vaultId, String noteId) {
         if (!configured) return Optional.empty();
-        String objectKey = key(vaultId, "notes/" + noteId + ".md");
-        return get(objectKey);
+        String cacheKey = noteCacheKey(vaultId, noteId);
+        String cached = noteContentCache.getIfPresent(cacheKey);
+        if (cached != null) {
+            log.debug("Note content cache HIT: vault={}, noteId={}", vaultId, noteId);
+            return Optional.of(cached);
+        }
+
+        log.debug("Note content cache MISS: vault={}, noteId={}", vaultId, noteId);
+        String content = noteContentCache.get(cacheKey, ignored -> {
+            log.info("Loading note content from B2: vault={}, noteId={}", vaultId, noteId);
+            return get(key(vaultId, "notes/" + noteId + ".md")).orElse("");
+        });
+        return Optional.of(content);
+    }
+
+    @Scheduled(fixedDelay = 900_000, initialDelay = 900_000)
+    public void logNoteContentCacheStats() {
+        CacheStats stats = noteContentCache.stats();
+        log.info("Note content cache stats: hitRate={}, hitCount={}, missCount={}, evictionCount={}, estimatedSize={}",
+                stats.hitRate(), stats.hitCount(), stats.missCount(), stats.evictionCount(),
+                noteContentCache.estimatedSize());
+        telegramLogService.notifyServerEvent(
+            "Note content cache stats",
+            "hitRate=" + stats.hitRate()
+                + ", hitCount=" + stats.hitCount()
+                + ", missCount=" + stats.missCount()
+                + ", evictionCount=" + stats.evictionCount()
+                + ", estimatedSize=" + noteContentCache.estimatedSize());
+    }
+
+    @Override
+    public void cacheNoteContent(String vaultId, String noteId, String content) {
+        if (!configured) return;
+        noteContentCache.put(noteCacheKey(vaultId, noteId), content);
+        log.debug("Note content cache UPDATE: vault={}, noteId={}", vaultId, noteId);
+    }
+
+    @Override
+    public void invalidateNoteContent(String vaultId, String noteId) {
+        noteContentCache.invalidate(noteCacheKey(vaultId, noteId));
+        log.debug("Note content cache INVALIDATE: vault={}, noteId={}", vaultId, noteId);
     }
 
     @Override
@@ -123,11 +192,12 @@ public class BackblazeVaultStorage implements VaultStorageService {
 
     @Override
     public void deleteNote(String vaultId, String noteId) {
+        invalidateNoteContent(vaultId, noteId);
         if (!configured) return;
         try {
             s3.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucket)
-                    .key(key(vaultId, "_notes/" + noteId + ".md"))
+                    .key(key(vaultId, "notes/" + noteId + ".md"))
                     .build());
         } catch (Exception e) {
             log.warn("Failed to delete note {} from vault {}: {}", noteId, vaultId, e.getMessage());
@@ -325,6 +395,10 @@ public class BackblazeVaultStorage implements VaultStorageService {
 
     private String key(String vaultId, String rel) {
         return "vaults/" + vaultId + "/" + rel;
+    }
+
+    private String noteCacheKey(String vaultId, String noteId) {
+        return vaultId + ":" + noteId;
     }
 
     private void put(String key, String content, String contentType) {
