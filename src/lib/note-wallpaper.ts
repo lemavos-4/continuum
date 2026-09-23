@@ -133,7 +133,7 @@ export function subscribeWallpaper(fn: (s: NoteWallpaperSettings) => void) {
   listeners.add(fn);
   // Kick off initial load so the new subscriber gets the server value.
   if (!loaded) loadWallpaperSettings();
-  return () => listeners.delete(fn);
+  return () => { listeners.delete(fn); };
 }
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png"]);
