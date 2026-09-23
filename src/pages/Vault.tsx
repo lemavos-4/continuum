@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { vaultApi } from "@/lib/api";
-import { useCachedResource } from "@/hooks/useCachedResource";
-import { qk, STALE } from "@/lib/queries";
 import { usePlanGate } from "@/hooks/usePlanGate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -72,7 +70,7 @@ function ItemActions({
     <div className={className}>
       <Button
         type="button" size="icon" variant="ghost"
-        className="h-7 w-7 rounded-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+        className="h-7 w-7 rounded-sm text-white/40 hover:text-white hover:bg-white/5"
         onClick={(e) => { e.stopPropagation(); onRename(file); }}
         aria-label="Rename file"
       >
@@ -80,7 +78,7 @@ function ItemActions({
       </Button>
       <Button
         type="button" size="icon" variant="ghost"
-        className="h-7 w-7 rounded-sm text-muted-foreground hover:text-red-400 hover:bg-foreground/5"
+        className="h-7 w-7 rounded-sm text-white/40 hover:text-red-400 hover:bg-white/5"
         onClick={(e) => { e.stopPropagation(); onDelete(file); }}
         aria-label="Delete file"
       >
@@ -96,25 +94,25 @@ function ImageThumb({ file, name, onDelete, onRename, onOpen }: {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
-    <Card variant="subtle" className="group relative cursor-zoom-in overflow-hidden border-border/5 bg-background/10 aspect-square p-0 transition-colors hover:border-border/20" onClick={() => onOpen(file)}>
+    <Card variant="subtle" className="group relative cursor-zoom-in overflow-hidden border-white/5 bg-black/10 aspect-square p-0 transition-colors hover:border-white/20" onClick={() => onOpen(file)}>
       {error ? (
         <div className="flex items-center justify-center h-full text-[11px] text-red-400/70 font-mono">{t("gr_vault_error_generic")}</div>
       ) : url ? (
         <img src={url} alt={name} className="w-full h-full object-cover transition-opacity duration-300 opacity-80 group-hover:opacity-100" />
       ) : (
         <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          <Loader2 className="h-3 w-3 animate-spin text-white/20" />
         </div>
       )}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-        <p className="text-xs text-muted-foreground truncate">{name}</p>
-        <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{formatSize(file.size)}</p>
+        <p className="text-xs text-white/90 truncate">{name}</p>
+        <p className="text-[10px] font-mono text-white/40 mt-0.5">{formatSize(file.size)}</p>
       </div>
       <ItemActions
         file={file}
         onDelete={onDelete}
         onRename={onRename}
-        className="absolute top-1.5 right-1.5 flex items-center rounded-sm bg-background/50 opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100"
+        className="absolute top-1.5 right-1.5 flex items-center rounded-sm bg-black/50 opacity-100 transition-all sm:opacity-0 sm:group-hover:opacity-100"
       />
     </Card>
   );
@@ -126,11 +124,11 @@ function AudioPlayer({ file, name, onDelete, onRename }: {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
-    <Card variant="subtle" className="group relative flex flex-col justify-between border-border/5 bg-background/10 p-4 transition-colors hover:border-border/10">
+    <Card variant="subtle" className="group relative flex flex-col justify-between border-white/5 bg-black/10 p-4 transition-colors hover:border-white/10">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-serif text-muted-foreground truncate group-hover:text-foreground transition-colors">{name}</p>
-          <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{formatSize(file.size)}</p>
+          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{name}</p>
+          <p className="text-[10px] font-mono text-white/30 mt-0.5">{formatSize(file.size)}</p>
         </div>
         <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex shrink-0 items-center" />
       </div>
@@ -140,7 +138,7 @@ function AudioPlayer({ file, name, onDelete, onRename }: {
         ) : url ? (
           <audio src={url} controls className="w-full h-8 accent-white filter invert opacity-40 hover:opacity-70 transition-opacity" />
         ) : (
-          <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
+          <div className="flex items-center gap-2 text-[11px] font-mono text-white/30">
             <Loader2 className="h-3 w-3 animate-spin" /> {t("gr_vault_audio_fetching")}
           </div>
         )}
@@ -155,26 +153,26 @@ function PdfCard({ file, name, onDelete, onRename, onOpen }: {
   const { url, error } = useBlobUrl(file.id);
   const { t } = useLanguage();
   return (
-    <Card variant="subtle" className="border-border/5 bg-background/10 overflow-hidden flex flex-col p-0 transition-colors hover:border-border/10 group">
-      <button type="button" onClick={() => onOpen(file)} className="aspect-[4/3] bg-background/40 relative overflow-hidden border-b border-border/5 flex items-center justify-center">
+    <Card variant="subtle" className="border-white/5 bg-black/10 overflow-hidden flex flex-col p-0 transition-colors hover:border-white/10 group">
+      <button type="button" onClick={() => onOpen(file)} className="aspect-[4/3] bg-black/40 relative overflow-hidden border-b border-white/5 flex items-center justify-center">
         {error ? (
           <div className="text-[11px] font-mono text-red-400/60">{t("gr_vault_error_generic")}</div>
         ) : url ? (
           <iframe src={`${url}#toolbar=0&navpanes=0`} title={name} className="w-full h-full pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity" />
         ) : (
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          <Loader2 className="h-3 w-3 animate-spin text-white/20" />
         )}
-        <div className="absolute inset-0 flex items-center justify-center bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-[11px] bg-background border border-border/10 px-2.5 py-1 text-muted-foreground rounded-sm">{t("gr_vault_view_document")}</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-[11px] bg-black border border-white/10 px-2.5 py-1 text-white/80 rounded-sm">{t("gr_vault_view_document")}</span>
         </div>
       </button>
       <div className="p-3 flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-serif text-muted-foreground truncate group-hover:text-foreground">{name}</p>
-          <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{formatSize(file.size)}</p>
+          <p className="text-xs font-serif text-white/80 truncate group-hover:text-white">{name}</p>
+          <p className="text-[10px] font-mono text-white/30 mt-0.5">{formatSize(file.size)}</p>
         </div>
         <div className="flex items-center shrink-0">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5" onClick={() => onOpen(file)}>
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-sm text-white/30 hover:text-white hover:bg-white/5" onClick={() => onOpen(file)}>
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
           <ItemActions file={file} onDelete={onDelete} onRename={onRename} className="flex items-center" />
@@ -188,12 +186,12 @@ function OtherFileRow({ file, name, onDelete, onRename }: {
   file: VaultFile; name: string; onDelete: (f: VaultFile) => void; onRename: (f: VaultFile) => void;
 }) {
   return (
-    <div className="group relative flex items-center justify-between py-4 border-b border-border/10 hover:bg-foreground/[0.01] transition-colors">
+    <div className="group relative flex items-center justify-between py-4 border-b border-white/[0.06] hover:bg-white/[0.01] transition-colors">
       <div className="flex items-center gap-3 min-w-0">
-        <FileGeneric className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <FileGeneric className="w-3.5 h-3.5 text-white/30 shrink-0" />
         <div className="min-w-0">
-          <p className="text-sm font-serif text-muted-foreground truncate group-hover:text-foreground transition-colors">{name}</p>
-          <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
+          <p className="text-sm font-serif text-white/80 truncate group-hover:text-white transition-colors">{name}</p>
+          <p className="text-[10px] font-mono text-white/30 mt-0.5">
             {formatSize(file.size)} &middot; {new Date(file.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
@@ -208,6 +206,7 @@ function OtherFileRow({ file, name, onDelete, onRename }: {
 export default function Vault() {
   const { t } = useLanguage();
   const [files, setFiles] = useState<VaultFile[]>([]);
+  const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<VaultFile | null>(null);
   const [pdfPreview, setPdfPreview] = useState<VaultFile | null>(null);
   const [mediaPreview, setMediaPreview] = useState<VaultFile | null>(null);
@@ -254,28 +253,21 @@ export default function Vault() {
   const { applyUsageDelta } = usePlanGate();
   const limits = getPlanLimits(user);
 
-  const filesQuery = useCachedResource<VaultFile[]>(
-    qk.vaultFiles(),
-    async () => {
-      const { data } = await vaultApi.list();
-      return Array.isArray(data) ? (data as VaultFile[]) : [];
-    },
-    { staleTime: STALE.list }
-  );
-  const loading =
-    filesQuery.loading ||
-    (filesQuery.data !== undefined &&
-      files.length === 0 &&
-      filesQuery.data.some((file) => file.id !== wallpaperFileId));
-
-  useEffect(() => {
-    // The editor wallpaper is a system file: never listed, never counted.
-    if (filesQuery.data) setFiles(filesQuery.data.filter((f) => f.id !== wallpaperFileId));
-  }, [filesQuery.data, wallpaperFileId]);
-
   const fetchFiles = async () => {
-    await filesQuery.refetch();
+    setLoading(true);
+    try {
+      const { data } = await vaultApi.list();
+      const all = Array.isArray(data) ? data : [];
+      // The editor wallpaper is a system file: never listed, never counted.
+      setFiles(all.filter((f: VaultFile) => f.id !== wallpaperFileId));
+    } catch {
+      toast({ title: t("gr_vault_error_loading"), variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => { fetchFiles(); }, [wallpaperFileId]);
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -296,7 +288,6 @@ export default function Vault() {
       await vaultApi.delete(file.id);
       invalidateVaultBlob(file.id);
       setFiles((cur) => cur.filter((f) => f.id !== file.id));
-      filesQuery.setData((cur) => (cur ?? []).filter((f) => f.id !== file.id));
       applyUsageDelta({ vaultSizeMB: -Number((file.size / (1024 * 1024)).toFixed(2)) });
       toast({ title: t("gr_vault_delete_success") });
     } catch {
@@ -349,27 +340,27 @@ export default function Vault() {
 
 
           {/* Indicador de Espaço Sutil (Removido o bloco chamativo) */}
-          <div className="mb-6 border-b border-border/5 pb-5 pt-2">
-            <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground mb-2">
+          <div className="mb-6 border-b border-white/5 pb-5 pt-2">
+            <div className="flex items-center justify-between text-[11px] font-mono text-white/40 mb-2">
               <div className="flex items-center gap-1.5">
-                <HardDrive className="w-3 h-3 text-muted-foreground" />
+                <HardDrive className="w-3 h-3 text-white/30" />
                 <span>{t("gr_vault_volume_capacity")}</span>
               </div>
               <span>
                 {isUnlimited(vaultMaxMB) ? `${vaultUsedMB.toFixed(1)} MB` : `${vaultUsedMB.toFixed(1)} / ${vaultMaxMB} MB`}
               </span>
             </div>
-            <Progress value={isUnlimited(vaultMaxMB) ? 0 : vaultPct} className="h-[2px] bg-foreground/5 text-foreground" />
+            <Progress value={isUnlimited(vaultMaxMB) ? 0 : vaultPct} className="h-[2px] bg-white/5 text-white" />
           </div>
 
           {loading ? (
             <div className="flex justify-center py-24">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-white/30" />
             </div>
           ) : files.length === 0 ? (
             /* Empty State poético e limpo igual ao do seu Notes */
             <div className="py-24 text-center">
-              <p className="font-serif text-2xl italic text-muted-foreground">
+              <p className="font-serif text-2xl italic text-white/40">
                 {t("vault_empty")}
               </p>
             </div>
@@ -440,7 +431,7 @@ export default function Vault() {
                 grouped.other.length === 0 ? (
                   <p className="py-12 font-serif text-sm italic text-muted-foreground">{t("gr_vault_no_other")}</p>
                 ) : (
-                  <div className="divide-y divide-border/10">
+                  <div className="divide-y divide-border">
                     {grouped.other.map((f) => (
                       <OtherFileRow key={f.id} file={f} name={nameOf(f)} onDelete={setPendingDelete} onRename={openRename} />
                     ))}
@@ -455,16 +446,16 @@ export default function Vault() {
 
       {/* CONFIRM DIALOG — Adaptado para seguir o design limpo do app */}
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
-        <AlertDialogContent className="bg-background border border-border/10 rounded-sm max-w-sm">
+        <AlertDialogContent className="bg-black border border-white/10 rounded-sm max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-serif text-xl font-normal text-foreground">{t("gr_vault_remove_title")}</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground text-xs mt-2">
+            <AlertDialogTitle className="font-serif text-xl font-normal text-white">{t("gr_vault_remove_title")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/40 text-xs mt-2">
               {t("gr_vault_remove_desc", { fileName: (pendingDelete ? nameOf(pendingDelete) : "") || t("gr_vault_this_asset") })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2">
-            <AlertDialogCancel className="bg-transparent hover:bg-foreground/5 text-muted-foreground border-border/10 rounded-sm text-xs">{t("gr_vault_cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-foreground text-background hover:bg-foreground/90 rounded-sm text-xs font-medium">{t("gr_vault_remove")}</AlertDialogAction>
+            <AlertDialogCancel className="bg-transparent hover:bg-white/5 text-white/60 border-white/10 rounded-sm text-xs">{t("gr_vault_cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-white text-black hover:bg-white/90 rounded-sm text-xs font-medium">{t("gr_vault_remove")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -473,19 +464,19 @@ export default function Vault() {
       <Dialog open={!!pdfPreview} onOpenChange={(open) => !open && setPdfPreview(null)}>
         <DialogContent
           hideClose
-          overlayClassName="bg-background/80 backdrop-blur-md"
+          overlayClassName="bg-black/80 backdrop-blur-md"
           className="fixed inset-0 left-0 top-0 z-50 grid h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 grid-rows-[auto_1fr] gap-0 rounded-none border-0 bg-transparent p-0 shadow-none flex flex-col"
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border/5 bg-background/40 backdrop-blur-xl text-foreground">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/40 backdrop-blur-xl text-white">
             <p className="font-serif text-sm truncate max-w-xl">{pdfPreview?.fileName}</p>
-            <Button size="sm" variant="ghost" onClick={() => setPdfPreview(null)} className="text-muted-foreground hover:text-foreground rounded-sm hover:bg-foreground/5 text-xs">{t("gr_vault_close")}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setPdfPreview(null)} className="text-white/40 hover:text-white rounded-sm hover:bg-white/5 text-xs">{t("gr_vault_close")}</Button>
           </div>
           <div className="flex-1 p-6">
             {pdfPreviewBlob.url ? (
-              <iframe src={pdfPreviewBlob.url} title={pdfPreview?.fileName} className="w-full h-full bg-transparent border border-border/10 rounded-sm shadow-2xl" />
+              <iframe src={pdfPreviewBlob.url} title={pdfPreview?.fileName} className="w-full h-full bg-transparent border border-white/10 rounded-sm shadow-2xl" />
             ) : (
               <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Loader2 className="h-5 w-5 animate-spin text-white/30" />
               </div>
             )}
           </div>
@@ -496,12 +487,12 @@ export default function Vault() {
       <Dialog open={!!mediaPreview} onOpenChange={(open) => !open && setMediaPreview(null)}>
         <DialogContent
           hideClose
-          overlayClassName="bg-background/90 backdrop-blur-md"
+          overlayClassName="bg-black/90 backdrop-blur-md"
           className="fixed inset-0 left-0 top-0 z-50 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
         >
-          <div className="flex items-center justify-between border-b border-border/5 bg-background/40 px-6 py-4 text-foreground backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-white/5 bg-black/40 px-6 py-4 text-white backdrop-blur-xl">
             <p className="max-w-xl truncate font-serif text-sm">{mediaPreview ? nameOf(mediaPreview) : ""}</p>
-            <Button size="sm" variant="ghost" onClick={() => setMediaPreview(null)} className="rounded-sm text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
+            <Button size="sm" variant="ghost" onClick={() => setMediaPreview(null)} className="rounded-sm text-xs text-white/40 hover:bg-white/5 hover:text-white">
               {t("gr_vault_close")}
             </Button>
           </div>
@@ -513,21 +504,21 @@ export default function Vault() {
 
       {/* RENAME DIALOG — extension is preserved silently */}
       <Dialog open={!!renameTarget} onOpenChange={(open) => !open && setRenameTarget(null)}>
-        <DialogContent className="max-w-sm rounded-sm border border-border/10 bg-background">
-          <p className="font-serif text-xl text-foreground">{t("gr_vault_rename_title")}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{t("gr_vault_rename_hint")}</p>
+        <DialogContent className="max-w-sm rounded-sm border border-white/10 bg-black">
+          <p className="font-serif text-xl text-white">{t("gr_vault_rename_title")}</p>
+          <p className="mt-1 text-[11px] text-white/40">{t("gr_vault_rename_hint")}</p>
           <Input
             autoFocus
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitRename(); } }}
-            className="mt-2 h-11 rounded-sm border-border/10 bg-foreground/[0.03] text-sm text-foreground"
+            className="mt-2 h-11 rounded-sm border-white/10 bg-white/[0.03] text-sm text-white"
           />
           <div className="mt-4 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setRenameTarget(null)} className="rounded-sm text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={() => setRenameTarget(null)} className="rounded-sm text-xs text-white/50 hover:bg-white/5 hover:text-white">
               {t("gr_vault_cancel")}
             </Button>
-            <Button size="sm" onClick={() => void submitRename()} disabled={!renameValue.trim()} className="rounded-sm bg-foreground text-xs font-medium text-background hover:bg-foreground/90">
+            <Button size="sm" onClick={() => void submitRename()} disabled={!renameValue.trim()} className="rounded-sm bg-white text-xs font-medium text-black hover:bg-white/90">
               {t("gr_vault_save")}
             </Button>
           </div>
@@ -540,6 +531,6 @@ export default function Vault() {
 function MediaViewerBody({ file, name }: { file: VaultFile; name: string }) {
   const { url, error } = useBlobUrl(file.id);
   if (error) return <p className="font-mono text-xs text-red-400/70">{name}</p>;
-  if (!url) return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
+  if (!url) return <Loader2 className="h-5 w-5 animate-spin text-white/30" />;
   return <img src={url} alt={name} className="max-h-full max-w-full rounded-sm object-contain" />;
 }
