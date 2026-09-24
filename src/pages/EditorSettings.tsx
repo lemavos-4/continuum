@@ -76,25 +76,27 @@ export default function EditorSettingsPage() {
             {wallpaperUrl && <div aria-hidden="true" className="absolute inset-0 bg-background/55" />}
 
             <div className="relative flex h-full flex-col">
-              <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/10 bg-background/70 px-3 backdrop-blur-md">
-                <Button type="button" variant="ghost" size="icon" aria-label={t("common_back")} onClick={() => navigate(-1)} className="h-8 w-8">
-                  <ArrowLeftIcon className="h-4 w-4" />
-                </Button>
-                <span className="absolute left-1/2 -translate-x-1/2 font-serif text-sm text-foreground">{t("nav_editorSettings")}</span>
-                <div className="flex items-center gap-1">
-                  <span className="flex items-center gap-1.5 px-2 text-[10px] text-muted-foreground">
-                    <CheckIcon className="h-3 w-3" /> {t("ed_saved")}
+              <header className="flex shrink-0 items-center justify-between border-b border-border/5 bg-background/70 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-md lg:pt-3">
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="ghost" size="icon" aria-label={t("common_back")} onClick={() => navigate(-1)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                    <ArrowLeftIcon className="h-4 w-4" />
+                  </Button>
+                  <div className="mx-2 h-4 w-px bg-border/10" />
+                  <span className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                    <CheckIcon className="h-3 w-3 text-emerald-400" /> {t("ed_saved")}
                   </span>
-                  <Button type="button" variant="ghost" size="icon" aria-label={t("ed_view_mode")} className="pointer-events-none h-8 w-8 bg-foreground/5 text-foreground">
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button type="button" variant="ghost" size="icon" aria-label={t("ed_view_mode")} className="pointer-events-none h-8 w-8 bg-primary/20 text-primary">
                     <EyeIcon className="h-4 w-4" />
                   </Button>
                   <Button type="button" variant="ghost" size="icon" aria-label={t("ed_toggle_side_panel")} className="pointer-events-none h-8 w-8 text-muted-foreground">
                     <Squares2X2Icon className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
+              </header>
 
-              <div className="flex-1 overflow-hidden px-7 py-10 pb-40 sm:px-12 sm:py-14 sm:pb-40">
+              <div className="flex-1 overflow-hidden px-7 py-10 pb-56 sm:px-12 sm:py-14 lg:pb-40">
                 <div className="mx-auto max-w-[680px]">
                   <h2
                     className="font-display font-bold leading-tight text-foreground"
@@ -122,7 +124,7 @@ export default function EditorSettingsPage() {
             </div>
           </section>
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] flex flex-col items-center gap-2 px-3">
+          <div className="pointer-events-none absolute inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] flex flex-col items-center gap-2 px-3 lg:bottom-6">
             {panel && (
               <div className="pointer-events-auto w-full max-w-md max-h-[45dvh] overflow-y-auto rounded-2xl border border-border/10 bg-background/80 px-4 shadow-lg backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2">
                 {panel === "text" ? (
