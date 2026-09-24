@@ -55,6 +55,22 @@ const Insights = React.lazy(() => import("./pages/Insights"));
 
 const queryPersister = createIdbPersister();
 
+/** Downloads every screen's code in the background so no route ever waits. */
+const PAGE_LOADERS = [
+  () => import("./pages/Notes"), () => import("./pages/NoteEditor"), () => import("./pages/Entities"),
+  () => import("./pages/EntityDetail"), () => import("./pages/Activities"), () => import("./pages/Projects"),
+  () => import("./pages/Insights"), () => import("./pages/Vault"), () => import("./pages/KnowledgeGraph"),
+  () => import("./pages/Settings"), () => import("./pages/EditorSettings"), () => import("./pages/About"),
+  () => import("./pages/Pricing"), () => import("./pages/Support"), () => import("./pages/Terms"),
+  () => import("./pages/Privacy"), () => import("./pages/Versions"), () => import("./pages/VaultDownload"),
+  () => import("./pages/Login"), () => import("./pages/Register"), () => import("./pages/NotFound"),
+];
+if (typeof window !== "undefined") {
+  const warm = () => PAGE_LOADERS.reduce((p, load) => p.then(() => load().catch(() => {})), Promise.resolve() as Promise<unknown>);
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+  window.addEventListener("load", () => (idle ? idle(warm) : setTimeout(warm, 1500)), { once: true });
+}
+
 /** Warms notes/entities/insights as soon as the user is authenticated. */
 function PrefetchPrimaryData() {
   const { user } = useAuth();
