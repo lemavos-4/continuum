@@ -260,10 +260,19 @@ export default function NoteEditor() {
           /* ignore fetch details for optimistic placeholder */
         });
     } else {
+      // Paint from cache instantly (even if stale); revalidate in the background.
+      const swr = <T,>(queryKey: readonly unknown[], queryFn: () => Promise<T>, staleTime: number) => {
+        const cached = queryClient.getQueryData<T>(queryKey);
+        if (cached !== undefined) {
+          void queryClient.prefetchQuery({ queryKey, queryFn, staleTime });
+          return Promise.resolve(cached);
+        }
+        return queryClient.fetchQuery({ queryKey, queryFn, staleTime });
+      };
       Promise.allSettled([
-        queryClient.fetchQuery({ queryKey: qk.note(id), queryFn: () => notesApi.get(id).then((response) => response.data as NoteData), staleTime: STALE.detail }),
-        queryClient.fetchQuery({ queryKey: qk.entities(), queryFn: () => entitiesApi.list().then((response) => response.data), staleTime: STALE.list }),
-        queryClient.fetchQuery({ queryKey: qk.noteTypes(), queryFn: () => notesApi.getTypes().then((response) => response.data), staleTime: STALE.list }),
+        swr(qk.note(id), () => notesApi.get(id).then((response) => response.data as NoteData), STALE.detail),
+        swr(qk.entities(), () => entitiesApi.list().then((response) => response.data), STALE.list),
+        swr(qk.noteTypes(), () => notesApi.getTypes().then((response) => response.data), STALE.list),
       ])
         .then(([noteResult, entitiesResult, typesResult]) => {
           if (noteResult.status !== "fulfilled") throw noteResult.reason;
