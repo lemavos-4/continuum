@@ -1,5 +1,7 @@
 import { preferencesApi, vaultApi } from "@/lib/api";
 import { invalidateVaultBlob, resolveVaultBlob, resolveVaultBlobFast } from "@/lib/vault-blob";
+import { queryClient } from "@/lib/query-client";
+import { qk, STALE } from "@/lib/queries";
 
 export interface NoteWallpaperSettings {
   fileId: string | null;
@@ -55,8 +57,14 @@ export function loadWallpaperSettings(): NoteWallpaperSettings {
   if (!loaded && !loadPromise) {
     loadPromise = (async () => {
       try {
-        const res = await preferencesApi.get();
-        const data: any = typeof res.data === "string" ? safeParse(res.data) : res.data;
+        const data: any = await queryClient.fetchQuery({
+          queryKey: qk.preferences(),
+          queryFn: async () => {
+            const res = await preferencesApi.get();
+            return typeof res.data === "string" ? safeParse(res.data) : (res.data ?? {});
+          },
+          staleTime: STALE.preferences,
+        });
         cache = normalize(data);
         writeLocalCache(cache);
       } catch {
@@ -96,6 +104,7 @@ async function flushServerSave(payload: NoteWallpaperSettings): Promise<void> {
       wallpaper: payload,
     };
     await preferencesApi.save(next);
+    queryClient.setQueryData(qk.preferences(), next);
   } catch {
     /* ignore — keep in-memory cache */
   }

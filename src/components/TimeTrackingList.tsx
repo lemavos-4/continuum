@@ -64,12 +64,10 @@ export function TimeTrackingList({
   const lower = hideInternalSearch ? (search ?? '').trim().toLowerCase() : query.trim().toLowerCase();
 
   const { data: trackableEntities, isLoading: entitiesLoading } = useQuery({
-    queryKey: qk.entities(filterType),
+    queryKey: qk.entities(),
     queryFn: async () => {
       const response = await entitiesApi.list();
-      const entities = response.data as Entity[];
-      if (filterType) return entities.filter((e) => e.type === filterType);
-      return entities.filter((e) => e.type === 'PROJECT' || e.type === 'ACTIVITY');
+      return response.data as Entity[];
     },
     staleTime: STALE.list,
   });
@@ -81,7 +79,11 @@ export function TimeTrackingList({
   const isLoading = entitiesLoading || summariesLoading;
   const typeLabels: Record<string, string> = { PROJECT: t('tm_project'), ACTIVITY: t('tm_activity') };
 
-  const all = useMemo(() => trackableEntities ?? [], [trackableEntities]);
+  const all = useMemo(() => {
+    const entities = trackableEntities ?? [];
+    if (filterType) return entities.filter((entity) => entity.type === filterType);
+    return entities.filter((entity) => entity.type === 'PROJECT' || entity.type === 'ACTIVITY');
+  }, [filterType, trackableEntities]);
   const visible = useMemo(() => {
     if (!lower) return all;
     return all.filter((e) =>
@@ -97,16 +99,20 @@ export function TimeTrackingList({
 
 
   const handleQuickComplete = async (entity: Entity) => {
-    if (markingId) return;
-    setMarkingId(entity.id);
+    const key = qk.entities();
+    const previous = queryClient.getQueryData<Entity[]>(key);
+    const today = todayKey();
+    // Optimistic: mark as done instantly, roll back on failure.
+    queryClient.setQueryData<Entity[]>(key, (old) =>
+      old?.map((e) => (e.id === entity.id ? { ...e, trackingDates: [...(e.trackingDates ?? []), today] } : e)),
+    );
+    toast({ title: t('tm_marked_done_title'), description: entity.title || t('tm_activity') });
     try {
       await entitiesApi.track(entity.id);
-      await queryClient.invalidateQueries({ queryKey: ['entities'] });
-      toast({ title: t('tm_marked_done_title'), description: entity.title || t('tm_activity') });
+      void queryClient.invalidateQueries({ queryKey: ['entities'] });
     } catch {
+      queryClient.setQueryData(key, previous);
       toast({ title: t('tm_could_not_mark_title'), variant: 'destructive' });
-    } finally {
-      setMarkingId(null);
     }
   };
 

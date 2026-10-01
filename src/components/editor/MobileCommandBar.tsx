@@ -199,7 +199,7 @@ export function MobileCommandBar({ editor }: Props) {
         "bg-background/90 backdrop-blur-xl shadow-2xl px-2 py-1.5"
       )}
       style={{
-        bottom: `calc(${offset}px + env(safe-area-inset-bottom, 0px) + 8px)`,
+        bottom: `calc(${offset}px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 8px)`,
         touchAction: "pan-x",
       }}
       // Prevent iOS/Android from stealing focus from the editor.

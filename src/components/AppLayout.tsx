@@ -69,7 +69,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <main className="min-w-0 flex-1 overflow-auto bg-background lg:ml-[3.25rem]">
         {children}
         {/* Spacer so content isn't hidden behind the floating mobile bottom nav */}
-        {!isNoteEditor && <div className="h-[calc(5.5rem+env(safe-area-inset-bottom))] lg:hidden" />}
+        {!isNoteEditor && <div className="h-[calc(5.5rem+var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] lg:hidden" />}
       </main>
 
 
@@ -85,7 +85,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <nav
           className="fixed inset-x-3 z-40 lg:hidden"
           style={{
-            bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
+            bottom: "calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 0.75rem)",
             width: "calc(100% - 20%)",
             left: "10%",
           }}

@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 import { authApi } from "@/lib/api";
 import { resetAllCaches } from "@/lib/query-client";
 import type { Plan, User as AppUser } from "@/types";
@@ -126,7 +128,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = async () => {
     const { data } = await authApi.googleStart();
-    window.location.href = data.authorizationUrl;
+    if (Capacitor.isNativePlatform()) {
+      await Browser.open({ url: data.authorizationUrl });
+    } else {
+      window.location.href = data.authorizationUrl;
+    }
   };
 
   const register = async (username: string, email: string, password: string) => {

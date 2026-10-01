@@ -260,10 +260,19 @@ export default function NoteEditor() {
           /* ignore fetch details for optimistic placeholder */
         });
     } else {
+      // Paint from cache instantly (even if stale); revalidate in the background.
+      const swr = <T,>(queryKey: readonly unknown[], queryFn: () => Promise<T>, staleTime: number) => {
+        const cached = queryClient.getQueryData<T>(queryKey);
+        if (cached !== undefined) {
+          void queryClient.prefetchQuery({ queryKey, queryFn, staleTime });
+          return Promise.resolve(cached);
+        }
+        return queryClient.fetchQuery({ queryKey, queryFn, staleTime });
+      };
       Promise.allSettled([
-        queryClient.fetchQuery({ queryKey: qk.note(id), queryFn: () => notesApi.get(id).then((response) => response.data as NoteData), staleTime: STALE.detail }),
-        queryClient.fetchQuery({ queryKey: qk.entities(), queryFn: () => entitiesApi.list().then((response) => response.data), staleTime: STALE.list }),
-        queryClient.fetchQuery({ queryKey: qk.noteTypes(), queryFn: () => notesApi.getTypes().then((response) => response.data), staleTime: STALE.list }),
+        swr(qk.note(id), () => notesApi.get(id).then((response) => response.data as NoteData), STALE.detail),
+        swr(qk.entities(), () => entitiesApi.list().then((response) => response.data), STALE.list),
+        swr(qk.noteTypes(), () => notesApi.getTypes().then((response) => response.data), STALE.list),
       ])
         .then(([noteResult, entitiesResult, typesResult]) => {
           if (noteResult.status !== "fulfilled") throw noteResult.reason;
@@ -530,7 +539,7 @@ export default function NoteEditor() {
 
           {/* Editor Canvas */}
           <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth">
-            <div className="mx-auto w-full max-w-[750px] px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-12 lg:px-12 lg:pb-32">
+            <div className="mx-auto w-full max-w-[750px] px-6 pb-[calc(7rem+var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] pt-12 lg:px-12 lg:pb-32">
               <Input
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
@@ -561,7 +570,7 @@ export default function NoteEditor() {
           
           {/* Footer Metadata */}
           {note?.updatedAt && (
-            <div className="pointer-events-none absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 flex items-center gap-1.5 rounded-md border border-border/5 bg-background/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur">
+            <div className="pointer-events-none absolute bottom-[calc(0.5rem+var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)))] left-4 flex items-center gap-1.5 rounded-md border border-border/5 bg-background/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur">
               <Clock className="w-3 h-3" />
               {t("ed_edited", { date: new Date(note.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) })}
             </div>

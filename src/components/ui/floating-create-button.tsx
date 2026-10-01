@@ -48,7 +48,7 @@ export function FloatingCreateButton({
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
         className,
       )}
-      style={{ bottom: "calc(env(safe-area-inset-bottom) + 5.25rem)" }}
+      style={{ bottom: "calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 5.25rem)" }}
     >
       <button
         type="button"

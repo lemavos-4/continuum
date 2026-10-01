@@ -1,4 +1,6 @@
 import { preferencesApi } from "@/lib/api";
+import { queryClient } from "@/lib/query-client";
+import { qk, STALE } from "@/lib/queries";
 
 export interface NoteFontSizeSettings {
   titleScale: number;
@@ -52,8 +54,14 @@ function normalize(raw: any): NoteFontSizeSettings {
 }
 
 async function fetchPreferences(): Promise<any> {
-  const res = await preferencesApi.get();
-  return typeof res.data === "string" ? safeParse(res.data) : (res.data ?? {});
+  return queryClient.fetchQuery({
+    queryKey: qk.preferences(),
+    queryFn: async () => {
+      const res = await preferencesApi.get();
+      return typeof res.data === "string" ? safeParse(res.data) : (res.data ?? {});
+    },
+    staleTime: STALE.preferences,
+  });
 }
 
 export function loadNoteFontSize(): NoteFontSizeSettings {
@@ -107,6 +115,7 @@ export function saveNoteFontSize(settings: Partial<NoteFontSizeSettings>) {
         },
       };
       await preferencesApi.save(payload);
+      queryClient.setQueryData(qk.preferences(), payload);
     } catch { /* keep local cache */ }
   }, 500);
 }

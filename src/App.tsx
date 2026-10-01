@@ -20,9 +20,12 @@ import { prefetchPrimaryLists } from "@/lib/prefetch";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
-// Capacitor: aplica cor da status bar só quando rodando dentro do APK nativo
+// Capacitor 8: configura as barras do sistema somente no APK nativo.
 import { Capacitor } from "@capacitor/core";
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { SystemBars, SystemBarsStyle } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
+import { useNavigate } from "react-router-dom";
 
 // Auth-critical screens stay eager (they gate the first paint); everything else
 // is code-split and streamed in behind a skeleton.
@@ -55,12 +58,73 @@ const Insights = React.lazy(() => import("./pages/Insights"));
 
 const queryPersister = createIdbPersister();
 
+/** Downloads every screen's code in the background so no route ever waits. */
+const PAGE_LOADERS = [
+  () => import("./pages/Notes"), () => import("./pages/NoteEditor"), () => import("./pages/Entities"),
+  () => import("./pages/EntityDetail"), () => import("./pages/Activities"), () => import("./pages/Projects"),
+  () => import("./pages/Insights"), () => import("./pages/Vault"), () => import("./pages/KnowledgeGraph"),
+  () => import("./pages/Settings"), () => import("./pages/EditorSettings"), () => import("./pages/About"),
+  () => import("./pages/Pricing"), () => import("./pages/Support"), () => import("./pages/Terms"),
+  () => import("./pages/Privacy"), () => import("./pages/Versions"), () => import("./pages/VaultDownload"),
+  () => import("./pages/Login"), () => import("./pages/Register"), () => import("./pages/NotFound"),
+];
+if (typeof window !== "undefined") {
+  const warm = () => PAGE_LOADERS.reduce((p, load) => p.then(() => load().catch(() => {})), Promise.resolve() as Promise<unknown>);
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+  window.addEventListener("load", () => (idle ? idle(warm) : setTimeout(warm, 1500)), { once: true });
+}
+
 /** Warms notes/entities/insights as soon as the user is authenticated. */
 function PrefetchPrimaryData() {
   const { user } = useAuth();
   React.useEffect(() => {
-    if (user) prefetchPrimaryLists();
+    if (!user) return;
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    const run = () => { void prefetchPrimaryLists(); };
+    if (idle) idle(run); else setTimeout(run, 1500);
   }, [user]);
+  return null;
+}
+
+function NativeGoogleAuthRedirect() {
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let disposed = false;
+    let removeListener: (() => void) | undefined;
+    void CapacitorApp.addListener("appUrlOpen", async ({ url }) => {
+      let callbackUrl: URL;
+      try {
+        callbackUrl = new URL(url);
+      } catch {
+        return;
+      }
+
+      if (
+        callbackUrl.origin !== "https://continuum.onl" ||
+        callbackUrl.pathname !== "/google-callback"
+      ) {
+        return;
+      }
+
+      navigate(`/google-callback${callbackUrl.search}`);
+      await Browser.close();
+    }).then((listener) => {
+      if (disposed) {
+        void listener.remove();
+      } else {
+        removeListener = () => { void listener.remove(); };
+      }
+    });
+
+    return () => {
+      disposed = true;
+      removeListener?.();
+    };
+  }, [navigate]);
+
   return null;
 }
 
@@ -156,8 +220,7 @@ const AppRoutes = () => {
 const App = () => {
   React.useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setBackgroundColor({ color: "#000000" });
-      StatusBar.setStyle({ style: Style.Dark });
+      void SystemBars.setStyle({ style: SystemBarsStyle.Dark });
     }
   }, []);
 
@@ -180,6 +243,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <NativeGoogleAuthRedirect />
             <LanguageProvider>
               <AuthProvider>
                 <UsageProvider>

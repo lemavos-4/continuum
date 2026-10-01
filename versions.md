@@ -4,7 +4,7 @@ Every notable change to **Continuum**, from the first release to what just shipp
 
 ---
 
-## v1.2.17 — XXX XX, 2026 *(current)*
+## v1.3.0 — Set 25, 2026 *(current)*
 - Enhanced UI/UX.
 - Changed "/profile" to "/settings".
 - Enhanced "/settings" UI.
