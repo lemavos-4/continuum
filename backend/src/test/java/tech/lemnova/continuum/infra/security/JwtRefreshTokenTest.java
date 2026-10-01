@@ -1,4 +1,4 @@
-package onl.continuum.continuum.infra.security;
+package tech.lemnova.continuum.infra.security;
 
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;

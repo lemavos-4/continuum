@@ -1,4 +1,4 @@
-package onl.continuum.continuum.domain.stripe;
+package tech.lemnova.continuum.domain.stripe;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

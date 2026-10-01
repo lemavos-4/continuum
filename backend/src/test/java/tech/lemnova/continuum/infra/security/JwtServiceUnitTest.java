@@ -1,9 +1,9 @@
-package onl.continuum.continuum.infra.security;
+package tech.lemnova.continuum.infra.security;
 
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
-import onl.continuum.continuum.domain.user.User;
+import tech.lemnova.continuum.domain.user.User;
 
 import java.lang.reflect.Field;
 import java.util.UUID;

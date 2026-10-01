@@ -1,4 +1,4 @@
-package onl.continuum.continuum.domain.email;
+package tech.lemnova.continuum.domain.email;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

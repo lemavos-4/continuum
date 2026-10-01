@@ -1,4 +1,4 @@
-package onl.continuum.continuum.domain.connection;
+package tech.lemnova.continuum.domain.connection;
 
 import org.junit.jupiter.api.Test;
 

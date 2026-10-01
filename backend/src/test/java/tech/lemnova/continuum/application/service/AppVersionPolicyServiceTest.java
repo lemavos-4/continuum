@@ -1,4 +1,4 @@
-package onl.continuum.continuum.application.service;
+package tech.lemnova.continuum.application.service;
 
 import org.junit.jupiter.api.Test;
 

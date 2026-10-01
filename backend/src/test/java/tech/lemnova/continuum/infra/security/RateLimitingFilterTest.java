@@ -1,4 +1,4 @@
-package onl.continuum.continuum.infra.security;
+package tech.lemnova.continuum.infra.security;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import onl.continuum.continuum.infra.security.RateLimitingManager;
+import tech.lemnova.continuum.infra.security.RateLimitingManager;
 
 import java.time.Duration;
 
