@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.exception;
+package onl.continuum.continuum.application.exception;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

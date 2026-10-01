@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.domain.tracking;
+package onl.continuum.continuum.domain.tracking;
 
 import org.junit.jupiter.api.Test;
 

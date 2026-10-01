@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.infra.security;
+package onl.continuum.continuum.infra.security;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,8 +7,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import tech.lemnova.continuum.domain.user.User;
-import tech.lemnova.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.domain.user.User;
+import onl.continuum.continuum.domain.user.UserRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;

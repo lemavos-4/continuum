@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.service;
+package onl.continuum.continuum.application.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

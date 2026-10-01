@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.infra.security;
+package onl.continuum.continuum.infra.security;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,7 @@ import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import tech.lemnova.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.domain.user.UserRepository;
 
 import java.time.Instant;
 import java.util.Collections;

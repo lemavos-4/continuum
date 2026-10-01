@@ -122,6 +122,10 @@ You can inspect the source code, report issues, suggest improvements and contrib
 
 https://github.com/continuumnodes/continuum
 
+**Versions / changelog:**
+
+[frontend/versions.md](frontend/versions.md)
+
 If you find a security issue, please report it responsibly rather than publicly exposing sensitive information.
 
 ---

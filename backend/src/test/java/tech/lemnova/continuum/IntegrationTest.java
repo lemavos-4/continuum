@@ -1,4 +1,4 @@
-package tech.lemnova.continuum;
+package onl.continuum.continuum;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

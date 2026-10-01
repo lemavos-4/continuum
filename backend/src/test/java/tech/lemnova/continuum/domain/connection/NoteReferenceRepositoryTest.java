@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.domain.connection;
+package onl.continuum.continuum.domain.connection;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

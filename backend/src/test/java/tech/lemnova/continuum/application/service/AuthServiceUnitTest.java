@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.service;
+package onl.continuum.continuum.application.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -12,14 +12,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import tech.lemnova.continuum.domain.token.TokenBlacklistRepository;
-import tech.lemnova.continuum.domain.plan.PlanConfiguration;
-import tech.lemnova.continuum.domain.plan.PlanType;
-import tech.lemnova.continuum.domain.subscription.SubscriptionRepository;
-import tech.lemnova.continuum.domain.user.User;
-import tech.lemnova.continuum.domain.user.UserRepository;
-import tech.lemnova.continuum.infra.security.JwtService;
-import tech.lemnova.continuum.infra.vault.VaultStorageService;
+import onl.continuum.continuum.domain.token.TokenBlacklistRepository;
+import onl.continuum.continuum.domain.plan.PlanConfiguration;
+import onl.continuum.continuum.domain.plan.PlanType;
+import onl.continuum.continuum.domain.subscription.SubscriptionRepository;
+import onl.continuum.continuum.domain.user.User;
+import onl.continuum.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.infra.security.JwtService;
+import onl.continuum.continuum.infra.vault.VaultStorageService;
 
 import java.util.Optional;
 

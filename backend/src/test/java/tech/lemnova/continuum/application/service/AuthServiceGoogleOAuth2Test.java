@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.service;
+package onl.continuum.continuum.application.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -6,15 +6,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import tech.lemnova.continuum.domain.plan.PlanConfiguration;
-import tech.lemnova.continuum.domain.plan.PlanType;
-import tech.lemnova.continuum.domain.subscription.SubscriptionRepository;
-import tech.lemnova.continuum.domain.token.TokenBlacklistRepository;
-import tech.lemnova.continuum.domain.user.User;
-import tech.lemnova.continuum.domain.user.UserRepository;
-import tech.lemnova.continuum.infra.notification.TelegramNotificationService;
-import tech.lemnova.continuum.infra.security.JwtService;
-import tech.lemnova.continuum.infra.vault.VaultStorageService;
+import onl.continuum.continuum.domain.plan.PlanConfiguration;
+import onl.continuum.continuum.domain.plan.PlanType;
+import onl.continuum.continuum.domain.subscription.SubscriptionRepository;
+import onl.continuum.continuum.domain.token.TokenBlacklistRepository;
+import onl.continuum.continuum.domain.user.User;
+import onl.continuum.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.infra.notification.TelegramNotificationService;
+import onl.continuum.continuum.infra.security.JwtService;
+import onl.continuum.continuum.infra.vault.VaultStorageService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;

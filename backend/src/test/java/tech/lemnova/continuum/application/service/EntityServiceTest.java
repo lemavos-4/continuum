@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.service;
+package onl.continuum.continuum.application.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,17 +8,17 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import tech.lemnova.continuum.controller.dto.entity.EntityCreateRequest;
-import tech.lemnova.continuum.controller.dto.entity.EntityUpdateRequest;
-import tech.lemnova.continuum.domain.entity.Entity;
-import tech.lemnova.continuum.domain.entity.EntityType;
-import tech.lemnova.continuum.domain.note.Note;
-import tech.lemnova.continuum.domain.plan.PlanConfiguration;
-import tech.lemnova.continuum.domain.user.User;
-import tech.lemnova.continuum.domain.user.UserRepository;
-import tech.lemnova.continuum.infra.persistence.EntityRepository;
-import tech.lemnova.continuum.infra.persistence.NoteRepository;
-import tech.lemnova.continuum.infra.security.CustomUserDetails;
+import onl.continuum.continuum.controller.dto.entity.EntityCreateRequest;
+import onl.continuum.continuum.controller.dto.entity.EntityUpdateRequest;
+import onl.continuum.continuum.domain.entity.Entity;
+import onl.continuum.continuum.domain.entity.EntityType;
+import onl.continuum.continuum.domain.note.Note;
+import onl.continuum.continuum.domain.plan.PlanConfiguration;
+import onl.continuum.continuum.domain.user.User;
+import onl.continuum.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.infra.persistence.EntityRepository;
+import onl.continuum.continuum.infra.persistence.NoteRepository;
+import onl.continuum.continuum.infra.security.CustomUserDetails;
 
 import java.time.Instant;
 import java.util.List;
@@ -68,7 +68,7 @@ class EntityServiceTest {
     void create_savesEntity() {
         String userId = "user1";
         String vaultId = "vault1";
-        EntityCreateRequest req = new EntityCreateRequest("AI", tech.lemnova.continuum.domain.entity.EntityType.PERSON, "Artificial Intelligence");
+        EntityCreateRequest req = new EntityCreateRequest("AI", onl.continuum.continuum.domain.entity.EntityType.PERSON, "Artificial Intelligence");
         
         Entity savedEntity = new Entity();
         savedEntity.setId("e1");
@@ -141,7 +141,7 @@ class EntityServiceTest {
         String userId = "user1";
         String vaultId = "vault1";
         String entityId = "e1";
-        EntityUpdateRequest req = new EntityUpdateRequest("Updated Title", tech.lemnova.continuum.domain.entity.EntityType.PERSON, "Updated Description");
+        EntityUpdateRequest req = new EntityUpdateRequest("Updated Title", onl.continuum.continuum.domain.entity.EntityType.PERSON, "Updated Description");
         
         Entity entity = new Entity();
         entity.setId(entityId);

@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.application.service;
+package onl.continuum.continuum.application.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -10,12 +10,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
 
-import tech.lemnova.continuum.domain.note.Note;
-import tech.lemnova.continuum.infra.persistence.NoteRepository;
-import tech.lemnova.continuum.infra.persistence.NoteLinkRepository;
-import tech.lemnova.continuum.infra.persistence.EntityRepository;
-import tech.lemnova.continuum.domain.user.UserRepository;
-import tech.lemnova.continuum.domain.plan.PlanConfiguration;
+import onl.continuum.continuum.domain.note.Note;
+import onl.continuum.continuum.infra.persistence.NoteRepository;
+import onl.continuum.continuum.infra.persistence.NoteLinkRepository;
+import onl.continuum.continuum.infra.persistence.EntityRepository;
+import onl.continuum.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.domain.plan.PlanConfiguration;
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ class NoteServiceTest {
     private TiptapParserService tiptapParserService;
     
     @Mock
-    private tech.lemnova.continuum.infra.vault.VaultStorageService vaultStorageService;
+    private onl.continuum.continuum.infra.vault.VaultStorageService vaultStorageService;
     
     @Mock
     private UserService userService;

@@ -1,4 +1,4 @@
-package tech.lemnova.continuum.infra.security;
+package onl.continuum.continuum.infra.security;
 
 import org.junit.jupiter.api.Test;
 
