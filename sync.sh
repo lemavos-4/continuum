@@ -30,6 +30,8 @@
 # Requer:
 #   gh (GitHub CLI) autenticado.
 
+clear
+
 set -euo pipefail
 
 REPO_NAME="continuum"
@@ -509,3 +511,6 @@ case "$FLOW_CHOICE" in
     exit 1
     ;;
 esac
+
+cd ..
+cd continuum
