@@ -297,9 +297,12 @@ export default function Notes() {
       });
 
       await Promise.allSettled(uncached.map(async (note) => {
-        const response = await notesApi.get(note.id);
-        queryClient.setQueryData(qk.note(note.id), response.data);
-        if (!cancelled) setSearchContentById((previous) => ({ ...previous, [note.id]: response.data?.content }));
+        const detail = await queryClient.fetchQuery({
+          queryKey: qk.note(note.id),
+          queryFn: () => notesApi.get(note.id).then((response) => response.data),
+          staleTime: STALE.detail,
+        });
+        if (!cancelled) setSearchContentById((previous) => ({ ...previous, [note.id]: detail?.content }));
       }));
     }, 250);
 
